@@ -1,0 +1,13 @@
+[package]
+name = "transformer"
+version = "0.1.0"
+authors = ["aleics <aleics.casanovas@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+serde = { version = "1.0.110", default-features = false, features = ["derive"] }
+hashbrown = "0.7.2"
+ebooler = { path = "../ebooler", features = ["serde"] }
+
+[dev-dependencies]
+serde_json = "1.0.53"
