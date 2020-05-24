@@ -1,13 +1,11 @@
 use ebooler::vars::Variables;
 use serde::Deserialize;
 
-use crate::iter::{chain, PipeIterator};
-use crate::pipe::Pipe;
+use crate::pipe::{chain, Pipe, PipeIterator};
 
 pub mod error;
 pub mod filter;
 pub mod group;
-pub mod iter;
 pub mod map;
 pub mod pipe;
 
@@ -65,7 +63,7 @@ mod tests {
     )
     .unwrap();
 
-    let engine = Engine::new(data.values.as_slice());
+    let engine = Engine::new(&data.values);
     let result = engine.run(&data.pipes).collect::<Vec<Variables>>();
 
     assert_eq!(result.len(), 1);

@@ -5,7 +5,7 @@ use hashbrown::hash_map::IntoIter;
 use hashbrown::HashMap;
 use serde::Deserialize;
 
-use crate::iter::DataIterator;
+use crate::pipe::DataIterator;
 
 #[derive(Deserialize, PartialEq, Debug)]
 pub struct GroupPipe<'a> {
@@ -114,7 +114,7 @@ mod tests {
   use ebooler::vars::Variables;
 
   use crate::group::{GroupIterator, GroupPipe, Operation};
-  use crate::iter::PipeIterator;
+  use crate::pipe::PipeIterator;
 
   #[test]
   fn finds_repetition() {

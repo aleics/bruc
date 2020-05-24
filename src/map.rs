@@ -7,8 +7,7 @@ use serde::de::Visitor;
 use serde::{Deserialize, Deserializer};
 
 use crate::error::Error;
-use crate::iter::DataIterator;
-use crate::pipe::Predicate;
+use crate::pipe::{DataIterator, Predicate};
 
 #[derive(Deserialize, PartialEq, Debug)]
 pub struct MapPipe<'a> {
@@ -104,8 +103,8 @@ impl<'de: 'a, 'a> Deserialize<'de> for MapPredicate<'a> {
 mod tests {
   use ebooler::vars::Variables;
 
-  use crate::iter::PipeIterator;
   use crate::map::{MapIterator, MapPipe};
+  use crate::pipe::PipeIterator;
 
   #[test]
   fn apply() {

@@ -7,12 +7,29 @@ use serde::de::Visitor;
 use serde::{Deserialize, Deserializer};
 
 use crate::error::Error;
-use crate::iter::DataIterator;
-use crate::pipe::Predicate;
+use crate::pipe::{DataIterator, Predicate};
 
 #[derive(PartialEq, Debug)]
 pub struct FilterPipe<'a> {
   predicate: FilterPredicate<'a>,
+}
+
+impl<'a> FilterPipe<'a> {
+  #[inline]
+  pub fn new(predicate: &'a str) -> Result<FilterPipe<'a>, Error> {
+    let predicate = FilterPredicate::new(predicate)?;
+    Ok(FilterPipe { predicate })
+  }
+
+  #[inline]
+  pub fn apply(&self, item: &Variables<'a>) -> Option<Variables<'a>> {
+    let result = self.predicate.interpret(item).unwrap();
+    if result {
+      Some(item.clone())
+    } else {
+      None
+    }
+  }
 }
 
 impl<'de: 'a, 'a> Deserialize<'de> for FilterPipe<'a> {
@@ -33,24 +50,6 @@ impl<'de: 'a, 'a> Deserialize<'de> for FilterPipe<'a> {
     }
 
     deserializer.deserialize_any(FilterPipeVisitor)
-  }
-}
-
-impl<'a> FilterPipe<'a> {
-  #[inline]
-  pub fn new(predicate: &'a str) -> Result<FilterPipe<'a>, Error> {
-    let predicate = FilterPredicate::new(predicate)?;
-    Ok(FilterPipe { predicate })
-  }
-
-  #[inline]
-  pub fn apply(&self, item: &Variables<'a>) -> Option<Variables<'a>> {
-    let result = self.predicate.interpret(item).unwrap();
-    if result {
-      Some(item.clone())
-    } else {
-      None
-    }
   }
 }
 
@@ -103,7 +102,7 @@ mod tests {
   use ebooler::vars::Variables;
 
   use crate::filter::{FilterIterator, FilterPipe};
-  use crate::iter::PipeIterator;
+  use crate::pipe::PipeIterator;
 
   #[test]
   fn apply() {
