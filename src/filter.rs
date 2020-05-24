@@ -7,7 +7,7 @@ use serde::de::Visitor;
 use serde::{Deserialize, Deserializer};
 
 use crate::error::Error;
-use crate::pipe::{DataIterator, Predicate};
+use crate::pipe::{DataIterator, PipeIterator, Predicate};
 
 #[derive(PartialEq, Debug)]
 pub struct FilterPipe<'a> {
@@ -82,8 +82,14 @@ pub struct FilterIterator<'a> {
 }
 
 impl<'a> FilterIterator<'a> {
-  pub fn chain(source: Box<DataIterator<'a>>, pipe: &'a FilterPipe<'a>) -> FilterIterator<'a> {
+  pub fn new(source: Box<DataIterator<'a>>, pipe: &'a FilterPipe<'a>) -> FilterIterator<'a> {
     FilterIterator { source, pipe }
+  }
+
+  #[inline]
+  pub fn chain(source: PipeIterator<'a>, pipe: &'a FilterPipe<'a>) -> PipeIterator<'a> {
+    let iterator = FilterIterator::new(Box::new(source), pipe);
+    PipeIterator::new(Box::new(iterator))
   }
 }
 
@@ -113,7 +119,7 @@ mod tests {
     ];
     let source = PipeIterator::source(data.iter());
 
-    let iterator = FilterIterator::chain(Box::new(source), &filter);
+    let iterator = FilterIterator::chain(source, &filter);
     let result = iterator.collect::<Vec<Variables>>();
 
     assert_eq!(result.len(), 1);

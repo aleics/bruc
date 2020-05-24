@@ -5,7 +5,7 @@ use hashbrown::hash_map::IntoIter;
 use hashbrown::HashMap;
 use serde::Deserialize;
 
-use crate::pipe::DataIterator;
+use crate::pipe::{DataIterator, PipeIterator};
 
 #[derive(Deserialize, PartialEq, Debug)]
 pub struct GroupPipe<'a> {
@@ -33,15 +33,18 @@ pub struct GroupIterator<'a> {
 }
 
 impl<'a> GroupIterator<'a> {
+  pub fn new(source: Box<DataIterator<'a>>) -> GroupIterator<'a> {
+    GroupIterator { source }
+  }
+
   #[inline]
-  pub fn chain(source: Box<DataIterator<'a>>, pipe: &'a GroupPipe<'a>) -> GroupIterator<'a> {
+  pub fn chain(source: PipeIterator<'a>, pipe: &'a GroupPipe<'a>) -> PipeIterator<'a> {
     let group_source = match pipe.op {
       Operation::Count => CountIterator::chain(source, pipe),
     };
 
-    GroupIterator {
-      source: Box::new(group_source),
-    }
+    let iterator = GroupIterator::new(Box::new(group_source));
+    PipeIterator::new(Box::new(iterator))
   }
 }
 
@@ -61,12 +64,6 @@ struct CountIterator<'a> {
 }
 
 impl<'a> CountIterator<'a> {
-  #[inline]
-  fn chain(source: Box<DataIterator<'a>>, pipe: &'a GroupPipe<'a>) -> CountIterator<'a> {
-    let data: Vec<Variables> = source.collect();
-    CountIterator::new(data, pipe.by, pipe.output)
-  }
-
   #[inline]
   fn new(data: Vec<Variables<'a>>, by: &'a str, output: &'a str) -> CountIterator<'a> {
     let reps = CountIterator::reps(data, by);
@@ -91,6 +88,14 @@ impl<'a> CountIterator<'a> {
         }
         acc
       })
+  }
+
+  #[inline]
+  fn chain(source: PipeIterator<'a>, pipe: &'a GroupPipe<'a>) -> PipeIterator<'a> {
+    let data: Vec<Variables> = source.collect();
+    let iterator = CountIterator::new(data, pipe.by, pipe.output);
+
+    PipeIterator::new(Box::new(iterator))
   }
 }
 
@@ -125,7 +130,7 @@ mod tests {
     ];
     let source = PipeIterator::source(data.iter());
 
-    let iterator = GroupIterator::chain(Box::new(source), &group);
+    let iterator = GroupIterator::chain(source, &group);
     let result = iterator.collect::<Vec<Variables>>();
 
     assert_eq!(result.len(), 1);
@@ -142,7 +147,7 @@ mod tests {
     ];
     let source = PipeIterator::source(data.iter());
 
-    let iterator = GroupIterator::chain(Box::new(source), &group);
+    let iterator = GroupIterator::chain(source, &group);
     let result = iterator.collect::<Vec<Variables>>();
 
     assert_eq!(result.len(), 1);

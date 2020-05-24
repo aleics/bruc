@@ -41,42 +41,22 @@ pub struct PipeIterator<'a> {
 }
 
 impl<'a> PipeIterator<'a> {
+  pub fn new(source: Box<DataIterator<'a>>) -> PipeIterator<'a> {
+    PipeIterator { source }
+  }
+
   #[inline]
   pub fn chain(source: PipeIterator<'a>, pipe: &'a Pipe<'a>) -> PipeIterator<'a> {
     match pipe {
-      Pipe::Filter(pipe) => PipeIterator::filter(source, pipe),
-      Pipe::Map(pipe) => PipeIterator::map(source, pipe),
-      Pipe::Group(pipe) => PipeIterator::group(source, pipe),
+      Pipe::Filter(pipe) => FilterIterator::chain(source, pipe),
+      Pipe::Map(pipe) => MapIterator::chain(source, pipe),
+      Pipe::Group(pipe) => GroupIterator::chain(source, pipe),
     }
   }
 
   #[inline]
   pub fn source(input: Iter<'a, Variables<'a>>) -> PipeIterator<'a> {
     let iterator = SourceIterator::new(input);
-    PipeIterator {
-      source: Box::new(iterator),
-    }
-  }
-
-  #[inline]
-  fn map(source: PipeIterator<'a>, pipe: &'a MapPipe<'a>) -> PipeIterator<'a> {
-    let iterator = MapIterator::chain(Box::new(source), pipe);
-    PipeIterator {
-      source: Box::new(iterator),
-    }
-  }
-
-  #[inline]
-  fn filter(source: PipeIterator<'a>, pipe: &'a FilterPipe<'a>) -> PipeIterator<'a> {
-    let iterator = FilterIterator::chain(Box::new(source), pipe);
-    PipeIterator {
-      source: Box::new(iterator),
-    }
-  }
-
-  #[inline]
-  fn group(source: PipeIterator<'a>, pipe: &'a GroupPipe<'a>) -> PipeIterator<'a> {
-    let iterator = GroupIterator::chain(Box::new(source), pipe);
     PipeIterator {
       source: Box::new(iterator),
     }

@@ -7,7 +7,7 @@ use serde::de::Visitor;
 use serde::{Deserialize, Deserializer};
 
 use crate::error::Error;
-use crate::pipe::{DataIterator, Predicate};
+use crate::pipe::{DataIterator, PipeIterator, Predicate};
 
 #[derive(Deserialize, PartialEq, Debug)]
 pub struct MapPipe<'a> {
@@ -41,8 +41,14 @@ pub struct MapIterator<'a> {
 }
 
 impl<'a> MapIterator<'a> {
-  pub fn chain(source: Box<DataIterator<'a>>, pipe: &'a MapPipe<'a>) -> MapIterator<'a> {
+  pub fn new(source: Box<DataIterator<'a>>, pipe: &'a MapPipe<'a>) -> MapIterator<'a> {
     MapIterator { source, pipe }
+  }
+
+  #[inline]
+  pub fn chain(source: PipeIterator<'a>, pipe: &'a MapPipe<'a>) -> PipeIterator<'a> {
+    let iterator = MapIterator::new(Box::new(source), pipe);
+    PipeIterator::new(Box::new(iterator))
   }
 }
 
@@ -115,7 +121,7 @@ mod tests {
     ];
     let source = PipeIterator::source(data.iter());
 
-    let iterator = MapIterator::chain(Box::new(source), &map);
+    let iterator = MapIterator::chain(source, &map);
     let result = iterator.collect::<Vec<Variables>>();
 
     assert_eq!(result.len(), 2);
