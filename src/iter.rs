@@ -3,6 +3,7 @@ use std::slice::Iter;
 use ebooler::vars::Variables;
 
 use crate::filter::{FilterIterator, FilterPipe};
+use crate::group::{GroupIterator, GroupPipe};
 use crate::map::{MapIterator, MapPipe};
 use crate::pipe::Pipe;
 
@@ -46,7 +47,7 @@ impl<'a> PipeIterator<'a> {
     match pipe {
       Pipe::Filter(pipe) => PipeIterator::filter(source, pipe),
       Pipe::Map(pipe) => PipeIterator::map(source, pipe),
-      Pipe::Group(_) => unimplemented!(),
+      Pipe::Group(pipe) => PipeIterator::group(source, pipe),
     }
   }
 
@@ -69,6 +70,14 @@ impl<'a> PipeIterator<'a> {
   #[inline]
   fn filter(source: PipeIterator<'a>, pipe: &'a FilterPipe<'a>) -> PipeIterator<'a> {
     let iterator = FilterIterator::chain(Box::new(source), pipe);
+    PipeIterator {
+      source: Box::new(iterator),
+    }
+  }
+
+  #[inline]
+  fn group(source: PipeIterator<'a>, pipe: &'a GroupPipe<'a>) -> PipeIterator<'a> {
+    let iterator = GroupIterator::chain(Box::new(source), pipe);
     PipeIterator {
       source: Box::new(iterator),
     }

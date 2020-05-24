@@ -35,8 +35,9 @@ impl<'a> Engine<'a> {
 
 #[cfg(test)]
 mod tests {
-  use crate::{Data, Engine};
   use ebooler::vars::Variables;
+
+  use crate::{Data, Engine};
 
   #[test]
   fn from_json() {

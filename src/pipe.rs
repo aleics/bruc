@@ -16,10 +16,6 @@ pub enum Pipe<'a> {
   Group(GroupPipe<'a>),
 }
 
-pub trait Pipable<'a> {
-  fn transform(&self, data: &[Variables<'a>]) -> Vec<Variables<'a>>;
-}
-
 pub trait Predicate {
   type Value;
 
