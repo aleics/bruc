@@ -2,6 +2,7 @@ use std::slice::Iter;
 
 use ebooler::vars::Variables;
 
+use crate::filter::{FilterIterator, FilterPipe};
 use crate::map::{MapIterator, MapPipe};
 use crate::pipe::Pipe;
 
@@ -15,7 +16,7 @@ pub fn chain<'a>(data: &'a [Variables<'a>], pipes: &'a [Pipe<'a>]) -> PipeIterat
     })
 }
 
-struct SourceIterator<'a> {
+pub struct SourceIterator<'a> {
   source: Iter<'a, Variables<'a>>,
 }
 
@@ -43,14 +44,14 @@ impl<'a> PipeIterator<'a> {
   #[inline]
   pub fn chain(source: PipeIterator<'a>, pipe: &'a Pipe<'a>) -> PipeIterator<'a> {
     match pipe {
-      Pipe::Filter(_) => unimplemented!(),
-      Pipe::Map(map) => PipeIterator::map(source, map),
+      Pipe::Filter(pipe) => PipeIterator::filter(source, pipe),
+      Pipe::Map(pipe) => PipeIterator::map(source, pipe),
       Pipe::Group(_) => unimplemented!(),
     }
   }
 
   #[inline]
-  fn source(input: Iter<'a, Variables<'a>>) -> PipeIterator<'a> {
+  pub fn source(input: Iter<'a, Variables<'a>>) -> PipeIterator<'a> {
     let iterator = SourceIterator::new(input);
     PipeIterator {
       source: Box::new(iterator),
@@ -60,6 +61,14 @@ impl<'a> PipeIterator<'a> {
   #[inline]
   fn map(source: PipeIterator<'a>, pipe: &'a MapPipe<'a>) -> PipeIterator<'a> {
     let iterator = MapIterator::chain(Box::new(source), pipe);
+    PipeIterator {
+      source: Box::new(iterator),
+    }
+  }
+
+  #[inline]
+  fn filter(source: PipeIterator<'a>, pipe: &'a FilterPipe<'a>) -> PipeIterator<'a> {
+    let iterator = FilterIterator::chain(Box::new(source), pipe);
     PipeIterator {
       source: Box::new(iterator),
     }

@@ -8,7 +8,7 @@ use serde::{Deserialize, Deserializer};
 
 use crate::error::Error;
 use crate::iter::DataIterator;
-use crate::pipe::{Pipable, Predicate};
+use crate::pipe::Predicate;
 
 #[derive(Deserialize, PartialEq, Debug)]
 pub struct MapPipe<'a> {
@@ -53,16 +53,6 @@ impl<'a> Iterator for MapIterator<'a> {
   #[inline]
   fn next(&mut self) -> Option<Self::Item> {
     self.source.next().map(|current| self.pipe.apply(&current))
-  }
-}
-
-impl<'a> Pipable<'a> for MapPipe<'a> {
-  #[inline]
-  fn transform(&self, data: &[Variables<'a>]) -> Vec<Variables<'a>> {
-    data
-      .iter()
-      .map(|item| self.apply(item))
-      .collect::<Vec<Variables>>()
   }
 }
 
@@ -114,8 +104,8 @@ impl<'de: 'a, 'a> Deserialize<'de> for MapPredicate<'a> {
 mod tests {
   use ebooler::vars::Variables;
 
-  use crate::map::MapPipe;
-  use crate::pipe::Pipable;
+  use crate::iter::PipeIterator;
+  use crate::map::{MapIterator, MapPipe};
 
   #[test]
   fn apply() {
@@ -124,7 +114,10 @@ mod tests {
       Variables::from_pairs(vec![("a", 2.0.into())]),
       Variables::from_pairs(vec![("a", 4.0.into())]),
     ];
-    let result = map.transform(&data);
+    let source = PipeIterator::source(data.iter());
+
+    let iterator = MapIterator::chain(Box::new(source), &map);
+    let result = iterator.collect::<Vec<Variables>>();
 
     assert_eq!(result.len(), 2);
     assert_eq!(result[0].find("b").unwrap(), &5.0.into());

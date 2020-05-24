@@ -7,7 +7,8 @@ use serde::de::Visitor;
 use serde::{Deserialize, Deserializer};
 
 use crate::error::Error;
-use crate::pipe::{Pipable, Predicate};
+use crate::iter::DataIterator;
+use crate::pipe::Predicate;
 
 #[derive(PartialEq, Debug)]
 pub struct FilterPipe<'a> {
@@ -53,16 +54,6 @@ impl<'a> FilterPipe<'a> {
   }
 }
 
-impl<'a> Pipable<'a> for FilterPipe<'a> {
-  #[inline]
-  fn transform(&self, data: &[Variables<'a>]) -> Vec<Variables<'a>> {
-    data
-      .iter()
-      .filter_map(|item| self.apply(item))
-      .collect::<Vec<Variables>>()
-  }
-}
-
 #[derive(PartialEq, Debug)]
 pub struct FilterPredicate<'a> {
   expression: Expression<'a>,
@@ -86,12 +77,33 @@ impl<'a> Predicate for FilterPredicate<'a> {
   }
 }
 
+pub struct FilterIterator<'a> {
+  source: Box<DataIterator<'a>>,
+  pipe: &'a FilterPipe<'a>,
+}
+
+impl<'a> FilterIterator<'a> {
+  pub fn chain(source: Box<DataIterator<'a>>, pipe: &'a FilterPipe<'a>) -> FilterIterator<'a> {
+    FilterIterator { source, pipe }
+  }
+}
+
+impl<'a> Iterator for FilterIterator<'a> {
+  type Item = Variables<'a>;
+
+  #[inline]
+  fn next(&mut self) -> Option<Self::Item> {
+    let current = self.source.next()?;
+    self.pipe.apply(&current).or_else(|| self.next())
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use ebooler::vars::Variables;
 
-  use crate::filter::FilterPipe;
-  use crate::pipe::Pipable;
+  use crate::filter::{FilterIterator, FilterPipe};
+  use crate::iter::PipeIterator;
 
   #[test]
   fn apply() {
@@ -100,7 +112,10 @@ mod tests {
       Variables::from_pairs(vec![("a", 2.0.into())]),
       Variables::from_pairs(vec![("a", 4.0.into())]),
     ];
-    let result = filter.transform(&data);
+    let source = PipeIterator::source(data.iter());
+
+    let iterator = FilterIterator::chain(Box::new(source), &filter);
+    let result = iterator.collect::<Vec<Variables>>();
 
     assert_eq!(result.len(), 1);
     assert_eq!(result[0].find("a").unwrap(), &4.0.into());
