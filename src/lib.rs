@@ -1,7 +1,8 @@
 use ebooler::vars::Variables;
 use serde::Deserialize;
 
-use crate::pipe::{Pipable, Pipe};
+use crate::iter::{chain, PipeIterator};
+use crate::pipe::Pipe;
 
 pub mod error;
 pub mod filter;
@@ -18,38 +19,24 @@ pub struct Data<'a> {
 }
 
 pub struct Engine<'a> {
-  values: Vec<Variables<'a>>,
+  values: &'a [Variables<'a>],
 }
 
 impl<'a> Engine<'a> {
-  pub fn new(values: Vec<Variables<'a>>) -> Engine<'a> {
+  pub fn new(values: &'a [Variables<'a>]) -> Engine<'a> {
     Engine { values }
   }
 
-  pub fn values(&self) -> &Vec<Variables<'a>> {
-    &self.values
-  }
-
   #[inline]
-  pub fn run(&mut self, pipes: &'a [Pipe<'a>]) {
-    for pipe in pipes {
-      self.values = self.apply_pipe(pipe);
-    }
-  }
-
-  #[inline]
-  fn apply_pipe(&mut self, pipe: &'a Pipe<'a>) -> Vec<Variables<'a>> {
-    match pipe {
-      Pipe::Filter(filter) => filter.transform(&self.values),
-      Pipe::Map(map) => map.transform(&self.values),
-      Pipe::Group(group) => group.transform(&self.values),
-    }
+  pub fn run(&self, pipes: &'a [Pipe<'a>]) -> PipeIterator<'a> {
+    chain(self.values, pipes)
   }
 }
 
 #[cfg(test)]
 mod tests {
   use crate::{Data, Engine};
+  use ebooler::vars::Variables;
 
   #[test]
   fn from_json() {
@@ -77,9 +64,9 @@ mod tests {
     )
     .unwrap();
 
-    let engine = &mut Engine::new(data.values);
-    engine.run(&data.pipes);
+    let engine = Engine::new(data.values.as_slice());
+    let result = engine.run(&data.pipes).collect::<Vec<Variables>>();
 
-    assert_eq!(engine.values().len(), 1);
+    assert_eq!(result.len(), 1);
   }
 }
