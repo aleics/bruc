@@ -7,6 +7,7 @@ use ebooler::vars::{Variable, Variables};
 
 use transformer::filter::FilterPipe;
 use transformer::group::{GroupPipe, Operation};
+use transformer::iter::chain;
 use transformer::map::MapPipe;
 use transformer::pipe::Pipe;
 use transformer::Engine;
@@ -147,4 +148,94 @@ fn bench_group_pipe_20_sequentially(b: &mut Bencher) {
     ])
     .run(&pipes)
   });
+}
+
+#[bench]
+fn bench_unchained_10_10_maps(b: &mut Bencher) {
+  let pipes = vec![
+    Pipe::Map(MapPipe::new("(a + 1)", "k").unwrap()),
+    Pipe::Map(MapPipe::new("(b + 2)", "l").unwrap()),
+    Pipe::Map(MapPipe::new("(c + 3)", "m").unwrap()),
+    Pipe::Map(MapPipe::new("(d + 4)", "n").unwrap()),
+    Pipe::Map(MapPipe::new("(e + 5)", "o").unwrap()),
+    Pipe::Map(MapPipe::new("(f + 6)", "p").unwrap()),
+    Pipe::Map(MapPipe::new("(g + 7)", "q").unwrap()),
+    Pipe::Map(MapPipe::new("(h + 8)", "r").unwrap()),
+    Pipe::Map(MapPipe::new("(i + 9)", "s").unwrap()),
+    Pipe::Map(MapPipe::new("(j + 10)", "t").unwrap()),
+  ];
+
+  b.iter(|| {
+    Engine::new(vec![
+      Variables::from_pairs(vec![
+        ("a", Variable::Number(1.0)),
+        ("b", Variable::Number(2.0)),
+        ("c", Variable::Number(3.0)),
+        ("d", Variable::Number(4.0)),
+        ("e", Variable::Number(5.0)),
+        ("f", Variable::Number(6.0)),
+        ("g", Variable::Number(7.0)),
+        ("h", Variable::Number(8.0)),
+        ("i", Variable::Number(9.0)),
+        ("j", Variable::Number(10.0)),
+      ]),
+      Variables::from_pairs(vec![
+        ("a", Variable::Number(1.0)),
+        ("b", Variable::Number(2.0)),
+        ("c", Variable::Number(3.0)),
+        ("d", Variable::Number(4.0)),
+        ("e", Variable::Number(5.0)),
+        ("f", Variable::Number(6.0)),
+        ("g", Variable::Number(7.0)),
+        ("h", Variable::Number(8.0)),
+        ("i", Variable::Number(9.0)),
+        ("j", Variable::Number(10.0)),
+      ]),
+    ])
+    .run(&pipes)
+  });
+}
+
+#[bench]
+fn bench_chained_10_10_maps(b: &mut Bencher) {
+  let pipes = vec![
+    Pipe::Map(MapPipe::new("(a + 1)", "k").unwrap()),
+    Pipe::Map(MapPipe::new("(b + 2)", "l").unwrap()),
+    Pipe::Map(MapPipe::new("(c + 3)", "m").unwrap()),
+    Pipe::Map(MapPipe::new("(d + 4)", "n").unwrap()),
+    Pipe::Map(MapPipe::new("(e + 5)", "o").unwrap()),
+    Pipe::Map(MapPipe::new("(f + 6)", "p").unwrap()),
+    Pipe::Map(MapPipe::new("(g + 7)", "q").unwrap()),
+    Pipe::Map(MapPipe::new("(h + 8)", "r").unwrap()),
+    Pipe::Map(MapPipe::new("(i + 9)", "s").unwrap()),
+    Pipe::Map(MapPipe::new("(j + 10)", "t").unwrap()),
+  ];
+  let data = vec![
+    Variables::from_pairs(vec![
+      ("a", Variable::Number(1.0)),
+      ("b", Variable::Number(2.0)),
+      ("c", Variable::Number(3.0)),
+      ("d", Variable::Number(4.0)),
+      ("e", Variable::Number(5.0)),
+      ("f", Variable::Number(6.0)),
+      ("g", Variable::Number(7.0)),
+      ("h", Variable::Number(8.0)),
+      ("i", Variable::Number(9.0)),
+      ("j", Variable::Number(10.0)),
+    ]),
+    Variables::from_pairs(vec![
+      ("a", Variable::Number(1.0)),
+      ("b", Variable::Number(2.0)),
+      ("c", Variable::Number(3.0)),
+      ("d", Variable::Number(4.0)),
+      ("e", Variable::Number(5.0)),
+      ("f", Variable::Number(6.0)),
+      ("g", Variable::Number(7.0)),
+      ("h", Variable::Number(8.0)),
+      ("i", Variable::Number(9.0)),
+      ("j", Variable::Number(10.0)),
+    ]),
+  ];
+
+  b.iter(|| chain(&data, &pipes).collect::<Vec<Variables>>());
 }

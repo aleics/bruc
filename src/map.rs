@@ -7,6 +7,7 @@ use serde::de::Visitor;
 use serde::{Deserialize, Deserializer};
 
 use crate::error::Error;
+use crate::iter::DataIterator;
 use crate::pipe::{Pipable, Predicate};
 
 #[derive(Deserialize, PartialEq, Debug)]
@@ -32,6 +33,26 @@ impl<'a> MapPipe<'a> {
     result.insert(self.output, var.into());
 
     result
+  }
+}
+
+pub struct MapIterator<'a> {
+  source: Box<DataIterator<'a>>,
+  pipe: &'a MapPipe<'a>,
+}
+
+impl<'a> MapIterator<'a> {
+  pub fn chain(source: Box<DataIterator<'a>>, pipe: &'a MapPipe<'a>) -> MapIterator<'a> {
+    MapIterator { source, pipe }
+  }
+}
+
+impl<'a> Iterator for MapIterator<'a> {
+  type Item = Variables<'a>;
+
+  #[inline]
+  fn next(&mut self) -> Option<Self::Item> {
+    self.source.next().map(|current| self.pipe.apply(&current))
   }
 }
 

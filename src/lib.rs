@@ -6,6 +6,7 @@ use crate::pipe::{Pipable, Pipe};
 pub mod error;
 pub mod filter;
 pub mod group;
+pub mod iter;
 pub mod map;
 pub mod pipe;
 
