@@ -25,7 +25,6 @@ impl<'a> Engine<'a> {
     Engine { values }
   }
 
-  #[inline]
   pub fn run(&self, pipes: &'a [Pipe<'a>]) -> PipeIterator<'a> {
     chain(self.values, pipes)
   }

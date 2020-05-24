@@ -1,8 +1,8 @@
+use std::collections::hash_map::IntoIter;
+use std::collections::HashMap;
 use std::ops::AddAssign;
 
 use ebooler::vars::{Variable, Variables};
-use hashbrown::hash_map::IntoIter;
-use hashbrown::HashMap;
 use serde::Deserialize;
 
 use crate::pipe::{DataIterator, PipeIterator};

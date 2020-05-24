@@ -6,7 +6,6 @@ edition = "2018"
 
 [dependencies]
 serde = { version = "1.0.110", default-features = false, features = ["derive"] }
-hashbrown = "0.7.2"
 ebooler = { path = "../ebooler", features = ["serde"] }
 
 [dev-dependencies]
