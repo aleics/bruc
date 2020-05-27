@@ -22,10 +22,10 @@ impl<'a> FilterPipe<'a> {
   }
 
   #[inline]
-  pub fn apply(&self, item: &Variables<'a>) -> Option<Variables<'a>> {
-    let result = self.predicate.interpret(item).unwrap();
+  pub fn apply(&self, item: Variables<'a>) -> Option<Variables<'a>> {
+    let result = self.predicate.interpret(&item).unwrap();
     if result {
-      Some(item.clone())
+      Some(item)
     } else {
       None
     }
@@ -99,7 +99,7 @@ impl<'a> Iterator for FilterIterator<'a> {
   #[inline]
   fn next(&mut self) -> Option<Self::Item> {
     let current = self.source.next()?;
-    self.pipe.apply(&current).or_else(|| self.next())
+    self.pipe.apply(current).or_else(|| self.next())
   }
 }
 

@@ -25,13 +25,9 @@ impl<'a> MapPipe<'a> {
   }
 
   #[inline]
-  pub fn apply(&self, item: &Variables<'a>) -> Variables<'a> {
-    let var = self.predicate.interpret(item).unwrap();
-
-    let mut result = item.clone();
-    result.insert(self.output, var.into());
-
-    result
+  pub fn apply(&self, item: &mut Variables<'a>) {
+    let var = self.predicate.interpret(&item).unwrap();
+    item.insert(self.output, var.into());
   }
 }
 
@@ -57,7 +53,10 @@ impl<'a> Iterator for MapIterator<'a> {
 
   #[inline]
   fn next(&mut self) -> Option<Self::Item> {
-    self.source.next().map(|current| self.pipe.apply(&current))
+    self.source.next().map(|mut item| {
+      self.pipe.apply(&mut item);
+      item
+    })
   }
 }
 
