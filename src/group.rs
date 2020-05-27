@@ -124,11 +124,11 @@ mod tests {
   #[test]
   fn finds_repetition() {
     let group = GroupPipe::new("a", Operation::Count, "count");
-    let data = vec![
+    let data = [
       Variables::from_pairs(vec![("a", 2.0.into())]),
       Variables::from_pairs(vec![("a", 2.0.into())]),
     ];
-    let source = PipeIterator::source(data.iter());
+    let source = PipeIterator::source(&data);
 
     let iterator = GroupIterator::chain(source, &group);
     let result = iterator.collect::<Vec<Variables>>();
@@ -141,11 +141,11 @@ mod tests {
   #[test]
   fn finds_no_repetition() {
     let group = GroupPipe::new("a", Operation::Count, "count");
-    let data = vec![
+    let data = [
       Variables::from_pairs(vec![("a", 2.0.into())]),
       Variables::from_pairs(vec![("b", 3.0.into())]),
     ];
-    let source = PipeIterator::source(data.iter());
+    let source = PipeIterator::source(&data);
 
     let iterator = GroupIterator::chain(source, &group);
     let result = iterator.collect::<Vec<Variables>>();

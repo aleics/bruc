@@ -113,11 +113,11 @@ mod tests {
   #[test]
   fn apply() {
     let filter = FilterPipe::new("a > 3").unwrap();
-    let data = vec![
+    let data = [
       Variables::from_pairs(vec![("a", 2.0.into())]),
       Variables::from_pairs(vec![("a", 4.0.into())]),
     ];
-    let source = PipeIterator::source(data.iter());
+    let source = PipeIterator::source(&data);
 
     let iterator = FilterIterator::chain(source, &filter);
     let result = iterator.collect::<Vec<Variables>>();

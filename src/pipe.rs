@@ -1,5 +1,3 @@
-use std::slice::Iter;
-
 use ebooler::vars::Variables;
 use serde::Deserialize;
 
@@ -28,7 +26,7 @@ pub trait Predicate {
 pub fn chain<'a>(data: &'a [Variables<'a>], pipes: &'a [Pipe<'a>]) -> PipeIterator<'a> {
   pipes
     .iter()
-    .fold(PipeIterator::source(data.iter()), |mut acc, pipe| {
+    .fold(PipeIterator::source(data), |mut acc, pipe| {
       acc = PipeIterator::chain(acc, pipe);
       acc
     })
@@ -55,8 +53,11 @@ impl<'a> PipeIterator<'a> {
   }
 
   #[inline]
-  pub fn source(input: Iter<'a, Variables<'a>>) -> PipeIterator<'a> {
-    let iterator = SourceIterator::new(input);
+  pub fn source<I: 'a>(input: I) -> PipeIterator<'a>
+  where
+    I: IntoIterator<Item = &'a Variables<'a>>,
+  {
+    let iterator = SourceIterator::new(input.into_iter());
     PipeIterator {
       source: Box::new(iterator),
     }
@@ -72,17 +73,23 @@ impl<'a> Iterator for PipeIterator<'a> {
   }
 }
 
-pub struct SourceIterator<'a> {
-  source: Iter<'a, Variables<'a>>,
+pub struct SourceIterator<I> {
+  source: I,
 }
 
-impl<'a> SourceIterator<'a> {
-  pub fn new(source: Iter<'a, Variables<'a>>) -> SourceIterator<'a> {
+impl<'a, I> SourceIterator<I>
+where
+  I: Iterator<Item = &'a Variables<'a>>,
+{
+  pub fn new(source: I) -> SourceIterator<I> {
     SourceIterator { source }
   }
 }
 
-impl<'a> Iterator for SourceIterator<'a> {
+impl<'a, I> Iterator for SourceIterator<I>
+where
+  I: Iterator<Item = &'a Variables<'a>>,
+{
   type Item = Variables<'a>;
 
   fn next(&mut self) -> Option<Self::Item> {

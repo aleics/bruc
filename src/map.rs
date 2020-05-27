@@ -115,11 +115,11 @@ mod tests {
   #[test]
   fn apply() {
     let map = MapPipe::new("a + 3", "b").unwrap();
-    let data = vec![
+    let data = [
       Variables::from_pairs(vec![("a", 2.0.into())]),
       Variables::from_pairs(vec![("a", 4.0.into())]),
     ];
-    let source = PipeIterator::source(data.iter());
+    let source = PipeIterator::source(&data);
 
     let iterator = MapIterator::chain(source, &map);
     let result = iterator.collect::<Vec<Variables>>();
