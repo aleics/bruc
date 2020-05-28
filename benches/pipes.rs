@@ -9,21 +9,22 @@ use transformer::filter::FilterPipe;
 use transformer::group::{GroupPipe, Operation};
 use transformer::map::MapPipe;
 use transformer::pipe::Pipe;
-use transformer::Engine;
+use transformer::{run, Data};
 
 #[bench]
 fn bench_filter_pipe_1(b: &mut Bencher) {
-  let data = [Variables::from_pairs(vec![("a", Variable::Number(1.0))])];
+  let values = vec![Variables::from_pairs(vec![("a", Variable::Number(1.0))])];
   let pipes = vec![Pipe::Filter(
     FilterPipe::new("(a > 1) && (a < 4) && (a != 3)").unwrap(),
   )];
 
-  b.iter(|| Engine::new(&data).run(&pipes).collect::<Vec<Variables>>());
+  let data = Data { values, pipes };
+  b.iter(|| run(&data).collect::<Vec<Variables>>());
 }
 
 #[bench]
 fn bench_filter_pipe_20_sequentially(b: &mut Bencher) {
-  let data = [
+  let values = vec![
     Variables::from_pairs(vec![("a", Variable::Number(1.0))]),
     Variables::from_pairs(vec![("a", Variable::Number(2.0))]),
     Variables::from_pairs(vec![("a", Variable::Number(3.0))]),
@@ -49,22 +50,24 @@ fn bench_filter_pipe_20_sequentially(b: &mut Bencher) {
     FilterPipe::new("(a > 1) && (a < 4) && (a != 3)").unwrap(),
   )];
 
-  b.iter(|| Engine::new(&data).run(&pipes).collect::<Vec<Variables>>());
+  let data = Data { values, pipes };
+  b.iter(|| run(&data).collect::<Vec<Variables>>());
 }
 
 #[bench]
 fn bench_map_pipe_1(b: &mut Bencher) {
-  let data = [Variables::from_pairs(vec![("a", Variable::Number(1.0))])];
+  let values = vec![Variables::from_pairs(vec![("a", Variable::Number(1.0))])];
   let pipes = vec![Pipe::Map(
     MapPipe::new("(a + 1) / (a * 4) - (a + 2)", "b").unwrap(),
   )];
 
-  b.iter(|| Engine::new(&data).run(&pipes).collect::<Vec<Variables>>());
+  let data = Data { values, pipes };
+  b.iter(|| run(&data).collect::<Vec<Variables>>());
 }
 
 #[bench]
 fn bench_map_pipe_20_sequentially(b: &mut Bencher) {
-  let data = [
+  let values = vec![
     Variables::from_pairs(vec![("a", Variable::Number(1.0))]),
     Variables::from_pairs(vec![("a", Variable::Number(2.0))]),
     Variables::from_pairs(vec![("a", Variable::Number(3.0))]),
@@ -90,20 +93,22 @@ fn bench_map_pipe_20_sequentially(b: &mut Bencher) {
     MapPipe::new("(a + 1) / (a * 4) - (a + 2)", "b").unwrap(),
   )];
 
-  b.iter(|| Engine::new(&data).run(&pipes).collect::<Vec<Variables>>());
+  let data = Data { values, pipes };
+  b.iter(|| run(&data).collect::<Vec<Variables>>());
 }
 
 #[bench]
 fn bench_group_pipe_1(b: &mut Bencher) {
-  let data = [Variables::from_pairs(vec![("a", Variable::Number(1.0))])];
-  let pipes = [Pipe::Group(GroupPipe::new("a", Operation::Count, "count"))];
+  let values = vec![Variables::from_pairs(vec![("a", Variable::Number(1.0))])];
+  let pipes = vec![Pipe::Group(GroupPipe::new("a", Operation::Count, "count"))];
 
-  b.iter(|| Engine::new(&data).run(&pipes).collect::<Vec<Variables>>());
+  let data = Data { values, pipes };
+  b.iter(|| run(&data).collect::<Vec<Variables>>());
 }
 
 #[bench]
 fn bench_group_pipe_20_sequentially(b: &mut Bencher) {
-  let data = [
+  let values = vec![
     Variables::from_pairs(vec![("a", Variable::Number(1.0))]),
     Variables::from_pairs(vec![("a", Variable::Number(2.0))]),
     Variables::from_pairs(vec![("a", Variable::Number(3.0))]),
@@ -125,9 +130,10 @@ fn bench_group_pipe_20_sequentially(b: &mut Bencher) {
     Variables::from_pairs(vec![("a", Variable::Number(19.0))]),
     Variables::from_pairs(vec![("a", Variable::Number(20.0))]),
   ];
-  let pipes = [Pipe::Group(GroupPipe::new("a", Operation::Count, "count"))];
+  let pipes = vec![Pipe::Group(GroupPipe::new("a", Operation::Count, "count"))];
 
-  b.iter(|| Engine::new(&data).run(&pipes).collect::<Vec<Variables>>());
+  let data = Data { values, pipes };
+  b.iter(|| run(&data).collect::<Vec<Variables>>());
 }
 
 #[bench]
@@ -145,7 +151,7 @@ fn bench_10_pipes_2_10_vars_maps(b: &mut Bencher) {
     Pipe::Map(MapPipe::new("(j + 10)", "t").unwrap()),
   ];
 
-  let data = [
+  let values = vec![
     Variables::from_pairs(vec![
       ("a", Variable::Number(1.0)),
       ("b", Variable::Number(2.0)),
@@ -172,5 +178,6 @@ fn bench_10_pipes_2_10_vars_maps(b: &mut Bencher) {
     ]),
   ];
 
-  b.iter(|| Engine::new(&data).run(&pipes).collect::<Vec<Variables>>());
+  let data = Data { values, pipes };
+  b.iter(|| run(&data).collect::<Vec<Variables>>());
 }

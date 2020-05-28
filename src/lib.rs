@@ -16,25 +16,15 @@ pub struct Data<'a> {
   pub pipes: Vec<Pipe<'a>>,
 }
 
-pub struct Engine<'a> {
-  values: &'a [Variables<'a>],
-}
-
-impl<'a> Engine<'a> {
-  pub fn new(values: &'a [Variables<'a>]) -> Engine<'a> {
-    Engine { values }
-  }
-
-  pub fn run(&self, pipes: &'a [Pipe<'a>]) -> PipeIterator<'a> {
-    chain(self.values, pipes)
-  }
+pub fn run<'a>(data: &'a Data<'a>) -> PipeIterator<'a> {
+  chain(&data.values, &data.pipes)
 }
 
 #[cfg(test)]
 mod tests {
   use ebooler::vars::Variables;
 
-  use crate::{Data, Engine};
+  use crate::{run, Data};
 
   #[test]
   fn from_json() {
@@ -62,9 +52,7 @@ mod tests {
     )
     .unwrap();
 
-    let engine = Engine::new(&data.values);
-    let result = engine.run(&data.pipes).collect::<Vec<Variables>>();
-
+    let result = run(&data).collect::<Vec<Variables>>();
     assert_eq!(result.len(), 1);
   }
 }
