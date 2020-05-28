@@ -65,7 +65,10 @@ struct CountIterator<'a> {
 
 impl<'a> CountIterator<'a> {
   #[inline]
-  fn new(data: Vec<Variables<'a>>, by: &'a str, output: &'a str) -> CountIterator<'a> {
+  fn new<I>(data: I, by: &'a str, output: &'a str) -> CountIterator<'a>
+  where
+    I: Iterator<Item = Variables<'a>>,
+  {
     let reps = CountIterator::reps(data, by);
     CountIterator {
       source: reps.into_iter(),
@@ -75,26 +78,25 @@ impl<'a> CountIterator<'a> {
   }
 
   #[inline]
-  fn reps(data: Vec<Variables<'a>>, by: &'a str) -> HashMap<Variable, usize> {
-    data
-      .iter()
-      .fold(HashMap::with_capacity(data.len()), |mut acc, item| {
-        if let Some(target) = item.find(by) {
-          if let Some(count) = acc.get_mut(target) {
-            count.add_assign(1);
-          } else {
-            acc.insert(*target, 1);
-          }
+  fn reps<I>(data: I, by: &'a str) -> HashMap<Variable, usize>
+  where
+    I: Iterator<Item = Variables<'a>>,
+  {
+    data.fold(HashMap::new(), |mut acc, item| {
+      if let Some(target) = item.find(by) {
+        if let Some(count) = acc.get_mut(target) {
+          count.add_assign(1);
+        } else {
+          acc.insert(*target, 1);
         }
-        acc
-      })
+      }
+      acc
+    })
   }
 
   #[inline]
   fn chain(source: PipeIterator<'a>, pipe: &'a GroupPipe<'a>) -> PipeIterator<'a> {
-    let data: Vec<Variables> = source.collect();
-    let iterator = CountIterator::new(data, pipe.by, pipe.output);
-
+    let iterator = CountIterator::new(source, pipe.by, pipe.output);
     PipeIterator::new(Box::new(iterator))
   }
 }
