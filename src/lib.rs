@@ -1,4 +1,6 @@
 use ebooler::vars::Variables;
+use futures::stream;
+use futures::Stream;
 use serde::Deserialize;
 
 use crate::pipe::{chain, Pipe, PipeIterator};
@@ -18,6 +20,10 @@ pub struct Data<'a> {
 
 pub fn run<'a>(data: &'a Data<'a>) -> PipeIterator<'a> {
   chain(&data.values, &data.pipes)
+}
+
+pub async fn run_async<'a>(data: &'a Data<'a>) -> impl Stream<Item = Variables<'a>> {
+  stream::iter(chain(&data.values, &data.pipes))
 }
 
 #[cfg(test)]
