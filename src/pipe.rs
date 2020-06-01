@@ -101,6 +101,8 @@ where
 mod tests {
   use ebooler::vars::Variables;
 
+  use crate::filter::FilterPipe;
+  use crate::group::{GroupPipe, Operation};
   use crate::map::MapPipe;
   use crate::pipe::{chain, Pipe};
 
@@ -183,5 +185,107 @@ mod tests {
         ]),
       ]
     );
+  }
+
+  #[test]
+  fn chain_filters() {
+    let pipes = [
+      Pipe::Filter(FilterPipe::new("a > 2").unwrap()),
+      Pipe::Filter(FilterPipe::new("a < 4").unwrap()),
+    ];
+
+    let data = [
+      Variables::from_pairs(vec![("a", 1.0.into())]),
+      Variables::from_pairs(vec![("a", 2.0.into())]),
+      Variables::from_pairs(vec![("a", 3.0.into())]),
+      Variables::from_pairs(vec![("a", 4.0.into())]),
+    ];
+
+    let iterator = chain(&data, &pipes);
+
+    let result = iterator.collect::<Vec<Variables>>();
+    assert_eq!(result, vec![Variables::from_pairs(vec![("a", 3.0.into())])]);
+  }
+
+  #[test]
+  fn chain_groups() {
+    let pipes = [
+      Pipe::Group(GroupPipe::new("a", Operation::Count, "a_count")),
+      Pipe::Group(GroupPipe::new("a_count", Operation::Count, "count_a_count")),
+    ];
+
+    let data = [
+      Variables::from_pairs(vec![("a", 2.0.into())]),
+      Variables::from_pairs(vec![("a", 2.0.into())]),
+      Variables::from_pairs(vec![("a", 3.0.into())]),
+      Variables::from_pairs(vec![("a", 4.0.into())]),
+    ];
+
+    let iterator = chain(&data, &pipes);
+
+    let result = iterator.collect::<Vec<Variables>>();
+    assert_eq!(result.len(), 2);
+    assert!(result.contains(&Variables::from_pairs(vec![
+      ("a_count", 2.0.into()),
+      ("count_a_count", 1.0.into())
+    ])));
+    assert!(result.contains(&Variables::from_pairs(vec![
+      ("a_count", 1.0.into()),
+      ("count_a_count", 2.0.into())
+    ])));
+  }
+
+  #[test]
+  fn chain_filter_map() {
+    let pipes = [
+      Pipe::Filter(FilterPipe::new("a > 2").unwrap()),
+      Pipe::Map(MapPipe::new("a * 2", "b").unwrap()),
+    ];
+
+    let data = [
+      Variables::from_pairs(vec![("a", 1.0.into())]),
+      Variables::from_pairs(vec![("a", 2.0.into())]),
+      Variables::from_pairs(vec![("a", 3.0.into())]),
+      Variables::from_pairs(vec![("a", 4.0.into())]),
+    ];
+
+    let iterator = chain(&data, &pipes);
+
+    let result = iterator.collect::<Vec<Variables>>();
+    assert_eq!(
+      result,
+      vec![
+        Variables::from_pairs(vec![("a", 3.0.into()), ("b", 6.0.into())]),
+        Variables::from_pairs(vec![("a", 4.0.into()), ("b", 8.0.into())])
+      ]
+    );
+  }
+
+  #[test]
+  fn chain_filter_group() {
+    let pipes = [
+      Pipe::Filter(FilterPipe::new("a > 2").unwrap()),
+      Pipe::Group(GroupPipe::new("a", Operation::Count, "a_count")),
+    ];
+
+    let data = [
+      Variables::from_pairs(vec![("a", 1.0.into())]),
+      Variables::from_pairs(vec![("a", 2.0.into())]),
+      Variables::from_pairs(vec![("a", 3.0.into())]),
+      Variables::from_pairs(vec![("a", 4.0.into())]),
+    ];
+
+    let iterator = chain(&data, &pipes);
+
+    let result = iterator.collect::<Vec<Variables>>();
+    assert_eq!(result.len(), 2);
+    assert!(result.contains(&Variables::from_pairs(vec![
+      ("a", 3.0.into()),
+      ("a_count", 1.0.into())
+    ])));
+    assert!(result.contains(&Variables::from_pairs(vec![
+      ("a", 4.0.into()),
+      ("a_count", 1.0.into())
+    ])));
   }
 }

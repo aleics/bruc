@@ -22,9 +22,7 @@ pub fn run<'a>(data: &'a Data<'a>) -> PipeIterator<'a> {
 
 #[cfg(test)]
 mod tests {
-  use ebooler::vars::Variables;
-
-  use crate::{run, Data};
+  use crate::Data;
 
   #[test]
   fn from_json() {
@@ -38,21 +36,5 @@ mod tests {
     );
 
     assert!(data.is_ok());
-  }
-
-  #[test]
-  fn apply_filter_pipe() {
-    let data: Data = serde_json::from_str(
-      r#"
-      {
-        "values": [{ "a": 2 }, { "a": 3 }],
-        "pipes": [{ "filter": "a > 2" }]
-      }
-    "#,
-    )
-    .unwrap();
-
-    let result = run(&data).collect::<Vec<Variables>>();
-    assert_eq!(result.len(), 1);
   }
 }
