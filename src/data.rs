@@ -1,10 +1,8 @@
 use ebooler::data::{DataItem, DataSource};
-use serde::Deserialize;
 use std::collections::HashMap;
 
-#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct DataValue<'a> {
-  #[serde(borrow)]
   instance: HashMap<&'a str, DataItem>,
 }
 
@@ -13,6 +11,10 @@ impl<'a> DataValue<'a> {
     DataValue {
       instance: HashMap::new(),
     }
+  }
+
+  pub fn with_instance(instance: HashMap<&'a str, DataItem>) -> DataValue<'a> {
+    DataValue { instance }
   }
 
   pub fn from_pairs(pairs: Vec<(&'a str, DataItem)>) -> DataValue<'a> {

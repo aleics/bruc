@@ -1,5 +1,3 @@
-use serde::Deserialize;
-
 use crate::data::DataValue;
 use crate::pipe::{chain, Pipe, PipeIterator};
 
@@ -10,11 +8,27 @@ pub mod group;
 pub mod map;
 pub mod pipe;
 
-#[derive(Deserialize, Debug)]
+#[cfg(feature = "serde")]
+pub mod serde;
+
+#[derive(Debug)]
 pub struct Source<'a> {
-  #[serde(borrow)]
-  pub data: Vec<DataValue<'a>>,
-  pub pipes: Vec<Pipe<'a>>,
+  data: Vec<DataValue<'a>>,
+  pipes: Vec<Pipe<'a>>,
+}
+
+impl<'a> Source<'a> {
+  pub fn new(data: Vec<DataValue<'a>>, pipes: Vec<Pipe<'a>>) -> Source<'a> {
+    Source { data, pipes }
+  }
+
+  pub fn data(&self) -> &Vec<DataValue<'a>> {
+    &self.data
+  }
+
+  pub fn pipes(&self) -> &Vec<Pipe<'a>> {
+    &self.pipes
+  }
 }
 
 pub fn run<'a>(source: &'a Source<'a>) -> PipeIterator {

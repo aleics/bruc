@@ -1,18 +1,13 @@
-use serde::Deserialize;
-
 use crate::data::DataValue;
 use crate::error::Error;
 use crate::filter::{FilterIterator, FilterPipe};
 use crate::group::{GroupIterator, GroupPipe};
 use crate::map::{MapIterator, MapPipe};
 
-#[derive(Deserialize, PartialEq, Debug)]
+#[derive(PartialEq, Debug)]
 pub enum Pipe<'a> {
-  #[serde(rename = "filter", borrow)]
   Filter(FilterPipe<'a>),
-  #[serde(rename = "map", borrow)]
   Map(MapPipe<'a>),
-  #[serde(rename = "group", borrow)]
   Group(GroupPipe<'a>),
 }
 
@@ -104,18 +99,6 @@ mod tests {
   use crate::group::{GroupPipe, Operation};
   use crate::map::MapPipe;
   use crate::pipe::{chain, Pipe};
-
-  #[test]
-  fn deserializes_pipes() {
-    let pipes_json = r#"[
-      { "filter": "a > 2" },
-      { "map": { "fn": "a + 2", "output": "b" } },
-      { "group": { "by": "b", "op": "count", "output": "count" } }
-    ]"#;
-    let pipes: Vec<Pipe> = serde_json::from_str(pipes_json).unwrap();
-
-    assert_eq!(pipes.len(), 3);
-  }
 
   #[test]
   fn chain_empty() {

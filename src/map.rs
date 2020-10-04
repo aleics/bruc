@@ -1,19 +1,13 @@
-use std::fmt;
-
 use ebooler::expr::{Expression, Interpretable};
 use ebooler::PredicateParser;
-use serde::de::Visitor;
-use serde::{Deserialize, Deserializer};
 
 use crate::data::DataValue;
 use crate::error::Error;
 use crate::pipe::{DataIterator, PipeIterator, Predicate};
 
-#[derive(Deserialize, PartialEq, Debug)]
+#[derive(PartialEq, Debug)]
 pub struct MapPipe<'a> {
-  #[serde(rename = "fn", borrow)]
   predicate: MapPredicate<'a>,
-  #[serde(borrow)]
   output: &'a str,
 }
 
@@ -28,6 +22,16 @@ impl<'a> MapPipe<'a> {
   pub fn apply(&self, item: &mut DataValue<'a>) {
     let var = self.predicate.interpret(&item).unwrap();
     item.insert(self.output, var.into());
+  }
+
+  #[inline]
+  pub fn predicate(&self) -> &'_ MapPredicate<'a> {
+    &self.predicate
+  }
+
+  #[inline]
+  pub fn output(&self) -> &'_ str {
+    &self.output
   }
 }
 
@@ -83,27 +87,6 @@ impl<'a> Predicate for MapPredicate<'a> {
   }
 }
 
-impl<'de: 'a, 'a> Deserialize<'de> for MapPredicate<'a> {
-  fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-    struct PredicateVisitor;
-
-    impl<'a> Visitor<'a> for PredicateVisitor {
-      type Value = MapPredicate<'a>;
-
-      fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("any valid predicate (string)")
-      }
-
-      #[inline]
-      fn visit_borrowed_str<E: serde::de::Error>(self, value: &'a str) -> Result<Self::Value, E> {
-        MapPredicate::new(value).map_err(|error| serde::de::Error::custom(error.to_string()))
-      }
-    }
-
-    deserializer.deserialize_any(PredicateVisitor)
-  }
-}
-
 #[cfg(test)]
 mod tests {
   use crate::data::DataValue;
@@ -125,11 +108,5 @@ mod tests {
     assert_eq!(result.len(), 2);
     assert_eq!(result[0].find("b").unwrap(), &5.0.into());
     assert_eq!(result[1].find("b").unwrap(), &7.0.into());
-  }
-
-  #[test]
-  fn deserialize() {
-    let map = serde_json::from_str::<MapPipe>(r#"{ "fn": "a + 2.0", "output": "b" }"#);
-    assert!(map.is_ok());
   }
 }

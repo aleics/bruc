@@ -1,9 +1,5 @@
-use std::fmt;
-
 use ebooler::expr::{Expression, Interpretable};
 use ebooler::PredicateParser;
-use serde::de::Visitor;
-use serde::{Deserialize, Deserializer};
 
 use crate::data::DataValue;
 use crate::error::Error;
@@ -22,6 +18,11 @@ impl<'a> FilterPipe<'a> {
   }
 
   #[inline]
+  pub fn predicate(&self) -> &'_ FilterPredicate<'a> {
+    &self.predicate
+  }
+
+  #[inline]
   pub fn apply(&self, item: DataValue<'a>) -> Option<DataValue<'a>> {
     let result = self.predicate.interpret(&item).unwrap();
     if result {
@@ -29,27 +30,6 @@ impl<'a> FilterPipe<'a> {
     } else {
       None
     }
-  }
-}
-
-impl<'de: 'a, 'a> Deserialize<'de> for FilterPipe<'a> {
-  fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-    struct FilterPipeVisitor;
-
-    impl<'a> Visitor<'a> for FilterPipeVisitor {
-      type Value = FilterPipe<'a>;
-
-      fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("any valid predicate (string)")
-      }
-
-      #[inline]
-      fn visit_borrowed_str<E: serde::de::Error>(self, value: &'a str) -> Result<Self::Value, E> {
-        FilterPipe::new(value).map_err(|error| serde::de::Error::custom(error.to_string()))
-      }
-    }
-
-    deserializer.deserialize_any(FilterPipeVisitor)
   }
 }
 
@@ -123,11 +103,5 @@ mod tests {
 
     assert_eq!(result.len(), 1);
     assert_eq!(result[0].find("a").unwrap(), &4.0.into());
-  }
-
-  #[test]
-  fn deserialize() {
-    let filter = serde_json::from_str::<FilterPipe>(r#""a > 2.0""#);
-    assert!(filter.is_ok());
   }
 }

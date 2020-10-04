@@ -2,18 +2,14 @@ use std::collections::hash_map::IntoIter;
 use std::collections::HashMap;
 use std::ops::AddAssign;
 
-use serde::Deserialize;
-
 use crate::data::DataValue;
 use crate::pipe::{DataIterator, PipeIterator};
 use ebooler::data::DataItem;
 
-#[derive(Deserialize, PartialEq, Debug)]
+#[derive(PartialEq, Debug)]
 pub struct GroupPipe<'a> {
-  #[serde(borrow)]
   by: &'a str,
   op: Operation,
-  #[serde(borrow)]
   output: &'a str,
 }
 
@@ -21,12 +17,35 @@ impl<'a> GroupPipe<'a> {
   pub fn new(by: &'a str, op: Operation, output: &'a str) -> GroupPipe<'a> {
     GroupPipe { by, op, output }
   }
+
+  #[inline]
+  pub fn by(&self) -> &'a str {
+    &self.by
+  }
+
+  #[inline]
+  pub fn op(&self) -> &Operation {
+    &self.op
+  }
+
+  #[inline]
+  pub fn output(&self) -> &'a str {
+    &self.output
+  }
 }
 
-#[derive(Deserialize, PartialEq, Debug)]
+#[derive(PartialEq, Debug)]
 pub enum Operation {
-  #[serde(rename = "count")]
   Count,
+}
+
+impl Operation {
+  pub fn from_string(string: &str) -> Option<Operation> {
+    match string {
+      "count" => Some(Operation::Count),
+      _ => None,
+    }
+  }
 }
 
 pub struct GroupIterator<'a> {
@@ -155,18 +174,5 @@ mod tests {
     assert_eq!(result.len(), 1);
     assert_eq!(result[0].find("a").unwrap(), &2.0.into());
     assert_eq!(result[0].find("count").unwrap(), &1.0.into());
-  }
-
-  #[test]
-  fn deserialize() {
-    let group = serde_json::from_str::<GroupPipe>(
-      r#"{
-      "by": "a",
-      "op": "count",
-      "output": "count_a"
-     }"#,
-    );
-
-    assert!(group.is_ok());
   }
 }
