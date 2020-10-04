@@ -1,11 +1,11 @@
 use std::fmt;
 
 use ebooler::expr::{Expression, Interpretable};
-use ebooler::vars::Variables;
 use ebooler::PredicateParser;
 use serde::de::Visitor;
 use serde::{Deserialize, Deserializer};
 
+use crate::data::DataValue;
 use crate::error::Error;
 use crate::pipe::{DataIterator, PipeIterator, Predicate};
 
@@ -25,7 +25,7 @@ impl<'a> MapPipe<'a> {
   }
 
   #[inline]
-  pub fn apply(&self, item: &mut Variables<'a>) {
+  pub fn apply(&self, item: &mut DataValue<'a>) {
     let var = self.predicate.interpret(&item).unwrap();
     item.insert(self.output, var.into());
   }
@@ -49,7 +49,7 @@ impl<'a> MapIterator<'a> {
 }
 
 impl<'a> Iterator for MapIterator<'a> {
-  type Item = Variables<'a>;
+  type Item = DataValue<'a>;
 
   #[inline]
   fn next(&mut self) -> Option<Self::Item> {
@@ -75,7 +75,7 @@ impl<'a> MapPredicate<'a> {
 impl<'a> Predicate for MapPredicate<'a> {
   type Value = f32;
 
-  fn interpret(&self, vars: &Variables) -> Result<Self::Value, Error> {
+  fn interpret(&self, vars: &DataValue) -> Result<Self::Value, Error> {
     self
       .expression
       .interpret(vars)
@@ -106,8 +106,7 @@ impl<'de: 'a, 'a> Deserialize<'de> for MapPredicate<'a> {
 
 #[cfg(test)]
 mod tests {
-  use ebooler::vars::Variables;
-
+  use crate::data::DataValue;
   use crate::map::{MapIterator, MapPipe};
   use crate::pipe::PipeIterator;
 
@@ -115,13 +114,13 @@ mod tests {
   fn apply() {
     let map = MapPipe::new("a + 3", "b").unwrap();
     let data = [
-      Variables::from_pairs(vec![("a", 2.0.into())]),
-      Variables::from_pairs(vec![("a", 4.0.into())]),
+      DataValue::from_pairs(vec![("a", 2.0.into())]),
+      DataValue::from_pairs(vec![("a", 4.0.into())]),
     ];
     let source = PipeIterator::source(&data);
 
     let iterator = MapIterator::chain(source, &map);
-    let result = iterator.collect::<Vec<Variables>>();
+    let result = iterator.collect::<Vec<DataValue>>();
 
     assert_eq!(result.len(), 2);
     assert_eq!(result[0].find("b").unwrap(), &5.0.into());

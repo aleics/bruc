@@ -1,11 +1,11 @@
 use std::fmt;
 
 use ebooler::expr::{Expression, Interpretable};
-use ebooler::vars::Variables;
 use ebooler::PredicateParser;
 use serde::de::Visitor;
 use serde::{Deserialize, Deserializer};
 
+use crate::data::DataValue;
 use crate::error::Error;
 use crate::pipe::{DataIterator, PipeIterator, Predicate};
 
@@ -22,7 +22,7 @@ impl<'a> FilterPipe<'a> {
   }
 
   #[inline]
-  pub fn apply(&self, item: Variables<'a>) -> Option<Variables<'a>> {
+  pub fn apply(&self, item: DataValue<'a>) -> Option<DataValue<'a>> {
     let result = self.predicate.interpret(&item).unwrap();
     if result {
       Some(item)
@@ -68,7 +68,7 @@ impl<'a> FilterPredicate<'a> {
 impl<'a> Predicate for FilterPredicate<'a> {
   type Value = bool;
 
-  fn interpret(&self, vars: &Variables) -> Result<Self::Value, Error> {
+  fn interpret(&self, vars: &DataValue) -> Result<Self::Value, Error> {
     self
       .expression
       .interpret(vars)
@@ -94,7 +94,7 @@ impl<'a> FilterIterator<'a> {
 }
 
 impl<'a> Iterator for FilterIterator<'a> {
-  type Item = Variables<'a>;
+  type Item = DataValue<'a>;
 
   #[inline]
   fn next(&mut self) -> Option<Self::Item> {
@@ -105,8 +105,7 @@ impl<'a> Iterator for FilterIterator<'a> {
 
 #[cfg(test)]
 mod tests {
-  use ebooler::vars::Variables;
-
+  use crate::data::DataValue;
   use crate::filter::{FilterIterator, FilterPipe};
   use crate::pipe::PipeIterator;
 
@@ -114,13 +113,13 @@ mod tests {
   fn apply() {
     let filter = FilterPipe::new("a > 3").unwrap();
     let data = [
-      Variables::from_pairs(vec![("a", 2.0.into())]),
-      Variables::from_pairs(vec![("a", 4.0.into())]),
+      DataValue::from_pairs(vec![("a", 2.0.into())]),
+      DataValue::from_pairs(vec![("a", 4.0.into())]),
     ];
     let source = PipeIterator::source(&data);
 
     let iterator = FilterIterator::chain(source, &filter);
-    let result = iterator.collect::<Vec<Variables>>();
+    let result = iterator.collect::<Vec<DataValue>>();
 
     assert_eq!(result.len(), 1);
     assert_eq!(result[0].find("a").unwrap(), &4.0.into());

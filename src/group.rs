@@ -2,10 +2,11 @@ use std::collections::hash_map::IntoIter;
 use std::collections::HashMap;
 use std::ops::AddAssign;
 
-use ebooler::vars::{Variable, Variables};
 use serde::Deserialize;
 
+use crate::data::DataValue;
 use crate::pipe::{DataIterator, PipeIterator};
+use ebooler::data::DataItem;
 
 #[derive(Deserialize, PartialEq, Debug)]
 pub struct GroupPipe<'a> {
@@ -49,7 +50,7 @@ impl<'a> GroupIterator<'a> {
 }
 
 impl<'a> Iterator for GroupIterator<'a> {
-  type Item = Variables<'a>;
+  type Item = DataValue<'a>;
 
   #[inline]
   fn next(&mut self) -> Option<Self::Item> {
@@ -58,7 +59,7 @@ impl<'a> Iterator for GroupIterator<'a> {
 }
 
 struct CountIterator<'a> {
-  source: IntoIter<Variable, usize>,
+  source: IntoIter<DataItem, usize>,
   by: &'a str,
   output: &'a str,
 }
@@ -67,7 +68,7 @@ impl<'a> CountIterator<'a> {
   #[inline]
   fn new<I>(data: I, by: &'a str, output: &'a str) -> CountIterator<'a>
   where
-    I: Iterator<Item = Variables<'a>>,
+    I: Iterator<Item = DataValue<'a>>,
   {
     let reps = CountIterator::reps(data, by);
     CountIterator {
@@ -78,9 +79,9 @@ impl<'a> CountIterator<'a> {
   }
 
   #[inline]
-  fn reps<I>(data: I, by: &'a str) -> HashMap<Variable, usize>
+  fn reps<I>(data: I, by: &'a str) -> HashMap<DataItem, usize>
   where
-    I: Iterator<Item = Variables<'a>>,
+    I: Iterator<Item = DataValue<'a>>,
   {
     data.fold(HashMap::new(), |mut acc, item| {
       if let Some(target) = item.find(by) {
@@ -102,14 +103,14 @@ impl<'a> CountIterator<'a> {
 }
 
 impl<'a> Iterator for CountIterator<'a> {
-  type Item = Variables<'a>;
+  type Item = DataValue<'a>;
 
   #[inline]
   fn next(&mut self) -> Option<Self::Item> {
     let (var, count) = self.source.next()?;
-    let result = Variables::from_pairs(vec![
+    let result = DataValue::from_pairs(vec![
       (self.by, var),
-      (self.output, Variable::Number(count as f32)),
+      (self.output, DataItem::Number(count as f32)),
     ]);
 
     Some(result)
@@ -118,8 +119,7 @@ impl<'a> Iterator for CountIterator<'a> {
 
 #[cfg(test)]
 mod tests {
-  use ebooler::vars::Variables;
-
+  use crate::data::DataValue;
   use crate::group::{GroupIterator, GroupPipe, Operation};
   use crate::pipe::PipeIterator;
 
@@ -127,13 +127,13 @@ mod tests {
   fn finds_repetition() {
     let group = GroupPipe::new("a", Operation::Count, "count");
     let data = [
-      Variables::from_pairs(vec![("a", 2.0.into())]),
-      Variables::from_pairs(vec![("a", 2.0.into())]),
+      DataValue::from_pairs(vec![("a", 2.0.into())]),
+      DataValue::from_pairs(vec![("a", 2.0.into())]),
     ];
     let source = PipeIterator::source(&data);
 
     let iterator = GroupIterator::chain(source, &group);
-    let result = iterator.collect::<Vec<Variables>>();
+    let result = iterator.collect::<Vec<DataValue>>();
 
     assert_eq!(result.len(), 1);
     assert_eq!(result[0].find("a").unwrap(), &2.0.into());
@@ -144,13 +144,13 @@ mod tests {
   fn finds_no_repetition() {
     let group = GroupPipe::new("a", Operation::Count, "count");
     let data = [
-      Variables::from_pairs(vec![("a", 2.0.into())]),
-      Variables::from_pairs(vec![("b", 3.0.into())]),
+      DataValue::from_pairs(vec![("a", 2.0.into())]),
+      DataValue::from_pairs(vec![("b", 3.0.into())]),
     ];
     let source = PipeIterator::source(&data);
 
     let iterator = GroupIterator::chain(source, &group);
-    let result = iterator.collect::<Vec<Variables>>();
+    let result = iterator.collect::<Vec<DataValue>>();
 
     assert_eq!(result.len(), 1);
     assert_eq!(result[0].find("a").unwrap(), &2.0.into());
