@@ -39,3 +39,9 @@ impl<'a> DataSource for DataValue<'a> {
     self.instance.get(key)
   }
 }
+
+impl<'a> Default for DataValue<'a> {
+  fn default() -> Self {
+    Self::new()
+  }
+}
