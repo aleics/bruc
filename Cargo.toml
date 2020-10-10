@@ -5,7 +5,7 @@ authors = ["aleics <aleics.casanovas@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-ebooler = { path = "../ebooler", features = ["serde"] }
+ebooler = { git = "ssh://git@github.com/aleics/ebooler.git", features = ["serde"] }
 
 # For external trait impls
 serde = { version = "1.0.111", default-features = false, optional = true }
