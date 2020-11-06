@@ -7,6 +7,7 @@ pub mod filter;
 pub mod group;
 pub mod map;
 pub mod pipe;
+pub mod pipe_async;
 
 #[cfg(feature = "serde")]
 pub mod serde;
