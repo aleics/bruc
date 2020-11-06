@@ -6,6 +6,7 @@ pub mod error;
 pub mod filter;
 pub mod filter_async;
 pub mod group;
+pub mod group_async;
 pub mod map;
 pub mod map_async;
 pub mod pipe;
