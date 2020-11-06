@@ -4,6 +4,7 @@ use crate::pipe::{chain, Pipe, PipeIterator};
 pub mod data;
 pub mod error;
 pub mod filter;
+pub mod filter_async;
 pub mod group;
 pub mod map;
 pub mod map_async;
