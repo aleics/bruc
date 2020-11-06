@@ -1,5 +1,6 @@
 use crate::data::DataValue;
 use crate::pipe::{chain, Pipe, PipeIterator};
+use crate::pipe_async::{chain_async, PipeStream};
 
 pub mod data;
 pub mod error;
@@ -37,4 +38,8 @@ impl<'a> Source<'a> {
 
 pub fn run<'a>(source: &'a Source<'a>) -> PipeIterator {
   chain(&source.data, &source.pipes)
+}
+
+pub fn run_async<'a>(source: &'a Source<'a>) -> PipeStream<'a> {
+  chain_async(source.data(), &source.pipes())
 }

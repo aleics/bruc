@@ -10,7 +10,7 @@ use crate::map_async::MapStream;
 use crate::pipe::Pipe;
 
 #[inline]
-pub async fn chain_async<'a>(data: &'a [DataValue<'a>], pipes: &'a [Pipe<'a>]) -> PipeStream<'a> {
+pub fn chain_async<'a>(data: &'a [DataValue<'a>], pipes: &'a [Pipe<'a>]) -> PipeStream<'a> {
   pipes
     .iter()
     .fold(PipeStream::source(data), |mut acc, pipe| {
