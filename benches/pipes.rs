@@ -4,6 +4,7 @@ extern crate test;
 use test::Bencher;
 
 use ebooler::data::DataItem;
+use futures::StreamExt;
 
 use transformer::data::DataValue;
 use transformer::filter::FilterPipe;
@@ -20,7 +21,11 @@ fn bench_filter_pipe_1(b: &mut Bencher) {
   )];
 
   let source = Source::new(data, pipes);
-  b.iter(|| run(&source).collect::<Vec<DataValue>>());
+  b.iter(|| {
+    futures::executor::block_on(async {
+      run(&source).collect::<Vec<DataValue>>().await;
+    });
+  });
 }
 
 #[bench]
@@ -52,7 +57,11 @@ fn bench_filter_pipe_20_sequentially(b: &mut Bencher) {
   )];
 
   let source = Source::new(data, pipes);
-  b.iter(|| run(&source).collect::<Vec<DataValue>>());
+  b.iter(|| {
+    futures::executor::block_on(async {
+      run(&source).collect::<Vec<DataValue>>().await;
+    });
+  });
 }
 
 #[bench]
@@ -63,7 +72,11 @@ fn bench_map_pipe_1(b: &mut Bencher) {
   )];
 
   let source = Source::new(data, pipes);
-  b.iter(|| run(&source).collect::<Vec<DataValue>>());
+  b.iter(|| {
+    futures::executor::block_on(async {
+      run(&source).collect::<Vec<DataValue>>().await;
+    });
+  });
 }
 
 #[bench]
@@ -95,7 +108,11 @@ fn bench_map_pipe_20_sequentially(b: &mut Bencher) {
   )];
 
   let source = Source::new(data, pipes);
-  b.iter(|| run(&source).collect::<Vec<DataValue>>());
+  b.iter(|| {
+    futures::executor::block_on(async {
+      run(&source).collect::<Vec<DataValue>>().await;
+    });
+  });
 }
 
 #[bench]
@@ -104,7 +121,11 @@ fn bench_group_pipe_1(b: &mut Bencher) {
   let pipes = vec![Pipe::Group(GroupPipe::new("a", Operation::Count, "count"))];
 
   let source = Source::new(data, pipes);
-  b.iter(|| run(&source).collect::<Vec<DataValue>>());
+  b.iter(|| {
+    futures::executor::block_on(async {
+      run(&source).collect::<Vec<DataValue>>().await;
+    });
+  });
 }
 
 #[bench]
@@ -134,7 +155,11 @@ fn bench_group_pipe_20_sequentially(b: &mut Bencher) {
   let pipes = vec![Pipe::Group(GroupPipe::new("a", Operation::Count, "count"))];
 
   let source = Source::new(data, pipes);
-  b.iter(|| run(&source).collect::<Vec<DataValue>>());
+  b.iter(|| {
+    futures::executor::block_on(async {
+      run(&source).collect::<Vec<DataValue>>().await;
+    });
+  });
 }
 
 #[bench]
@@ -180,5 +205,9 @@ fn bench_10_pipes_2_10_vars_maps(b: &mut Bencher) {
   ];
 
   let source = Source::new(data, pipes);
-  b.iter(|| run(&source).collect::<Vec<DataValue>>());
+  b.iter(|| {
+    futures::executor::block_on(async {
+      run(&source).collect::<Vec<DataValue>>().await;
+    });
+  });
 }

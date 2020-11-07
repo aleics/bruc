@@ -1,5 +1,6 @@
-use ebooler::data::{DataItem, DataSource};
 use std::collections::HashMap;
+
+use ebooler::data::{DataItem, DataSource};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct DataValue<'a> {

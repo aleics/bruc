@@ -1,10 +1,14 @@
-use std::collections::hash_map::IntoIter;
 use std::collections::HashMap;
 use std::ops::AddAssign;
+use std::pin::Pin;
+
+use ebooler::data::DataItem;
+use futures::stream::LocalBoxStream;
+use futures::task::{Context, Poll};
+use futures::{FutureExt, Stream, StreamExt};
 
 use crate::data::DataValue;
-use crate::pipe::{DataIterator, PipeIterator};
-use ebooler::data::DataItem;
+use crate::pipe::{DataStream, PipeStream};
 
 #[derive(PartialEq, Debug)]
 pub struct GroupPipe<'a> {
@@ -48,99 +52,151 @@ impl Operation {
   }
 }
 
-pub struct GroupIterator<'a> {
-  source: Box<DataIterator<'a>>,
+pub struct GroupStream<'a> {
+  source: DataStream<'a>,
 }
 
-impl<'a> GroupIterator<'a> {
-  pub fn new(source: Box<DataIterator<'a>>) -> GroupIterator<'a> {
-    GroupIterator { source }
+impl<'a> GroupStream<'a> {
+  pub fn new(source: DataStream<'a>) -> GroupStream<'a> {
+    GroupStream { source }
   }
 
   #[inline]
-  pub fn chain(source: PipeIterator<'a>, pipe: &'a GroupPipe<'a>) -> PipeIterator<'a> {
-    let group_source = match pipe.op {
-      Operation::Count => CountIterator::chain(source, pipe),
+  pub fn chain(source: PipeStream<'a>, pipe: &'a GroupPipe<'a>) -> PipeStream<'a> {
+    let group_source = match pipe.op() {
+      Operation::Count => CountStream::chain(source, pipe),
     };
 
-    let iterator = GroupIterator::new(Box::new(group_source));
-    PipeIterator::new(Box::new(iterator))
+    let stream = GroupStream::new(Box::new(group_source));
+    PipeStream::new(Box::new(stream))
   }
 }
 
-impl<'a> Iterator for GroupIterator<'a> {
+impl<'a> Unpin for GroupStream<'a> {}
+
+impl<'a> Stream for GroupStream<'a> {
   type Item = DataValue<'a>;
 
-  #[inline]
-  fn next(&mut self) -> Option<Self::Item> {
-    self.source.next()
+  fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+    Poll::Ready(loop {
+      if let Poll::Ready(source) = Pin::new(&mut self.source).poll_next(cx) {
+        break source;
+      }
+    })
+  }
+
+  fn size_hint(&self) -> (usize, Option<usize>) {
+    self.source.size_hint()
   }
 }
 
-struct CountIterator<'a> {
-  source: IntoIter<DataItem, usize>,
+struct CountStream<'a> {
+  source: RepsStream<'a>,
   by: &'a str,
   output: &'a str,
 }
 
-impl<'a> CountIterator<'a> {
-  #[inline]
-  fn new<I>(data: I, by: &'a str, output: &'a str) -> CountIterator<'a>
-  where
-    I: Iterator<Item = DataValue<'a>>,
-  {
-    let reps = CountIterator::reps(data, by);
-    CountIterator {
-      source: reps.into_iter(),
+impl<'a> CountStream<'a> {
+  pub fn new(data: PipeStream<'a>, by: &'a str, output: &'a str) -> CountStream<'a> {
+    CountStream {
+      source: RepsStream::new(data, by),
       by,
       output,
     }
   }
 
   #[inline]
-  fn reps<I>(data: I, by: &'a str) -> HashMap<DataItem, usize>
-  where
-    I: Iterator<Item = DataValue<'a>>,
-  {
-    data.fold(HashMap::new(), |mut acc, item| {
-      if let Some(target) = item.find(by) {
-        if let Some(count) = acc.get_mut(target) {
-          count.add_assign(1);
-        } else {
-          acc.insert(*target, 1);
-        }
-      }
-      acc
-    })
-  }
-
-  #[inline]
-  fn chain(source: PipeIterator<'a>, pipe: &'a GroupPipe<'a>) -> PipeIterator<'a> {
-    let iterator = CountIterator::new(source, pipe.by, pipe.output);
-    PipeIterator::new(Box::new(iterator))
+  fn chain(source: PipeStream<'a>, pipe: &'a GroupPipe<'a>) -> PipeStream<'a> {
+    let stream = CountStream::new(source, pipe.by(), pipe.output());
+    PipeStream::new(Box::new(stream))
   }
 }
 
-impl<'a> Iterator for CountIterator<'a> {
+impl<'a> Unpin for CountStream<'a> {}
+
+impl<'a> Stream for CountStream<'a> {
   type Item = DataValue<'a>;
 
-  #[inline]
-  fn next(&mut self) -> Option<Self::Item> {
-    let (var, count) = self.source.next()?;
-    let result = DataValue::from_pairs(vec![
-      (self.by, var),
-      (self.output, DataItem::Number(count as f32)),
-    ]);
+  fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+    Poll::Ready(loop {
+      if let Poll::Ready(source) = Pin::new(&mut self.source).poll_next(cx) {
+        let result = source.map(|(var, count)| {
+          DataValue::from_pairs(vec![
+            (self.by, var),
+            (self.output, DataItem::Number(count as f32)),
+          ])
+        });
 
-    Some(result)
+        break result;
+      }
+    })
+  }
+
+  fn size_hint(&self) -> (usize, Option<usize>) {
+    self.source.size_hint()
+  }
+}
+
+struct RepsStream<'a> {
+  source: LocalBoxStream<'a, (DataItem, usize)>,
+}
+
+impl<'a> RepsStream<'a> {
+  pub fn new(data: PipeStream<'a>, by: &'a str) -> RepsStream<'a> {
+    RepsStream {
+      source: RepsStream::reps(data, by),
+    }
+  }
+
+  fn reps(data: PipeStream<'a>, by: &'a str) -> LocalBoxStream<'a, (DataItem, usize)> {
+    data
+      .fold(
+        HashMap::<DataItem, usize>::new(),
+        move |mut acc, item| async move {
+          if let Some(target) = item.find(by) {
+            match acc.get_mut(target) {
+              Some(count) => count.add_assign(1),
+              None => {
+                acc.insert(*target, 1);
+              }
+            }
+          }
+
+          acc
+        },
+      )
+      .map(|data| futures::stream::iter(data.into_iter()))
+      .flatten_stream()
+      .boxed_local()
+  }
+}
+
+impl<'a> Unpin for RepsStream<'a> {}
+
+impl<'a> Stream for RepsStream<'a> {
+  type Item = (DataItem, usize);
+
+  fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+    Poll::Ready(loop {
+      if let Poll::Ready(source) = Pin::new(&mut self.source).poll_next(cx) {
+        break source;
+      }
+    })
+  }
+
+  fn size_hint(&self) -> (usize, Option<usize>) {
+    self.source.size_hint()
   }
 }
 
 #[cfg(test)]
 mod tests {
+  use futures::StreamExt;
+
   use crate::data::DataValue;
-  use crate::group::{GroupIterator, GroupPipe, Operation};
-  use crate::pipe::PipeIterator;
+  use crate::group::GroupStream;
+  use crate::group::{GroupPipe, Operation};
+  use crate::pipe::PipeStream;
 
   #[test]
   fn finds_repetition() {
@@ -149,14 +205,20 @@ mod tests {
       DataValue::from_pairs(vec![("a", 2.0.into())]),
       DataValue::from_pairs(vec![("a", 2.0.into())]),
     ];
-    let source = PipeIterator::source(&data);
+    let source = PipeStream::source(&data);
+    let stream = GroupStream::chain(source, &group);
 
-    let iterator = GroupIterator::chain(source, &group);
-    let result = iterator.collect::<Vec<DataValue>>();
+    futures::executor::block_on(async {
+      let values: Vec<_> = stream.collect().await;
 
-    assert_eq!(result.len(), 1);
-    assert_eq!(result[0].find("a").unwrap(), &2.0.into());
-    assert_eq!(result[0].find("count").unwrap(), &2.0.into());
+      assert_eq!(
+        values,
+        vec![DataValue::from_pairs(vec![
+          ("a", 2.0.into()),
+          ("count", 2.0.into())
+        ]),]
+      )
+    });
   }
 
   #[test]
@@ -166,13 +228,19 @@ mod tests {
       DataValue::from_pairs(vec![("a", 2.0.into())]),
       DataValue::from_pairs(vec![("b", 3.0.into())]),
     ];
-    let source = PipeIterator::source(&data);
+    let source = PipeStream::source(&data);
+    let stream = GroupStream::chain(source, &group);
 
-    let iterator = GroupIterator::chain(source, &group);
-    let result = iterator.collect::<Vec<DataValue>>();
+    futures::executor::block_on(async {
+      let values: Vec<_> = stream.collect().await;
 
-    assert_eq!(result.len(), 1);
-    assert_eq!(result[0].find("a").unwrap(), &2.0.into());
-    assert_eq!(result[0].find("count").unwrap(), &1.0.into());
+      assert_eq!(
+        values,
+        vec![DataValue::from_pairs(vec![
+          ("a", 2.0.into()),
+          ("count", 1.0.into())
+        ]),]
+      )
+    });
   }
 }

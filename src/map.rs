@@ -1,9 +1,13 @@
+use std::pin::Pin;
+
 use ebooler::expr::{Expression, Interpretable};
 use ebooler::PredicateParser;
+use futures::task::{Context, Poll};
+use futures::Stream;
 
 use crate::data::DataValue;
 use crate::error::Error;
-use crate::pipe::{DataIterator, PipeIterator, Predicate};
+use crate::pipe::{DataStream, PipeStream, Predicate};
 
 #[derive(PartialEq, Debug)]
 pub struct MapPipe<'a> {
@@ -35,35 +39,6 @@ impl<'a> MapPipe<'a> {
   }
 }
 
-pub struct MapIterator<'a> {
-  source: Box<DataIterator<'a>>,
-  pipe: &'a MapPipe<'a>,
-}
-
-impl<'a> MapIterator<'a> {
-  pub fn new(source: Box<DataIterator<'a>>, pipe: &'a MapPipe<'a>) -> MapIterator<'a> {
-    MapIterator { source, pipe }
-  }
-
-  #[inline]
-  pub fn chain(source: PipeIterator<'a>, pipe: &'a MapPipe<'a>) -> PipeIterator<'a> {
-    let iterator = MapIterator::new(Box::new(source), pipe);
-    PipeIterator::new(Box::new(iterator))
-  }
-}
-
-impl<'a> Iterator for MapIterator<'a> {
-  type Item = DataValue<'a>;
-
-  #[inline]
-  fn next(&mut self) -> Option<Self::Item> {
-    self.source.next().map(|mut item| {
-      self.pipe.apply(&mut item);
-      item
-    })
-  }
-}
-
 #[derive(PartialEq, Debug)]
 pub struct MapPredicate<'a> {
   expression: Expression<'a>,
@@ -87,26 +62,75 @@ impl<'a> Predicate for MapPredicate<'a> {
   }
 }
 
+pub struct MapStream<'a> {
+  source: DataStream<'a>,
+  pipe: &'a MapPipe<'a>,
+}
+
+impl<'a> MapStream<'a> {
+  pub fn new(source: DataStream<'a>, pipe: &'a MapPipe<'a>) -> MapStream<'a> {
+    MapStream { source, pipe }
+  }
+
+  #[inline]
+  pub fn chain(source: PipeStream<'a>, pipe: &'a MapPipe<'a>) -> PipeStream<'a> {
+    let stream = MapStream::new(Box::new(source), pipe);
+    PipeStream::new(Box::new(stream))
+  }
+}
+
+impl<'a> Unpin for MapStream<'a> {}
+
+impl<'a> Stream for MapStream<'a> {
+  type Item = DataValue<'a>;
+
+  fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+    Poll::Ready(loop {
+      if let Poll::Ready(source) = Pin::new(&mut self.source).poll_next(cx) {
+        let result = source.map(|mut value| {
+          self.pipe.apply(&mut value);
+          value
+        });
+        break result;
+      }
+    })
+  }
+
+  fn size_hint(&self) -> (usize, Option<usize>) {
+    self.source.size_hint()
+  }
+}
+
 #[cfg(test)]
 mod tests {
+  use futures::StreamExt;
+
   use crate::data::DataValue;
-  use crate::map::{MapIterator, MapPipe};
-  use crate::pipe::PipeIterator;
+  use crate::map::MapPipe;
+  use crate::map::MapStream;
+  use crate::pipe::PipeStream;
 
   #[test]
-  fn apply() {
+  fn applies() {
     let map = MapPipe::new("a + 3", "b").unwrap();
     let data = [
       DataValue::from_pairs(vec![("a", 2.0.into())]),
       DataValue::from_pairs(vec![("a", 4.0.into())]),
     ];
-    let source = PipeIterator::source(&data);
+    let source = PipeStream::source(&data);
 
-    let iterator = MapIterator::chain(source, &map);
-    let result = iterator.collect::<Vec<DataValue>>();
+    let stream = MapStream::chain(source, &map);
 
-    assert_eq!(result.len(), 2);
-    assert_eq!(result[0].find("b").unwrap(), &5.0.into());
-    assert_eq!(result[1].find("b").unwrap(), &7.0.into());
+    futures::executor::block_on(async {
+      let values: Vec<_> = stream.collect().await;
+
+      assert_eq!(
+        values,
+        vec![
+          DataValue::from_pairs(vec![("a", 2.0.into()), ("b", 5.0.into())]),
+          DataValue::from_pairs(vec![("a", 4.0.into()), ("b", 7.0.into())]),
+        ]
+      )
+    })
   }
 }

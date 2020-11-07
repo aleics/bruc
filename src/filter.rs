@@ -1,9 +1,13 @@
+use std::pin::Pin;
+
 use ebooler::expr::{Expression, Interpretable};
 use ebooler::PredicateParser;
+use futures::task::{Context, Poll};
+use futures::Stream;
 
 use crate::data::DataValue;
 use crate::error::Error;
-use crate::pipe::{DataIterator, PipeIterator, Predicate};
+use crate::pipe::{DataStream, PipeStream, Predicate};
 
 #[derive(PartialEq, Debug)]
 pub struct FilterPipe<'a> {
@@ -56,52 +60,75 @@ impl<'a> Predicate for FilterPredicate<'a> {
   }
 }
 
-pub struct FilterIterator<'a> {
-  source: Box<DataIterator<'a>>,
+pub struct FilterStream<'a> {
+  source: DataStream<'a>,
   pipe: &'a FilterPipe<'a>,
 }
 
-impl<'a> FilterIterator<'a> {
-  pub fn new(source: Box<DataIterator<'a>>, pipe: &'a FilterPipe<'a>) -> FilterIterator<'a> {
-    FilterIterator { source, pipe }
+impl<'a> FilterStream<'a> {
+  pub fn new(source: DataStream<'a>, pipe: &'a FilterPipe<'a>) -> FilterStream<'a> {
+    FilterStream { source, pipe }
   }
 
   #[inline]
-  pub fn chain(source: PipeIterator<'a>, pipe: &'a FilterPipe<'a>) -> PipeIterator<'a> {
-    let iterator = FilterIterator::new(Box::new(source), pipe);
-    PipeIterator::new(Box::new(iterator))
+  pub fn chain(source: PipeStream<'a>, pipe: &'a FilterPipe<'a>) -> PipeStream<'a> {
+    let stream = FilterStream::new(Box::new(source), pipe);
+    PipeStream::new(Box::new(stream))
   }
 }
 
-impl<'a> Iterator for FilterIterator<'a> {
+impl<'a> Unpin for FilterStream<'a> {}
+
+impl<'a> Stream for FilterStream<'a> {
   type Item = DataValue<'a>;
 
-  #[inline]
-  fn next(&mut self) -> Option<Self::Item> {
-    let current = self.source.next()?;
-    self.pipe.apply(current).or_else(|| self.next())
+  fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+    Poll::Ready(loop {
+      if let Poll::Ready(source) = Pin::new(&mut self.source).poll_next(cx) {
+        match source {
+          Some(item) => {
+            let result = self.pipe.apply(item);
+            if result.is_some() {
+              break result;
+            }
+          }
+          None => break None,
+        }
+      }
+    })
+  }
+
+  fn size_hint(&self) -> (usize, Option<usize>) {
+    self.source.size_hint()
   }
 }
 
 #[cfg(test)]
 mod tests {
+  use futures::StreamExt;
+
   use crate::data::DataValue;
-  use crate::filter::{FilterIterator, FilterPipe};
-  use crate::pipe::PipeIterator;
+  use crate::filter::FilterPipe;
+  use crate::filter::FilterStream;
+  use crate::pipe::PipeStream;
 
   #[test]
-  fn apply() {
+  fn applies() {
     let filter = FilterPipe::new("a > 3").unwrap();
     let data = [
       DataValue::from_pairs(vec![("a", 2.0.into())]),
       DataValue::from_pairs(vec![("a", 4.0.into())]),
     ];
-    let source = PipeIterator::source(&data);
+    let source = PipeStream::source(&data);
+    let stream = FilterStream::chain(source, &filter);
 
-    let iterator = FilterIterator::chain(source, &filter);
-    let result = iterator.collect::<Vec<DataValue>>();
+    futures::executor::block_on(async {
+      let values: Vec<_> = stream.collect().await;
 
-    assert_eq!(result.len(), 1);
-    assert_eq!(result[0].find("a").unwrap(), &4.0.into());
+      assert_eq!(
+        values,
+        vec![DataValue::from_pairs(vec![("a", 4.0.into())]),]
+      )
+    })
   }
 }
