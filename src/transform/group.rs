@@ -7,7 +7,7 @@ use futures::stream::LocalBoxStream;
 use futures::task::{Context, Poll};
 use futures::{FutureExt, Stream, StreamExt};
 
-use crate::transform::data::DataValue;
+use crate::data::DataValue;
 use crate::transform::pipe::{DataStream, PipeStream};
 
 #[derive(PartialEq, Debug)]
@@ -193,7 +193,7 @@ impl<'a> Stream for RepsStream<'a> {
 mod tests {
   use futures::StreamExt;
 
-  use crate::transform::data::DataValue;
+  use crate::data::DataValue;
   use crate::transform::group::GroupStream;
   use crate::transform::group::{GroupPipe, Operation};
   use crate::transform::pipe::PipeStream;

@@ -1,7 +1,6 @@
-use crate::transform::data::DataValue;
+use crate::data::DataValue;
 use crate::transform::pipe::{chain, Pipe, PipeStream};
 
-pub mod data;
 pub mod error;
 pub mod filter;
 pub mod group;

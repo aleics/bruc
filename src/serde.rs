@@ -6,7 +6,7 @@ use serde::de::{MapAccess, Visitor};
 use serde::export::Formatter;
 use serde::{de, Deserialize, Deserializer};
 
-use crate::transform::data::DataValue;
+use crate::data::DataValue;
 use crate::transform::filter::FilterPipe;
 use crate::transform::group::{GroupPipe, Operation};
 use crate::transform::map::MapPipe;

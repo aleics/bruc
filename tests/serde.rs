@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-  use bruc::transform::data::DataValue;
+  use bruc::data::DataValue;
   use bruc::transform::filter::{FilterPipe, FilterPredicate};
   use bruc::transform::group::{GroupPipe, Operation};
   use bruc::transform::map::{MapPipe, MapPredicate};

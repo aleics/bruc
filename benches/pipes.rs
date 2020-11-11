@@ -6,7 +6,7 @@ use test::Bencher;
 use ebooler::data::DataItem;
 use futures::StreamExt;
 
-use bruc::transform::data::DataValue;
+use bruc::data::DataValue;
 use bruc::transform::filter::FilterPipe;
 use bruc::transform::group::{GroupPipe, Operation};
 use bruc::transform::map::MapPipe;

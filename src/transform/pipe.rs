@@ -3,7 +3,7 @@ use std::pin::Pin;
 use futures::task::{Context, Poll};
 use futures::Stream;
 
-use crate::transform::data::DataValue;
+use crate::data::DataValue;
 use crate::transform::error::Error;
 use crate::transform::filter::{FilterPipe, FilterStream};
 use crate::transform::group::{GroupPipe, GroupStream};
@@ -110,7 +110,7 @@ where
 mod tests {
   use futures::StreamExt;
 
-  use crate::transform::data::DataValue;
+  use crate::data::DataValue;
   use crate::transform::filter::FilterPipe;
   use crate::transform::group::{GroupPipe, Operation};
   use crate::transform::map::MapPipe;

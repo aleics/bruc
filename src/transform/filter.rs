@@ -5,7 +5,7 @@ use ebooler::PredicateParser;
 use futures::task::{Context, Poll};
 use futures::Stream;
 
-use crate::transform::data::DataValue;
+use crate::data::DataValue;
 use crate::transform::error::Error;
 use crate::transform::pipe::{DataStream, PipeStream, Predicate};
 
@@ -107,7 +107,7 @@ impl<'a> Stream for FilterStream<'a> {
 mod tests {
   use futures::StreamExt;
 
-  use crate::transform::data::DataValue;
+  use crate::data::DataValue;
   use crate::transform::filter::FilterPipe;
   use crate::transform::filter::FilterStream;
   use crate::transform::pipe::PipeStream;
