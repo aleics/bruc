@@ -7,6 +7,9 @@ pub mod group;
 pub mod map;
 pub mod pipe;
 
+#[cfg(feature = "serde")]
+pub mod serde;
+
 #[derive(Debug)]
 pub struct Source<'a> {
   data: Vec<DataValue<'a>>,
