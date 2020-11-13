@@ -3,6 +3,9 @@ use crate::scale::linear::LinearScale;
 pub mod domain;
 pub mod linear;
 
+#[cfg(feature = "serde")]
+pub mod serde;
+
 #[derive(Debug, PartialEq)]
 pub enum Scale<'a> {
   Linear(LinearScale<'a>),
