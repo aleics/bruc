@@ -7,12 +7,12 @@ pub mod group;
 pub mod map;
 pub mod pipe;
 
-#[cfg(feature = "serde")]
-pub mod serde;
-
 #[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 pub struct Source<'a> {
+  #[cfg_attr(feature = "serde", serde(borrow))]
   data: Vec<DataValue<'a>>,
+  #[cfg_attr(feature = "serde", serde(borrow))]
   pipes: Vec<Pipe<'a>>,
 }
 

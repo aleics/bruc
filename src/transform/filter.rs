@@ -103,6 +103,35 @@ impl<'a> Stream for FilterStream<'a> {
   }
 }
 
+#[cfg(feature = "serde")]
+pub mod serde {
+  use crate::transform::filter::FilterPipe;
+  use serde::de::Visitor;
+  use serde::{Deserialize, Deserializer};
+  use std::fmt;
+
+  impl<'de: 'a, 'a> Deserialize<'de> for FilterPipe<'a> {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+      struct FilterPipeVisitor;
+
+      impl<'a> Visitor<'a> for FilterPipeVisitor {
+        type Value = FilterPipe<'a>;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+          formatter.write_str("any valid predicate (string)")
+        }
+
+        #[inline]
+        fn visit_borrowed_str<E: serde::de::Error>(self, value: &'a str) -> Result<Self::Value, E> {
+          FilterPipe::new(value).map_err(|error| serde::de::Error::custom(error.to_string()))
+        }
+      }
+
+      deserializer.deserialize_any(FilterPipeVisitor)
+    }
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use futures::StreamExt;

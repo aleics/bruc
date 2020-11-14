@@ -101,6 +101,58 @@ impl<'a> Stream for MapStream<'a> {
   }
 }
 
+#[cfg(feature = "serde")]
+pub mod serde {
+  use crate::transform::map::MapPipe;
+  use serde::de::{MapAccess, Visitor};
+  use serde::{de, Deserialize, Deserializer};
+  use std::fmt;
+
+  impl<'de: 'a, 'a> Deserialize<'de> for MapPipe<'a> {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+      struct MapPipeVisitor;
+
+      impl<'a> Visitor<'a> for MapPipeVisitor {
+        type Value = MapPipe<'a>;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+          formatter.write_str("struct MapPipe")
+        }
+
+        fn visit_map<A: MapAccess<'a>>(self, mut map: A) -> Result<Self::Value, A::Error> {
+          let mut predicate = None;
+          let mut output = None;
+
+          while let Some((key, value)) = map.next_entry()? {
+            match key {
+              "fn" => {
+                if predicate.is_some() {
+                  return Err(de::Error::duplicate_field("fn"));
+                }
+                predicate = value;
+              }
+              "output" => {
+                if output.is_some() {
+                  return Err(de::Error::duplicate_field("output"));
+                }
+                output = value;
+              }
+              _ => {}
+            }
+          }
+
+          let predicate = predicate.ok_or_else(|| de::Error::missing_field("fn"))?;
+          let output = output.ok_or_else(|| de::Error::missing_field("output"))?;
+
+          MapPipe::new(predicate, output).map_err(|err| de::Error::custom(err.to_string()))
+        }
+      }
+
+      deserializer.deserialize_any(MapPipeVisitor)
+    }
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use futures::StreamExt;

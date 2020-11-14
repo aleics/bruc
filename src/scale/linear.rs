@@ -4,7 +4,9 @@ use crate::scale::Scaler;
 const DEFAULT_UNIT: (f32, f32) = (0f32, 1f32);
 
 #[derive(Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 pub struct LinearScale<'a> {
+  #[cfg_attr(feature = "serde", serde(borrow))]
   name: &'a str,
   domain: Domain,
   range: (f32, f32),

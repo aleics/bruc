@@ -11,6 +11,7 @@ use crate::data::DataValue;
 use crate::transform::pipe::{DataStream, PipeStream};
 
 #[derive(PartialEq, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 pub struct GroupPipe<'a> {
   by: &'a str,
   op: Operation,
@@ -39,6 +40,8 @@ impl<'a> GroupPipe<'a> {
 }
 
 #[derive(PartialEq, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub enum Operation {
   Count,
 }

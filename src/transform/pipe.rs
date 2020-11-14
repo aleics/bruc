@@ -10,9 +10,14 @@ use crate::transform::group::{GroupPipe, GroupStream};
 use crate::transform::map::{MapPipe, MapStream};
 
 #[derive(PartialEq, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub enum Pipe<'a> {
+  #[cfg_attr(feature = "serde", serde(borrow))]
   Filter(FilterPipe<'a>),
+  #[cfg_attr(feature = "serde", serde(borrow))]
   Map(MapPipe<'a>),
+  #[cfg_attr(feature = "serde", serde(borrow))]
   Group(GroupPipe<'a>),
 }
 
