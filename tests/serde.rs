@@ -1,11 +1,11 @@
 #[cfg(test)]
 mod tests {
-  use transformer::data::DataValue;
-  use transformer::filter::{FilterPipe, FilterPredicate};
-  use transformer::group::{GroupPipe, Operation};
-  use transformer::map::{MapPipe, MapPredicate};
-  use transformer::pipe::Pipe;
-  use transformer::Source;
+  use bruc::transform::data::DataValue;
+  use bruc::transform::filter::{FilterPipe, FilterPredicate};
+  use bruc::transform::group::{GroupPipe, Operation};
+  use bruc::transform::map::{MapPipe, MapPredicate};
+  use bruc::transform::pipe::Pipe;
+  use bruc::transform::Source;
 
   #[test]
   fn deserialize_value() {

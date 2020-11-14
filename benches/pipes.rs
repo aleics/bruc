@@ -6,12 +6,12 @@ use test::Bencher;
 use ebooler::data::DataItem;
 use futures::StreamExt;
 
-use transformer::data::DataValue;
-use transformer::filter::FilterPipe;
-use transformer::group::{GroupPipe, Operation};
-use transformer::map::MapPipe;
-use transformer::pipe::Pipe;
-use transformer::{run, Source};
+use bruc::transform::data::DataValue;
+use bruc::transform::filter::FilterPipe;
+use bruc::transform::group::{GroupPipe, Operation};
+use bruc::transform::map::MapPipe;
+use bruc::transform::pipe::Pipe;
+use bruc::transform::{run, Source};
 
 #[bench]
 fn bench_filter_pipe_1(b: &mut Bencher) {

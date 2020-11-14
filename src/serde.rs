@@ -1,17 +1,17 @@
+use std::collections::HashMap;
 use std::fmt;
 
+use ebooler::data::DataItem;
 use serde::de::{MapAccess, Visitor};
+use serde::export::Formatter;
 use serde::{de, Deserialize, Deserializer};
 
-use crate::data::DataValue;
-use crate::filter::FilterPipe;
-use crate::group::{GroupPipe, Operation};
-use crate::map::MapPipe;
-use crate::pipe::Pipe;
-use crate::Source;
-use ebooler::data::DataItem;
-use serde::export::Formatter;
-use std::collections::HashMap;
+use crate::transform::data::DataValue;
+use crate::transform::filter::FilterPipe;
+use crate::transform::group::{GroupPipe, Operation};
+use crate::transform::map::MapPipe;
+use crate::transform::pipe::Pipe;
+use crate::transform::Source;
 
 impl<'de: 'a, 'a> Deserialize<'de> for Source<'a> {
   fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {

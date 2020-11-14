@@ -3,11 +3,11 @@ use std::pin::Pin;
 use futures::task::{Context, Poll};
 use futures::Stream;
 
-use crate::data::DataValue;
-use crate::error::Error;
-use crate::filter::{FilterPipe, FilterStream};
-use crate::group::{GroupPipe, GroupStream};
-use crate::map::{MapPipe, MapStream};
+use crate::transform::data::DataValue;
+use crate::transform::error::Error;
+use crate::transform::filter::{FilterPipe, FilterStream};
+use crate::transform::group::{GroupPipe, GroupStream};
+use crate::transform::map::{MapPipe, MapStream};
 
 #[derive(PartialEq, Debug)]
 pub enum Pipe<'a> {
@@ -110,11 +110,11 @@ where
 mod tests {
   use futures::StreamExt;
 
-  use crate::data::DataValue;
-  use crate::filter::FilterPipe;
-  use crate::group::{GroupPipe, Operation};
-  use crate::map::MapPipe;
-  use crate::pipe::{chain, Pipe};
+  use crate::transform::data::DataValue;
+  use crate::transform::filter::FilterPipe;
+  use crate::transform::group::{GroupPipe, Operation};
+  use crate::transform::map::MapPipe;
+  use crate::transform::pipe::{chain, Pipe};
 
   #[test]
   fn chain_empty() {

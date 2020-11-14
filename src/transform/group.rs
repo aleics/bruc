@@ -7,8 +7,8 @@ use futures::stream::LocalBoxStream;
 use futures::task::{Context, Poll};
 use futures::{FutureExt, Stream, StreamExt};
 
-use crate::data::DataValue;
-use crate::pipe::{DataStream, PipeStream};
+use crate::transform::data::DataValue;
+use crate::transform::pipe::{DataStream, PipeStream};
 
 #[derive(PartialEq, Debug)]
 pub struct GroupPipe<'a> {
@@ -193,10 +193,10 @@ impl<'a> Stream for RepsStream<'a> {
 mod tests {
   use futures::StreamExt;
 
-  use crate::data::DataValue;
-  use crate::group::GroupStream;
-  use crate::group::{GroupPipe, Operation};
-  use crate::pipe::PipeStream;
+  use crate::transform::data::DataValue;
+  use crate::transform::group::GroupStream;
+  use crate::transform::group::{GroupPipe, Operation};
+  use crate::transform::pipe::PipeStream;
 
   #[test]
   fn finds_repetition() {

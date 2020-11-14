@@ -5,9 +5,9 @@ use ebooler::PredicateParser;
 use futures::task::{Context, Poll};
 use futures::Stream;
 
-use crate::data::DataValue;
-use crate::error::Error;
-use crate::pipe::{DataStream, PipeStream, Predicate};
+use crate::transform::data::DataValue;
+use crate::transform::error::Error;
+use crate::transform::pipe::{DataStream, PipeStream, Predicate};
 
 #[derive(PartialEq, Debug)]
 pub struct FilterPipe<'a> {
@@ -107,10 +107,10 @@ impl<'a> Stream for FilterStream<'a> {
 mod tests {
   use futures::StreamExt;
 
-  use crate::data::DataValue;
-  use crate::filter::FilterPipe;
-  use crate::filter::FilterStream;
-  use crate::pipe::PipeStream;
+  use crate::transform::data::DataValue;
+  use crate::transform::filter::FilterPipe;
+  use crate::transform::filter::FilterStream;
+  use crate::transform::pipe::PipeStream;
 
   #[test]
   fn applies() {
