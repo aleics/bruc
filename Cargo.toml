@@ -6,7 +6,7 @@ edition = "2018"
 
 [dependencies]
 futures = "0.3.7"
-ebooler = { git = "ssh://git@github.com/aleics/ebooler.git", features = ["serde"] }
+bruc-expreter = { git = "ssh://git@github.com/aleics/bruc-expreter.git", features = ["serde"] }
 
 # For external trait impls
 serde = { version = "1.0.117", features = ["derive"], optional = true }

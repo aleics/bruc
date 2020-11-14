@@ -1,7 +1,7 @@
 use std::pin::Pin;
 
-use ebooler::expr::{Expression, Interpretable};
-use ebooler::PredicateParser;
+use bruc_expreter::expr::{Expression, Interpretable};
+use bruc_expreter::PredicateParser;
 use futures::task::{Context, Poll};
 use futures::Stream;
 

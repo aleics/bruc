@@ -7,7 +7,7 @@ pub enum Error {
 
 #[derive(Debug)]
 pub enum PipeError {
-  Expression(ebooler::error::Error),
+  Expression(bruc_expreter::error::Error),
 }
 
 impl fmt::Display for Error {
@@ -22,8 +22,8 @@ impl fmt::Display for Error {
 
 impl error::Error for Error {}
 
-impl From<ebooler::error::Error> for Error {
-  fn from(error: ebooler::error::Error) -> Self {
+impl From<bruc_expreter::error::Error> for Error {
+  fn from(error: bruc_expreter::error::Error) -> Self {
     Error::Pipe(PipeError::Expression(error))
   }
 }

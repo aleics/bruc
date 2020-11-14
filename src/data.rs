@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use ebooler::data::{DataItem, DataSource};
+use bruc_expreter::data::{DataItem, DataSource};
 
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]

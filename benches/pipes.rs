@@ -3,7 +3,7 @@ extern crate test;
 
 use test::Bencher;
 
-use ebooler::data::DataItem;
+use bruc_expreter::data::DataItem;
 use futures::StreamExt;
 
 use bruc::data::DataValue;
