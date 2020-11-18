@@ -186,3 +186,17 @@ mod tests {
     })
   }
 }
+
+#[cfg(feature = "serde")]
+#[cfg(test)]
+mod serde_tests {
+  use crate::transform::map::{MapPipe, MapPredicate};
+
+  #[test]
+  fn deserialize_map() {
+    let map = serde_json::from_str::<MapPipe>(r#"{ "fn": "a + 2.0", "output": "b" }"#).unwrap();
+
+    assert_eq!(map.predicate(), &MapPredicate::new("a + 2.0").unwrap());
+    assert_eq!(map.output(), "b");
+  }
+}

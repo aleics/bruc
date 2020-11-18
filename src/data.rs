@@ -49,3 +49,15 @@ impl<'a> Default for DataValue<'a> {
     Self::new()
   }
 }
+
+#[cfg(feature = "serde")]
+#[cfg(test)]
+mod serde_tests {
+  use crate::data::DataValue;
+
+  #[test]
+  fn deserialize_value() {
+    let data_value: DataValue = serde_json::from_str(r#"{ "a": 2.0 }"#).unwrap();
+    assert_eq!(data_value, DataValue::from_pairs(vec![("a", 2.0.into())]));
+  }
+}

@@ -247,3 +247,25 @@ mod tests {
     });
   }
 }
+
+#[cfg(feature = "serde")]
+#[cfg(test)]
+mod serde_tests {
+  use crate::transform::group::{GroupPipe, Operation};
+
+  #[test]
+  fn deserialize_group() {
+    let group = serde_json::from_str::<GroupPipe>(
+      r#"{
+      "by": "a",
+      "op": "count",
+      "output": "count_a"
+     }"#,
+    )
+    .unwrap();
+
+    assert_eq!(group.by(), "a");
+    assert_eq!(group.op(), &Operation::Count);
+    assert_eq!(group.output(), "count_a");
+  }
+}

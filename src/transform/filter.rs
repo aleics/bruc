@@ -161,3 +161,18 @@ mod tests {
     })
   }
 }
+
+#[cfg(feature = "serde")]
+#[cfg(test)]
+mod serde_tests {
+  use crate::transform::filter::{FilterPipe, FilterPredicate};
+
+  #[test]
+  fn deserialize_filter() {
+    let filter = serde_json::from_str::<FilterPipe>(r#""a > 2.0""#).unwrap();
+    assert_eq!(
+      filter.predicate(),
+      &FilterPredicate::new("a > 2.0").unwrap()
+    );
+  }
+}

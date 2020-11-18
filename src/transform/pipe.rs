@@ -307,3 +307,21 @@ mod tests {
     });
   }
 }
+
+#[cfg(feature = "serde")]
+#[cfg(test)]
+mod serde_tests {
+  use crate::transform::pipe::Pipe;
+
+  #[test]
+  fn deserializes_pipes() {
+    let pipes_json = r#"[
+        { "filter": "a > 2" },
+        { "map": { "fn": "a + 2", "output": "b" } },
+        { "group": { "by": "b", "op": "count", "output": "count" } }
+      ]"#;
+    let pipes: Vec<Pipe> = serde_json::from_str(pipes_json).unwrap();
+
+    assert_eq!(pipes.len(), 3);
+  }
+}
