@@ -7,69 +7,57 @@ pub mod group;
 pub mod map;
 pub mod pipe;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
-pub struct Source<'a> {
+pub struct Transform<'a> {
   #[cfg_attr(feature = "serde", serde(borrow))]
-  data: Vec<DataValue<'a>>,
+  source: &'a str,
   #[cfg_attr(feature = "serde", serde(borrow))]
   pipes: Vec<Pipe<'a>>,
 }
 
-impl<'a> Source<'a> {
-  pub fn new(data: Vec<DataValue<'a>>, pipes: Vec<Pipe<'a>>) -> Source<'a> {
-    Source { data, pipes }
+impl<'a> Transform<'a> {
+  pub fn new(source: &'a str, pipes: Vec<Pipe<'a>>) -> Transform<'a> {
+    Transform { source, pipes }
   }
 
-  pub fn data(&self) -> &Vec<DataValue<'a>> {
-    &self.data
+  pub fn source(&self) -> &str {
+    &self.source
   }
 
   pub fn pipes(&self) -> &Vec<Pipe<'a>> {
     &self.pipes
   }
-}
 
-pub fn run<'a>(source: &'a Source<'a>) -> PipeStream<'a> {
-  chain(source.data(), source.pipes())
+  pub fn run(&'a self, data: &'a [DataValue<'a>]) -> PipeStream<'a> {
+    chain(data, &self.pipes())
+  }
 }
 
 #[cfg(feature = "serde")]
 #[cfg(test)]
 mod serde_tests {
-  use crate::data::DataValue;
   use crate::transform::filter::FilterPipe;
   use crate::transform::group::{GroupPipe, Operation};
   use crate::transform::map::MapPipe;
   use crate::transform::pipe::Pipe;
-  use crate::transform::Source;
+  use crate::transform::Transform;
 
   #[test]
-  fn deserializes_source() {
-    let source_json = r#"{
-      "data": [
-        { "a": 2.0 },
-        { "a": 4.0 },
-        { "a": 6.0 }
-      ],
+  fn deserializes_transform() {
+    let transform_json = r#"{
+      "source": "primary",
       "pipes": [
         { "filter": "a > 2" },
         { "map": { "fn": "a + 2", "output": "b" } },
         { "group": { "by": "b", "op": "count", "output": "count" } }
        ]
     }"#;
-    let source: Source = serde_json::from_str(source_json).unwrap();
 
+    let transform: Transform = serde_json::from_str(transform_json).unwrap();
+    assert_eq!(transform.source(), "primary");
     assert_eq!(
-      source.data(),
-      &vec![
-        DataValue::from_pairs(vec![("a", 2.0.into())]),
-        DataValue::from_pairs(vec![("a", 4.0.into())]),
-        DataValue::from_pairs(vec![("a", 6.0.into())])
-      ]
-    );
-    assert_eq!(
-      source.pipes(),
+      transform.pipes(),
       &vec![
         Pipe::Filter(FilterPipe::new("a > 2").unwrap()),
         Pipe::Map(MapPipe::new("a + 2", "b").unwrap()),
