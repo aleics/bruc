@@ -50,7 +50,7 @@ mod serde_tests {
         "transform": {
           "source": "primary",
           "pipes": [
-            { "filter": "a > 2" }
+            { "type": "filter", "fn": "a > 2" }
           ]
         }
       }"#,

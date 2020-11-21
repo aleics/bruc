@@ -48,9 +48,9 @@ mod serde_tests {
     let transform_json = r#"{
       "source": "primary",
       "pipes": [
-        { "filter": "a > 2" },
-        { "map": { "fn": "a + 2", "output": "b" } },
-        { "group": { "by": "b", "op": "count", "output": "count" } }
+        { "type": "filter", "fn": "a > 2" },
+        { "type": "map", "fn": "a + 2", "output": "b" },
+        { "type": "group", "by": "b", "op": "count", "output": "count" }
        ]
     }"#;
 

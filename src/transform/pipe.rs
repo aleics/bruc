@@ -11,6 +11,7 @@ use crate::transform::map::{MapPipe, MapStream};
 
 #[derive(PartialEq, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(tag = "type"))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub enum Pipe<'a> {
   #[cfg_attr(feature = "serde", serde(borrow))]
@@ -316,9 +317,9 @@ mod serde_tests {
   #[test]
   fn deserializes_pipes() {
     let pipes_json = r#"[
-        { "filter": "a > 2" },
-        { "map": { "fn": "a + 2", "output": "b" } },
-        { "group": { "by": "b", "op": "count", "output": "count" } }
+        { "type": "filter", "fn": "a > 2" },
+        { "type": "map", "fn": "a + 2", "output": "b" },
+        { "type": "group", "by": "b", "op": "count", "output": "count" }
       ]"#;
     let pipes: Vec<Pipe> = serde_json::from_str(pipes_json).unwrap();
 

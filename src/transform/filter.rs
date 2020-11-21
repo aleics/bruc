@@ -106,8 +106,8 @@ impl<'a> Stream for FilterStream<'a> {
 #[cfg(feature = "serde")]
 pub mod serde {
   use crate::transform::filter::FilterPipe;
-  use serde::de::Visitor;
-  use serde::{Deserialize, Deserializer};
+  use serde::de::{MapAccess, Visitor};
+  use serde::{de, Deserialize, Deserializer};
   use std::fmt;
 
   impl<'de: 'a, 'a> Deserialize<'de> for FilterPipe<'a> {
@@ -121,9 +121,18 @@ pub mod serde {
           formatter.write_str("any valid predicate (string)")
         }
 
-        #[inline]
-        fn visit_borrowed_str<E: serde::de::Error>(self, value: &'a str) -> Result<Self::Value, E> {
-          FilterPipe::new(value).map_err(|error| serde::de::Error::custom(error.to_string()))
+        fn visit_map<A: MapAccess<'a>>(self, mut map: A) -> Result<Self::Value, A::Error> {
+          let mut predicate = None;
+
+          while let Some((key, value)) = map.next_entry::<&str, &str>()? {
+            if key == "fn" && predicate.is_some() {
+              return Err(de::Error::duplicate_field("fn"));
+            }
+            predicate = Some(value);
+          }
+
+          let predicate = predicate.ok_or_else(|| de::Error::missing_field("fn"))?;
+          FilterPipe::new(predicate).map_err(|err| de::Error::custom(err.to_string()))
         }
       }
 
@@ -169,7 +178,7 @@ mod serde_tests {
 
   #[test]
   fn deserialize_filter() {
-    let filter = serde_json::from_str::<FilterPipe>(r#""a > 2.0""#).unwrap();
+    let filter = serde_json::from_str::<FilterPipe>(r#"{ "fn": "a > 2.0" }"#).unwrap();
     assert_eq!(
       filter.predicate(),
       &FilterPredicate::new("a > 2.0").unwrap()
