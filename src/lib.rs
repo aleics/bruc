@@ -1,3 +1,4 @@
+use crate::mark::Mark;
 use crate::scale::Scale;
 use crate::transform::Transform;
 
@@ -23,17 +24,28 @@ pub struct Specification<'a> {
   #[cfg_attr(feature = "serde", serde(borrow))]
   transform: Option<Transform<'a>>,
   scales: Vec<Scale<'a>>,
+  marks: Vec<Mark<'a>>,
 }
 
 impl<'a> Specification<'a> {
-  pub fn new(transform: Option<Transform<'a>>, scales: Vec<Scale<'a>>) -> Specification<'a> {
-    Specification { transform, scales }
+  pub fn new(
+    transform: Option<Transform<'a>>,
+    scales: Vec<Scale<'a>>,
+    marks: Vec<Mark<'a>>,
+  ) -> Specification<'a> {
+    Specification {
+      transform,
+      scales,
+      marks,
+    }
   }
 }
 
 #[cfg(feature = "serde")]
 #[cfg(test)]
 mod serde_tests {
+  use crate::mark::line::{Interpolate, LineMark, LineMarkProperties};
+  use crate::mark::{DataSource, Mark};
   use crate::scale::domain::Domain;
   use crate::scale::linear::LinearScale;
   use crate::scale::range::Range;
@@ -47,28 +59,12 @@ mod serde_tests {
   fn deserializes_empty_spec() {
     let spec: Specification = serde_json::from_str(
       r#"{
-        "scales": [ 
-          {
-            "type": "linear",
-            "name": "horizontal",
-            "domain": [0, 100],
-            "range": [0, 20]
-          }
-        ]
+        "scales": [],
+        "marks": []
       }"#,
     )
     .unwrap();
-    assert_eq!(
-      spec,
-      Specification::new(
-        None,
-        vec![Scale::Linear(LinearScale::new(
-          "horizontal",
-          Domain::Literal(0.0, 100.0),
-          Range::Literal(0.0, 20.0),
-        ))],
-      )
-    );
+    assert_eq!(spec, Specification::new(None, vec![], vec![]));
   }
 
   #[test]
@@ -88,6 +84,17 @@ mod serde_tests {
             "domain": [0, 100],
             "range": [0, 20]
           }
+        ],
+        "marks": [
+          {
+            "from": "primary",
+            "type": "line",
+            "on": {
+              "update": {
+                "x": { "field": "x", "scale": "horizontal" }
+              }
+            }
+          }
         ]
       }"#,
     )
@@ -104,6 +111,16 @@ mod serde_tests {
           Domain::Literal(0.0, 100.0),
           Range::Literal(0.0, 20.0),
         ))],
+        vec![Mark::line(
+          "primary",
+          LineMark::new(LineMarkProperties::new(
+            Some(DataSource::field("x", Some("horizontal"))),
+            None,
+            None,
+            None,
+            Interpolate::Linear,
+          )),
+        )],
       )
     );
   }

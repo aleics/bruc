@@ -1,4 +1,5 @@
 use crate::mark::line::LineMark;
+use bruc_expreter::data::DataItem;
 
 mod base;
 pub mod line;
@@ -29,12 +30,22 @@ enum MarkKind<'a> {
   Line(LineMark<'a>),
 }
 
+#[derive(Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(untagged))]
+pub enum DataSource<'a> {
+  FieldSource {
+    field: &'a str,
+    scale: Option<&'a str>,
+  },
+  ValueSource(DataItem),
+}
+
 #[cfg(test)]
 #[cfg(feature = "serde")]
 mod serde_tests {
-  use crate::mark::base::{BaseMarkProperties, DataSource};
   use crate::mark::line::{Interpolate, LineMark, LineMarkProperties};
-  use crate::mark::Mark;
+  use crate::mark::{DataSource, Mark};
 
   #[test]
   fn deserialize_mark() {
@@ -57,15 +68,41 @@ mod serde_tests {
       Mark::line(
         "table",
         LineMark::new(LineMarkProperties::new(
+          Some(DataSource::field("x", Some("xscale"))),
+          Some(DataSource::field("y", Some("yscale"))),
+          None,
+          None,
           Interpolate::Linear,
-          BaseMarkProperties::new(
-            Some(DataSource::field("x", Some("xscale"))),
-            Some(DataSource::field("y", Some("yscale"))),
-            None,
-            None,
-          ),
         )),
       )
     );
+  }
+
+  #[test]
+  fn deserialize_data_source() {
+    let data_source: DataSource = serde_json::from_str(r#"{ "field": "x" }"#).unwrap();
+    assert_eq!(
+      data_source,
+      DataSource::FieldSource {
+        field: "x",
+        scale: None,
+      }
+    );
+
+    let data_source: DataSource =
+      serde_json::from_str(r#"{ "field": "x", "scale": "horizontal" }"#).unwrap();
+    assert_eq!(
+      data_source,
+      DataSource::FieldSource {
+        field: "x",
+        scale: Some("horizontal"),
+      }
+    );
+
+    let data_source: DataSource = serde_json::from_str(r#"1"#).unwrap();
+    assert_eq!(data_source, DataSource::ValueSource(1.0.into()));
+
+    let data_source: DataSource = serde_json::from_str(r#"true"#).unwrap();
+    assert_eq!(data_source, DataSource::ValueSource(true.into()));
   }
 }

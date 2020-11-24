@@ -1,4 +1,5 @@
 use crate::mark::base::{BaseMarkProperties, Phases};
+use crate::mark::DataSource;
 
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
@@ -27,8 +28,17 @@ pub struct LineMarkProperties<'a> {
 }
 
 impl<'a> LineMarkProperties<'a> {
-  pub fn new(interpolate: Interpolate, base: BaseMarkProperties<'a>) -> LineMarkProperties<'a> {
-    LineMarkProperties { interpolate, base }
+  pub fn new(
+    x: Option<DataSource<'a>>,
+    y: Option<DataSource<'a>>,
+    width: Option<DataSource<'a>>,
+    height: Option<DataSource<'a>>,
+    interpolate: Interpolate,
+  ) -> LineMarkProperties<'a> {
+    LineMarkProperties {
+      interpolate,
+      base: BaseMarkProperties::new(x, y, width, height),
+    }
   }
 }
 
@@ -48,8 +58,8 @@ impl Default for Interpolate {
 #[cfg(test)]
 #[cfg(feature = "serde")]
 mod serde_tests {
-  use crate::mark::base::{BaseMarkProperties, DataSource};
   use crate::mark::line::{Interpolate, LineMark, LineMarkProperties};
+  use crate::mark::DataSource;
 
   #[test]
   fn deserialize_line_mark() {
@@ -68,13 +78,11 @@ mod serde_tests {
     assert_eq!(
       line_mark,
       LineMark::new(LineMarkProperties::new(
+        Some(DataSource::field("x", Some("xscale"))),
+        Some(DataSource::field("y", Some("yscale"))),
+        None,
+        None,
         Interpolate::Linear,
-        BaseMarkProperties::new(
-          Some(DataSource::field("x", Some("xscale"))),
-          Some(DataSource::field("y", Some("yscale"))),
-          None,
-          None,
-        )
       ))
     )
   }
@@ -93,13 +101,11 @@ mod serde_tests {
     assert_eq!(
       props,
       LineMarkProperties::new(
+        Some(DataSource::field("x", Some("xscale"))),
+        Some(DataSource::field("y", Some("yscale"))),
+        Some(DataSource::value(100.0.into())),
+        Some(DataSource::value(100.0.into())),
         Interpolate::Linear,
-        BaseMarkProperties::new(
-          Some(DataSource::field("x", Some("xscale"))),
-          Some(DataSource::field("y", Some("yscale"))),
-          Some(DataSource::value(100.0.into())),
-          Some(DataSource::value(100.0.into())),
-        )
       )
     );
 
@@ -116,13 +122,11 @@ mod serde_tests {
     assert_eq!(
       props,
       LineMarkProperties::new(
+        Some(DataSource::field("x", Some("xscale"))),
+        Some(DataSource::field("y", Some("yscale"))),
+        Some(DataSource::value(100.0.into())),
+        Some(DataSource::value(100.0.into())),
         Interpolate::Linear,
-        BaseMarkProperties::new(
-          Some(DataSource::field("x", Some("xscale"))),
-          Some(DataSource::field("y", Some("yscale"))),
-          Some(DataSource::value(100.0.into())),
-          Some(DataSource::value(100.0.into())),
-        )
       )
     );
   }

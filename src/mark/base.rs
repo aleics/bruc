@@ -1,3 +1,4 @@
+use crate::mark::DataSource;
 use bruc_expreter::data::DataItem;
 
 #[derive(Debug, PartialEq)]
@@ -50,17 +51,6 @@ impl<'a> BaseMarkProperties<'a> {
   }
 }
 
-#[derive(Debug, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Deserialize))]
-#[cfg_attr(feature = "serde", serde(untagged))]
-pub enum DataSource<'a> {
-  FieldSource {
-    field: &'a str,
-    scale: Option<&'a str>,
-  },
-  ValueSource(DataItem),
-}
-
 impl<'a> DataSource<'a> {
   pub fn field(field: &'a str, scale: Option<&'a str>) -> DataSource<'a> {
     DataSource::FieldSource { field, scale }
@@ -74,7 +64,8 @@ impl<'a> DataSource<'a> {
 #[cfg(test)]
 #[cfg(feature = "serde")]
 mod serde_tests {
-  use crate::mark::base::{BaseMarkProperties, DataSource, Phase};
+  use crate::mark::base::{BaseMarkProperties, Phase};
+  use crate::mark::DataSource;
 
   #[test]
   fn deserialize_update_phase() {
@@ -168,33 +159,5 @@ mod serde_tests {
         height: Some(DataSource::ValueSource(100.0.into())),
       }
     );
-  }
-
-  #[test]
-  fn deserialize_data_source() {
-    let data_source: DataSource = serde_json::from_str(r#"{ "field": "x" }"#).unwrap();
-    assert_eq!(
-      data_source,
-      DataSource::FieldSource {
-        field: "x",
-        scale: None,
-      }
-    );
-
-    let data_source: DataSource =
-      serde_json::from_str(r#"{ "field": "x", "scale": "horizontal" }"#).unwrap();
-    assert_eq!(
-      data_source,
-      DataSource::FieldSource {
-        field: "x",
-        scale: Some("horizontal"),
-      }
-    );
-
-    let data_source: DataSource = serde_json::from_str(r#"1"#).unwrap();
-    assert_eq!(data_source, DataSource::ValueSource(1.0.into()));
-
-    let data_source: DataSource = serde_json::from_str(r#"true"#).unwrap();
-    assert_eq!(data_source, DataSource::ValueSource(true.into()));
   }
 }
