@@ -2,6 +2,7 @@ use crate::scale::linear::LinearScale;
 
 pub mod domain;
 pub mod linear;
+pub mod range;
 
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
