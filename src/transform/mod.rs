@@ -1,5 +1,4 @@
-use crate::data::DataValue;
-use crate::transform::pipe::{chain, Pipe, PipeStream};
+use crate::transform::pipe::Pipe;
 
 pub mod error;
 pub mod filter;
@@ -27,10 +26,6 @@ impl<'a> Transform<'a> {
 
   pub fn pipes(&self) -> &Vec<Pipe<'a>> {
     &self.pipes
-  }
-
-  pub fn run(&'a self, data: &'a [DataValue<'a>]) -> PipeStream<'a> {
-    chain(data, &self.pipes())
   }
 }
 

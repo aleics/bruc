@@ -1,17 +1,15 @@
 #![feature(test)]
 extern crate test;
 
-use test::Bencher;
-
-use bruc_expreter::data::DataItem;
-use futures::StreamExt;
-
 use bruc::data::DataValue;
+use bruc::flow::transform::chain;
 use bruc::transform::filter::FilterPipe;
 use bruc::transform::group::{GroupPipe, Operation};
 use bruc::transform::map::MapPipe;
 use bruc::transform::pipe::Pipe;
-use bruc::transform::Transform;
+use bruc_expreter::data::DataItem;
+use futures::StreamExt;
+use test::Bencher;
 
 #[bench]
 fn bench_filter_pipe_1(b: &mut Bencher) {
@@ -20,10 +18,9 @@ fn bench_filter_pipe_1(b: &mut Bencher) {
     FilterPipe::new("(a > 1) && (a < 4) && (a != 3)").unwrap(),
   )];
 
-  let transform = Transform::new("test", pipes);
   b.iter(|| {
     futures::executor::block_on(async {
-      transform.run(&data).collect::<Vec<DataValue>>().await;
+      chain(&data, &pipes).collect::<Vec<DataValue>>().await;
     });
   });
 }
@@ -56,10 +53,9 @@ fn bench_filter_pipe_20_sequentially(b: &mut Bencher) {
     FilterPipe::new("(a > 1) && (a < 4) && (a != 3)").unwrap(),
   )];
 
-  let transform = Transform::new("test", pipes);
   b.iter(|| {
     futures::executor::block_on(async {
-      transform.run(&data).collect::<Vec<DataValue>>().await;
+      chain(&data, &pipes).collect::<Vec<DataValue>>().await;
     });
   });
 }
@@ -71,10 +67,9 @@ fn bench_map_pipe_1(b: &mut Bencher) {
     MapPipe::new("(a + 1) / (a * 4) - (a + 2)", "b").unwrap(),
   )];
 
-  let transform = Transform::new("test", pipes);
   b.iter(|| {
     futures::executor::block_on(async {
-      transform.run(&data).collect::<Vec<DataValue>>().await;
+      chain(&data, &pipes).collect::<Vec<DataValue>>().await;
     });
   });
 }
@@ -107,10 +102,9 @@ fn bench_map_pipe_20_sequentially(b: &mut Bencher) {
     MapPipe::new("(a + 1) / (a * 4) - (a + 2)", "b").unwrap(),
   )];
 
-  let transform = Transform::new("test", pipes);
   b.iter(|| {
     futures::executor::block_on(async {
-      transform.run(&data).collect::<Vec<DataValue>>().await;
+      chain(&data, &pipes).collect::<Vec<DataValue>>().await;
     });
   });
 }
@@ -120,10 +114,9 @@ fn bench_group_pipe_1(b: &mut Bencher) {
   let data = vec![DataValue::from_pairs(vec![("a", DataItem::Number(1.0))])];
   let pipes = vec![Pipe::Group(GroupPipe::new("a", Operation::Count, "count"))];
 
-  let transform = Transform::new("test", pipes);
   b.iter(|| {
     futures::executor::block_on(async {
-      transform.run(&data).collect::<Vec<DataValue>>().await;
+      chain(&data, &pipes).collect::<Vec<DataValue>>().await;
     });
   });
 }
@@ -154,10 +147,9 @@ fn bench_group_pipe_20_sequentially(b: &mut Bencher) {
   ];
   let pipes = vec![Pipe::Group(GroupPipe::new("a", Operation::Count, "count"))];
 
-  let transform = Transform::new("test", pipes);
   b.iter(|| {
     futures::executor::block_on(async {
-      transform.run(&data).collect::<Vec<DataValue>>().await;
+      chain(&data, &pipes).collect::<Vec<DataValue>>().await;
     });
   });
 }
@@ -204,10 +196,9 @@ fn bench_10_pipes_2_10_vars_maps(b: &mut Bencher) {
     ]),
   ];
 
-  let transform = Transform::new("test", pipes);
   b.iter(|| {
     futures::executor::block_on(async {
-      transform.run(&data).collect::<Vec<DataValue>>().await;
+      chain(&data, &pipes).collect::<Vec<DataValue>>().await;
     });
   });
 }

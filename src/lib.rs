@@ -3,6 +3,7 @@ use crate::scale::Scale;
 use crate::transform::Transform;
 
 pub mod data;
+pub mod flow;
 pub mod mark;
 pub mod scale;
 pub mod transform;
