@@ -4,7 +4,7 @@ extern crate test;
 use bruc::data::DataValue;
 use bruc::flow::transform::chain;
 use bruc::transform::filter::FilterPipe;
-use bruc::transform::group::{GroupPipe, Operation};
+use bruc::transform::group::{GroupOperator, GroupPipe};
 use bruc::transform::map::MapPipe;
 use bruc::transform::pipe::Pipe;
 use bruc_expreter::data::DataItem;
@@ -112,7 +112,11 @@ fn bench_map_pipe_20_sequentially(b: &mut Bencher) {
 #[bench]
 fn bench_group_pipe_1(b: &mut Bencher) {
   let data = vec![DataValue::from_pairs(vec![("a", DataItem::Number(1.0))])];
-  let pipes = vec![Pipe::Group(GroupPipe::new("a", Operation::Count, "count"))];
+  let pipes = vec![Pipe::Group(GroupPipe::new(
+    "a",
+    GroupOperator::Count,
+    "count",
+  ))];
 
   b.iter(|| {
     futures::executor::block_on(async {
@@ -145,7 +149,11 @@ fn bench_group_pipe_20_sequentially(b: &mut Bencher) {
     DataValue::from_pairs(vec![("a", DataItem::Number(19.0))]),
     DataValue::from_pairs(vec![("a", DataItem::Number(20.0))]),
   ];
-  let pipes = vec![Pipe::Group(GroupPipe::new("a", Operation::Count, "count"))];
+  let pipes = vec![Pipe::Group(GroupPipe::new(
+    "a",
+    GroupOperator::Count,
+    "count",
+  ))];
 
   b.iter(|| {
     futures::executor::block_on(async {

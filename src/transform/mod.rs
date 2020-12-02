@@ -33,7 +33,7 @@ impl<'a> Transform<'a> {
 #[cfg(test)]
 mod serde_tests {
   use crate::transform::filter::FilterPipe;
-  use crate::transform::group::{GroupPipe, Operation};
+  use crate::transform::group::{GroupOperator, GroupPipe};
   use crate::transform::map::MapPipe;
   use crate::transform::pipe::Pipe;
   use crate::transform::Transform;
@@ -56,7 +56,7 @@ mod serde_tests {
       &vec![
         Pipe::Filter(FilterPipe::new("a > 2").unwrap()),
         Pipe::Map(MapPipe::new("a + 2", "b").unwrap()),
-        Pipe::Group(GroupPipe::new("b", Operation::Count, "count"))
+        Pipe::Group(GroupPipe::new("b", GroupOperator::Count, "count"))
       ]
     );
   }

@@ -2,12 +2,12 @@
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 pub struct GroupPipe<'a> {
   by: &'a str,
-  op: Operation,
+  op: GroupOperator,
   output: &'a str,
 }
 
 impl<'a> GroupPipe<'a> {
-  pub fn new(by: &'a str, op: Operation, output: &'a str) -> GroupPipe<'a> {
+  pub fn new(by: &'a str, op: GroupOperator, output: &'a str) -> GroupPipe<'a> {
     GroupPipe { by, op, output }
   }
 
@@ -17,7 +17,7 @@ impl<'a> GroupPipe<'a> {
   }
 
   #[inline]
-  pub fn op(&self) -> &Operation {
+  pub fn op(&self) -> &GroupOperator {
     &self.op
   }
 
@@ -30,14 +30,14 @@ impl<'a> GroupPipe<'a> {
 #[derive(PartialEq, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
-pub enum Operation {
+pub enum GroupOperator {
   Count,
 }
 
-impl Operation {
-  pub fn from_string(string: &str) -> Option<Operation> {
+impl GroupOperator {
+  pub fn from_string(string: &str) -> Option<GroupOperator> {
     match string {
-      "count" => Some(Operation::Count),
+      "count" => Some(GroupOperator::Count),
       _ => None,
     }
   }
@@ -46,7 +46,7 @@ impl Operation {
 #[cfg(feature = "serde")]
 #[cfg(test)]
 mod serde_tests {
-  use crate::transform::group::{GroupPipe, Operation};
+  use crate::transform::group::{GroupOperator, GroupPipe};
 
   #[test]
   fn deserialize_group() {
@@ -60,7 +60,7 @@ mod serde_tests {
     .unwrap();
 
     assert_eq!(group.by(), "a");
-    assert_eq!(group.op(), &Operation::Count);
+    assert_eq!(group.op(), &GroupOperator::Count);
     assert_eq!(group.output(), "count_a");
   }
 }

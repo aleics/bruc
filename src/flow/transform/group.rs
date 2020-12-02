@@ -1,7 +1,7 @@
 use crate::data::DataValue;
 use crate::flow::data::DataStream;
 use crate::flow::transform::TransformStream;
-use crate::transform::group::{GroupPipe, Operation};
+use crate::transform::group::{GroupOperator, GroupPipe};
 use bruc_expreter::data::DataItem;
 use futures::stream::LocalBoxStream;
 use futures::task::{Context, Poll};
@@ -22,7 +22,7 @@ impl<'a> GroupStream<'a> {
   #[inline]
   pub fn chain(source: TransformStream<'a>, pipe: &'a GroupPipe<'a>) -> TransformStream<'a> {
     let group_source = match pipe.op() {
-      Operation::Count => CountStream::chain(source, pipe),
+      GroupOperator::Count => CountStream::chain(source, pipe),
     };
 
     let stream = GroupStream::new(Box::new(group_source));
@@ -154,11 +154,11 @@ mod tests {
   use crate::data::DataValue;
   use crate::flow::transform::group::GroupStream;
   use crate::flow::transform::TransformStream;
-  use crate::transform::group::{GroupPipe, Operation};
+  use crate::transform::group::{GroupOperator, GroupPipe};
 
   #[test]
   fn finds_repetition() {
-    let group = GroupPipe::new("a", Operation::Count, "count");
+    let group = GroupPipe::new("a", GroupOperator::Count, "count");
     let data = [
       DataValue::from_pairs(vec![("a", 2.0.into())]),
       DataValue::from_pairs(vec![("a", 2.0.into())]),
@@ -181,7 +181,7 @@ mod tests {
 
   #[test]
   fn finds_no_repetition() {
-    let group = GroupPipe::new("a", Operation::Count, "count");
+    let group = GroupPipe::new("a", GroupOperator::Count, "count");
     let data = [
       DataValue::from_pairs(vec![("a", 2.0.into())]),
       DataValue::from_pairs(vec![("b", 3.0.into())]),

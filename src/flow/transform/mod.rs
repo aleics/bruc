@@ -71,7 +71,7 @@ mod tests {
   use crate::data::DataValue;
   use crate::flow::transform::chain;
   use crate::transform::filter::FilterPipe;
-  use crate::transform::group::{GroupPipe, Operation};
+  use crate::transform::group::{GroupOperator, GroupPipe};
   use crate::transform::map::MapPipe;
   use crate::transform::pipe::Pipe;
 
@@ -175,8 +175,12 @@ mod tests {
   #[test]
   fn chain_groups() {
     let pipes = [
-      Pipe::Group(GroupPipe::new("a", Operation::Count, "a_count")),
-      Pipe::Group(GroupPipe::new("a_count", Operation::Count, "count_a_count")),
+      Pipe::Group(GroupPipe::new("a", GroupOperator::Count, "a_count")),
+      Pipe::Group(GroupPipe::new(
+        "a_count",
+        GroupOperator::Count,
+        "count_a_count",
+      )),
     ];
 
     let data = [
@@ -235,7 +239,7 @@ mod tests {
   fn chain_filter_group() {
     let pipes = [
       Pipe::Filter(FilterPipe::new("a > 2").unwrap()),
-      Pipe::Group(GroupPipe::new("a", Operation::Count, "a_count")),
+      Pipe::Group(GroupPipe::new("a", GroupOperator::Count, "a_count")),
     ];
 
     let data = [
