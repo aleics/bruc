@@ -1,5 +1,5 @@
 use crate::data::DataValue;
-use crate::flow::data::{DataStream, SourceStream};
+use crate::flow::data::DataStream;
 use crate::flow::transform::filter::FilterStream;
 use crate::flow::transform::group::GroupStream;
 use crate::flow::transform::map::MapStream;
@@ -13,10 +13,10 @@ pub mod group;
 pub mod map;
 
 #[inline]
-pub fn chain<'a>(data: &'a [DataValue<'a>], pipes: &'a [Pipe<'a>]) -> TransformStream<'a> {
+pub fn chain<'a>(source: DataStream<'a>, pipes: &'a [Pipe<'a>]) -> TransformStream<'a> {
   pipes
     .iter()
-    .fold(TransformStream::source(data), |mut acc, pipe| {
+    .fold(TransformStream::new(source), |mut acc, pipe| {
       acc = TransformStream::chain(acc, pipe);
       acc
     })
@@ -36,16 +36,6 @@ impl<'a> TransformStream<'a> {
       Pipe::Filter(pipe) => FilterStream::chain(source, pipe),
       Pipe::Map(pipe) => MapStream::chain(source, pipe),
       Pipe::Group(pipe) => GroupStream::chain(source, pipe),
-    }
-  }
-
-  pub fn source<I: 'a>(input: I) -> TransformStream<'a>
-  where
-    I: IntoIterator<Item = &'a DataValue<'a>>,
-  {
-    let stream = SourceStream::new(input.into_iter());
-    TransformStream {
-      source: Box::new(stream),
     }
   }
 }
@@ -69,6 +59,7 @@ mod tests {
   use futures::StreamExt;
 
   use crate::data::DataValue;
+  use crate::flow::data::source_finite;
   use crate::flow::transform::chain;
   use crate::transform::filter::FilterPipe;
   use crate::transform::group::{GroupOperator, GroupPipe};
@@ -79,14 +70,14 @@ mod tests {
   fn chain_empty() {
     let pipes: [Pipe; 0] = [];
 
-    let data = [
+    let data = vec![
       DataValue::from_pairs(vec![("a", 1.0.into())]),
       DataValue::from_pairs(vec![("a", 2.0.into())]),
       DataValue::from_pairs(vec![("a", 3.0.into())]),
       DataValue::from_pairs(vec![("a", 4.0.into())]),
     ];
 
-    let stream = chain(&data, &pipes);
+    let stream = chain(source_finite(data), &pipes);
 
     futures::executor::block_on(async {
       let values: Vec<_> = stream.collect().await;
@@ -110,14 +101,14 @@ mod tests {
       Pipe::Map(MapPipe::new("a + 4", "c").unwrap()),
     ];
 
-    let data = [
+    let data = vec![
       DataValue::from_pairs(vec![("a", 1.0.into())]),
       DataValue::from_pairs(vec![("a", 2.0.into())]),
       DataValue::from_pairs(vec![("a", 3.0.into())]),
       DataValue::from_pairs(vec![("a", 4.0.into())]),
     ];
 
-    let stream = chain(&data, &pipes);
+    let stream = chain(source_finite(data), &pipes);
 
     futures::executor::block_on(async {
       let values: Vec<_> = stream.collect().await;
@@ -157,14 +148,14 @@ mod tests {
       Pipe::Filter(FilterPipe::new("a < 4").unwrap()),
     ];
 
-    let data = [
+    let data = vec![
       DataValue::from_pairs(vec![("a", 1.0.into())]),
       DataValue::from_pairs(vec![("a", 2.0.into())]),
       DataValue::from_pairs(vec![("a", 3.0.into())]),
       DataValue::from_pairs(vec![("a", 4.0.into())]),
     ];
 
-    let stream = chain(&data, &pipes);
+    let stream = chain(source_finite(data), &pipes);
 
     futures::executor::block_on(async {
       let values: Vec<_> = stream.collect().await;
@@ -183,14 +174,14 @@ mod tests {
       )),
     ];
 
-    let data = [
+    let data = vec![
       DataValue::from_pairs(vec![("a", 2.0.into())]),
       DataValue::from_pairs(vec![("a", 2.0.into())]),
       DataValue::from_pairs(vec![("a", 3.0.into())]),
       DataValue::from_pairs(vec![("a", 4.0.into())]),
     ];
 
-    let stream = chain(&data, &pipes);
+    let stream = chain(source_finite(data), &pipes);
 
     futures::executor::block_on(async {
       let result = stream.collect::<Vec<DataValue>>().await;
@@ -214,14 +205,14 @@ mod tests {
       Pipe::Map(MapPipe::new("a * 2", "b").unwrap()),
     ];
 
-    let data = [
+    let data = vec![
       DataValue::from_pairs(vec![("a", 1.0.into())]),
       DataValue::from_pairs(vec![("a", 2.0.into())]),
       DataValue::from_pairs(vec![("a", 3.0.into())]),
       DataValue::from_pairs(vec![("a", 4.0.into())]),
     ];
 
-    let stream = chain(&data, &pipes);
+    let stream = chain(source_finite(data), &pipes);
 
     futures::executor::block_on(async {
       let result = stream.collect::<Vec<DataValue>>().await;
@@ -242,14 +233,14 @@ mod tests {
       Pipe::Group(GroupPipe::new("a", GroupOperator::Count, "a_count")),
     ];
 
-    let data = [
+    let data = vec![
       DataValue::from_pairs(vec![("a", 1.0.into())]),
       DataValue::from_pairs(vec![("a", 2.0.into())]),
       DataValue::from_pairs(vec![("a", 3.0.into())]),
       DataValue::from_pairs(vec![("a", 4.0.into())]),
     ];
 
-    let stream = chain(&data, &pipes);
+    let stream = chain(source_finite(data), &pipes);
 
     futures::executor::block_on(async {
       let result = stream.collect::<Vec<DataValue>>().await;

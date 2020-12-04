@@ -152,6 +152,7 @@ mod tests {
   use futures::StreamExt;
 
   use crate::data::DataValue;
+  use crate::flow::data::source_finite;
   use crate::flow::transform::group::GroupStream;
   use crate::flow::transform::TransformStream;
   use crate::transform::group::{GroupOperator, GroupPipe};
@@ -159,12 +160,12 @@ mod tests {
   #[test]
   fn finds_repetition() {
     let group = GroupPipe::new("a", GroupOperator::Count, "count");
-    let data = [
+    let data = vec![
       DataValue::from_pairs(vec![("a", 2.0.into())]),
       DataValue::from_pairs(vec![("a", 2.0.into())]),
     ];
-    let source = TransformStream::source(&data);
-    let stream = GroupStream::chain(source, &group);
+    let source = source_finite(data);
+    let stream = GroupStream::chain(TransformStream::new(source), &group);
 
     futures::executor::block_on(async {
       let values: Vec<_> = stream.collect().await;
@@ -182,12 +183,12 @@ mod tests {
   #[test]
   fn finds_no_repetition() {
     let group = GroupPipe::new("a", GroupOperator::Count, "count");
-    let data = [
+    let data = vec![
       DataValue::from_pairs(vec![("a", 2.0.into())]),
       DataValue::from_pairs(vec![("b", 3.0.into())]),
     ];
-    let source = TransformStream::source(&data);
-    let stream = GroupStream::chain(source, &group);
+    let source = source_finite(data);
+    let stream = GroupStream::chain(TransformStream::new(source), &group);
 
     futures::executor::block_on(async {
       let values: Vec<_> = stream.collect().await;

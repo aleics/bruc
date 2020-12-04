@@ -54,6 +54,7 @@ mod tests {
   use futures::StreamExt;
 
   use crate::data::DataValue;
+  use crate::flow::data::source_finite;
   use crate::flow::transform::filter::FilterStream;
   use crate::flow::transform::TransformStream;
   use crate::transform::filter::FilterPipe;
@@ -61,12 +62,12 @@ mod tests {
   #[test]
   fn applies() {
     let filter = FilterPipe::new("a > 3").unwrap();
-    let data = [
+    let data = vec![
       DataValue::from_pairs(vec![("a", 2.0.into())]),
       DataValue::from_pairs(vec![("a", 4.0.into())]),
     ];
-    let source = TransformStream::source(&data);
-    let stream = FilterStream::chain(source, &filter);
+    let source = source_finite(data);
+    let stream = FilterStream::chain(TransformStream::new(source), &filter);
 
     futures::executor::block_on(async {
       let values: Vec<_> = stream.collect().await;
