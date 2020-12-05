@@ -29,7 +29,7 @@ fn bench_filter_pipe_1(b: &mut Bencher) {
 }
 
 #[bench]
-fn bench_filter_pipe_20_sequentially(b: &mut Bencher) {
+fn bench_filter_pipe_20(b: &mut Bencher) {
   let data = vec![
     DataValue::from_pairs(vec![("a", DataItem::Number(1.0))]),
     DataValue::from_pairs(vec![("a", DataItem::Number(2.0))]),
@@ -82,7 +82,7 @@ fn bench_map_pipe_1(b: &mut Bencher) {
 }
 
 #[bench]
-fn bench_map_pipe_20_sequentially(b: &mut Bencher) {
+fn bench_map_pipe_20(b: &mut Bencher) {
   let data = vec![
     DataValue::from_pairs(vec![("a", DataItem::Number(1.0))]),
     DataValue::from_pairs(vec![("a", DataItem::Number(2.0))]),
@@ -137,7 +137,7 @@ fn bench_group_pipe_1(b: &mut Bencher) {
 }
 
 #[bench]
-fn bench_group_pipe_20_sequentially(b: &mut Bencher) {
+fn bench_group_pipe_20(b: &mut Bencher) {
   let data = vec![
     DataValue::from_pairs(vec![("a", DataItem::Number(1.0))]),
     DataValue::from_pairs(vec![("a", DataItem::Number(2.0))]),
