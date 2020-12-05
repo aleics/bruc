@@ -1,31 +1,31 @@
 use crate::data::DataValue;
 use crate::flow::data::DataStream;
-use crate::flow::transform::TransformStream;
+use crate::flow::transform::TransformNode;
 use crate::transform::map::MapPipe;
 use futures::task::{Context, Poll};
 use futures::Stream;
 use std::pin::Pin;
 
-pub struct MapStream<'a> {
+pub struct MapNode<'a> {
   source: DataStream<'a>,
   pipe: &'a MapPipe<'a>,
 }
 
-impl<'a> MapStream<'a> {
-  pub fn new(source: DataStream<'a>, pipe: &'a MapPipe<'a>) -> MapStream<'a> {
-    MapStream { source, pipe }
+impl<'a> MapNode<'a> {
+  pub fn new(source: DataStream<'a>, pipe: &'a MapPipe<'a>) -> MapNode<'a> {
+    MapNode { source, pipe }
   }
 
   #[inline]
-  pub fn chain(source: TransformStream<'a>, pipe: &'a MapPipe<'a>) -> TransformStream<'a> {
-    let stream = MapStream::new(Box::new(source), pipe);
-    TransformStream::new(Box::new(stream))
+  pub fn chain(source: TransformNode<'a>, pipe: &'a MapPipe<'a>) -> TransformNode<'a> {
+    let node = MapNode::new(Box::new(source), pipe);
+    TransformNode::new(Box::new(node))
   }
 }
 
-impl<'a> Unpin for MapStream<'a> {}
+impl<'a> Unpin for MapNode<'a> {}
 
-impl<'a> Stream for MapStream<'a> {
+impl<'a> Stream for MapNode<'a> {
   type Item = DataValue<'a>;
 
   fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
@@ -51,8 +51,8 @@ mod tests {
 
   use crate::data::DataValue;
   use crate::flow::data::source_finite;
-  use crate::flow::transform::map::MapStream;
-  use crate::flow::transform::TransformStream;
+  use crate::flow::transform::map::MapNode;
+  use crate::flow::transform::TransformNode;
   use crate::transform::map::MapPipe;
 
   #[test]
@@ -64,10 +64,10 @@ mod tests {
     ];
     let source = source_finite(data);
 
-    let stream = MapStream::chain(TransformStream::new(source), &map);
+    let node = MapNode::chain(TransformNode::new(source), &map);
 
     futures::executor::block_on(async {
-      let values: Vec<_> = stream.collect().await;
+      let values: Vec<_> = node.collect().await;
 
       assert_eq!(
         values,

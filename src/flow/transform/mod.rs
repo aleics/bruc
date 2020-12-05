@@ -1,8 +1,8 @@
 use crate::data::DataValue;
 use crate::flow::data::DataStream;
-use crate::flow::transform::filter::FilterStream;
-use crate::flow::transform::group::GroupStream;
-use crate::flow::transform::map::MapStream;
+use crate::flow::transform::filter::FilterNode;
+use crate::flow::transform::group::GroupNode;
+use crate::flow::transform::map::MapNode;
 use crate::transform::pipe::Pipe;
 use futures::task::{Context, Poll};
 use futures::Stream;
@@ -13,36 +13,36 @@ pub mod group;
 pub mod map;
 
 #[inline]
-pub fn chain<'a>(source: DataStream<'a>, pipes: &'a [Pipe<'a>]) -> TransformStream<'a> {
+pub fn chain<'a>(source: DataStream<'a>, pipes: &'a [Pipe<'a>]) -> TransformNode<'a> {
   pipes
     .iter()
-    .fold(TransformStream::new(source), |mut acc, pipe| {
-      acc = TransformStream::chain(acc, pipe);
+    .fold(TransformNode::new(source), |mut acc, pipe| {
+      acc = TransformNode::chain(acc, pipe);
       acc
     })
 }
 
-pub struct TransformStream<'a> {
+pub struct TransformNode<'a> {
   source: DataStream<'a>,
 }
 
-impl<'a> TransformStream<'a> {
-  pub fn new(source: DataStream<'a>) -> TransformStream<'a> {
-    TransformStream { source }
+impl<'a> TransformNode<'a> {
+  pub fn new(source: DataStream<'a>) -> TransformNode<'a> {
+    TransformNode { source }
   }
 
-  pub fn chain(source: TransformStream<'a>, pipe: &'a Pipe<'a>) -> TransformStream<'a> {
+  pub fn chain(source: TransformNode<'a>, pipe: &'a Pipe<'a>) -> TransformNode<'a> {
     match pipe {
-      Pipe::Filter(pipe) => FilterStream::chain(source, pipe),
-      Pipe::Map(pipe) => MapStream::chain(source, pipe),
-      Pipe::Group(pipe) => GroupStream::chain(source, pipe),
+      Pipe::Filter(pipe) => FilterNode::chain(source, pipe),
+      Pipe::Map(pipe) => MapNode::chain(source, pipe),
+      Pipe::Group(pipe) => GroupNode::chain(source, pipe),
     }
   }
 }
 
-impl<'a> Unpin for TransformStream<'a> {}
+impl<'a> Unpin for TransformNode<'a> {}
 
-impl<'a> Stream for TransformStream<'a> {
+impl<'a> Stream for TransformNode<'a> {
   type Item = DataValue<'a>;
 
   fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
@@ -77,10 +77,10 @@ mod tests {
       DataValue::from_pairs(vec![("a", 4.0.into())]),
     ];
 
-    let stream = chain(source_finite(data), &pipes);
+    let node = chain(source_finite(data), &pipes);
 
     futures::executor::block_on(async {
-      let values: Vec<_> = stream.collect().await;
+      let values: Vec<_> = node.collect().await;
 
       assert_eq!(
         values,
@@ -108,10 +108,10 @@ mod tests {
       DataValue::from_pairs(vec![("a", 4.0.into())]),
     ];
 
-    let stream = chain(source_finite(data), &pipes);
+    let node = chain(source_finite(data), &pipes);
 
     futures::executor::block_on(async {
-      let values: Vec<_> = stream.collect().await;
+      let values: Vec<_> = node.collect().await;
 
       assert_eq!(
         values,
@@ -155,10 +155,10 @@ mod tests {
       DataValue::from_pairs(vec![("a", 4.0.into())]),
     ];
 
-    let stream = chain(source_finite(data), &pipes);
+    let node = chain(source_finite(data), &pipes);
 
     futures::executor::block_on(async {
-      let values: Vec<_> = stream.collect().await;
+      let values: Vec<_> = node.collect().await;
       assert_eq!(values, vec![DataValue::from_pairs(vec![("a", 3.0.into())])]);
     });
   }
@@ -181,10 +181,10 @@ mod tests {
       DataValue::from_pairs(vec![("a", 4.0.into())]),
     ];
 
-    let stream = chain(source_finite(data), &pipes);
+    let node = chain(source_finite(data), &pipes);
 
     futures::executor::block_on(async {
-      let result = stream.collect::<Vec<DataValue>>().await;
+      let result = node.collect::<Vec<DataValue>>().await;
 
       assert_eq!(result.len(), 2);
       assert!(result.contains(&DataValue::from_pairs(vec![
@@ -212,10 +212,10 @@ mod tests {
       DataValue::from_pairs(vec![("a", 4.0.into())]),
     ];
 
-    let stream = chain(source_finite(data), &pipes);
+    let node = chain(source_finite(data), &pipes);
 
     futures::executor::block_on(async {
-      let result = stream.collect::<Vec<DataValue>>().await;
+      let result = node.collect::<Vec<DataValue>>().await;
       assert_eq!(
         result,
         vec![
@@ -240,10 +240,10 @@ mod tests {
       DataValue::from_pairs(vec![("a", 4.0.into())]),
     ];
 
-    let stream = chain(source_finite(data), &pipes);
+    let node = chain(source_finite(data), &pipes);
 
     futures::executor::block_on(async {
-      let result = stream.collect::<Vec<DataValue>>().await;
+      let result = node.collect::<Vec<DataValue>>().await;
       assert_eq!(result.len(), 2);
       assert!(result.contains(&DataValue::from_pairs(vec![
         ("a", 3.0.into()),

@@ -1,31 +1,31 @@
 use crate::data::DataValue;
 use crate::flow::data::DataStream;
-use crate::flow::transform::TransformStream;
+use crate::flow::transform::TransformNode;
 use crate::transform::filter::FilterPipe;
 use futures::task::{Context, Poll};
 use futures::Stream;
 use std::pin::Pin;
 
-pub struct FilterStream<'a> {
+pub struct FilterNode<'a> {
   source: DataStream<'a>,
   pipe: &'a FilterPipe<'a>,
 }
 
-impl<'a> FilterStream<'a> {
-  pub fn new(source: DataStream<'a>, pipe: &'a FilterPipe<'a>) -> FilterStream<'a> {
-    FilterStream { source, pipe }
+impl<'a> FilterNode<'a> {
+  pub fn new(source: DataStream<'a>, pipe: &'a FilterPipe<'a>) -> FilterNode<'a> {
+    FilterNode { source, pipe }
   }
 
   #[inline]
-  pub fn chain(source: TransformStream<'a>, pipe: &'a FilterPipe<'a>) -> TransformStream<'a> {
-    let stream = FilterStream::new(Box::new(source), pipe);
-    TransformStream::new(Box::new(stream))
+  pub fn chain(source: TransformNode<'a>, pipe: &'a FilterPipe<'a>) -> TransformNode<'a> {
+    let node = FilterNode::new(Box::new(source), pipe);
+    TransformNode::new(Box::new(node))
   }
 }
 
-impl<'a> Unpin for FilterStream<'a> {}
+impl<'a> Unpin for FilterNode<'a> {}
 
-impl<'a> Stream for FilterStream<'a> {
+impl<'a> Stream for FilterNode<'a> {
   type Item = DataValue<'a>;
 
   fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
@@ -55,8 +55,8 @@ mod tests {
 
   use crate::data::DataValue;
   use crate::flow::data::source_finite;
-  use crate::flow::transform::filter::FilterStream;
-  use crate::flow::transform::TransformStream;
+  use crate::flow::transform::filter::FilterNode;
+  use crate::flow::transform::TransformNode;
   use crate::transform::filter::FilterPipe;
 
   #[test]
@@ -67,10 +67,10 @@ mod tests {
       DataValue::from_pairs(vec![("a", 4.0.into())]),
     ];
     let source = source_finite(data);
-    let stream = FilterStream::chain(TransformStream::new(source), &filter);
+    let node = FilterNode::chain(TransformNode::new(source), &filter);
 
     futures::executor::block_on(async {
-      let values: Vec<_> = stream.collect().await;
+      let values: Vec<_> = node.collect().await;
 
       assert_eq!(
         values,

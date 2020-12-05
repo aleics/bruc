@@ -1,6 +1,6 @@
 use crate::data::DataValue;
 use crate::flow::data::DataStream;
-use crate::flow::transform::TransformStream;
+use crate::flow::transform::TransformNode;
 use crate::transform::group::{GroupOperator, GroupPipe};
 use bruc_expreter::data::DataItem;
 use futures::stream::LocalBoxStream;
@@ -10,29 +10,29 @@ use std::collections::HashMap;
 use std::ops::AddAssign;
 use std::pin::Pin;
 
-pub struct GroupStream<'a> {
+pub struct GroupNode<'a> {
   source: DataStream<'a>,
 }
 
-impl<'a> GroupStream<'a> {
-  pub fn new(source: DataStream<'a>) -> GroupStream<'a> {
-    GroupStream { source }
+impl<'a> GroupNode<'a> {
+  pub fn new(source: DataStream<'a>) -> GroupNode<'a> {
+    GroupNode { source }
   }
 
   #[inline]
-  pub fn chain(source: TransformStream<'a>, pipe: &'a GroupPipe<'a>) -> TransformStream<'a> {
+  pub fn chain(source: TransformNode<'a>, pipe: &'a GroupPipe<'a>) -> TransformNode<'a> {
     let group_source = match pipe.op() {
-      GroupOperator::Count => CountStream::chain(source, pipe),
+      GroupOperator::Count => CountNode::chain(source, pipe),
     };
 
-    let stream = GroupStream::new(Box::new(group_source));
-    TransformStream::new(Box::new(stream))
+    let node = GroupNode::new(Box::new(group_source));
+    TransformNode::new(Box::new(node))
   }
 }
 
-impl<'a> Unpin for GroupStream<'a> {}
+impl<'a> Unpin for GroupNode<'a> {}
 
-impl<'a> Stream for GroupStream<'a> {
+impl<'a> Stream for GroupNode<'a> {
   type Item = DataValue<'a>;
 
   fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
@@ -48,31 +48,31 @@ impl<'a> Stream for GroupStream<'a> {
   }
 }
 
-struct CountStream<'a> {
-  source: RepsStream<'a>,
+struct CountNode<'a> {
+  source: RepsNode<'a>,
   by: &'a str,
   output: &'a str,
 }
 
-impl<'a> CountStream<'a> {
-  pub fn new(data: TransformStream<'a>, by: &'a str, output: &'a str) -> CountStream<'a> {
-    CountStream {
-      source: RepsStream::new(data, by),
+impl<'a> CountNode<'a> {
+  pub fn new(data: TransformNode<'a>, by: &'a str, output: &'a str) -> CountNode<'a> {
+    CountNode {
+      source: RepsNode::new(data, by),
       by,
       output,
     }
   }
 
   #[inline]
-  fn chain(source: TransformStream<'a>, pipe: &'a GroupPipe<'a>) -> TransformStream<'a> {
-    let stream = CountStream::new(source, pipe.by(), pipe.output());
-    TransformStream::new(Box::new(stream))
+  fn chain(source: TransformNode<'a>, pipe: &'a GroupPipe<'a>) -> TransformNode<'a> {
+    let node = CountNode::new(source, pipe.by(), pipe.output());
+    TransformNode::new(Box::new(node))
   }
 }
 
-impl<'a> Unpin for CountStream<'a> {}
+impl<'a> Unpin for CountNode<'a> {}
 
-impl<'a> Stream for CountStream<'a> {
+impl<'a> Stream for CountNode<'a> {
   type Item = DataValue<'a>;
 
   fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
@@ -95,18 +95,18 @@ impl<'a> Stream for CountStream<'a> {
   }
 }
 
-struct RepsStream<'a> {
+struct RepsNode<'a> {
   source: LocalBoxStream<'a, (DataItem, usize)>,
 }
 
-impl<'a> RepsStream<'a> {
-  pub fn new(data: TransformStream<'a>, by: &'a str) -> RepsStream<'a> {
-    RepsStream {
-      source: RepsStream::reps(data, by),
+impl<'a> RepsNode<'a> {
+  pub fn new(data: TransformNode<'a>, by: &'a str) -> RepsNode<'a> {
+    RepsNode {
+      source: RepsNode::reps(data, by),
     }
   }
 
-  fn reps(data: TransformStream<'a>, by: &'a str) -> LocalBoxStream<'a, (DataItem, usize)> {
+  fn reps(data: TransformNode<'a>, by: &'a str) -> LocalBoxStream<'a, (DataItem, usize)> {
     data
       .fold(
         HashMap::<DataItem, usize>::new(),
@@ -129,9 +129,9 @@ impl<'a> RepsStream<'a> {
   }
 }
 
-impl<'a> Unpin for RepsStream<'a> {}
+impl<'a> Unpin for RepsNode<'a> {}
 
-impl<'a> Stream for RepsStream<'a> {
+impl<'a> Stream for RepsNode<'a> {
   type Item = (DataItem, usize);
 
   fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
@@ -153,8 +153,8 @@ mod tests {
 
   use crate::data::DataValue;
   use crate::flow::data::source_finite;
-  use crate::flow::transform::group::GroupStream;
-  use crate::flow::transform::TransformStream;
+  use crate::flow::transform::group::GroupNode;
+  use crate::flow::transform::TransformNode;
   use crate::transform::group::{GroupOperator, GroupPipe};
 
   #[test]
@@ -165,10 +165,10 @@ mod tests {
       DataValue::from_pairs(vec![("a", 2.0.into())]),
     ];
     let source = source_finite(data);
-    let stream = GroupStream::chain(TransformStream::new(source), &group);
+    let node = GroupNode::chain(TransformNode::new(source), &group);
 
     futures::executor::block_on(async {
-      let values: Vec<_> = stream.collect().await;
+      let values: Vec<_> = node.collect().await;
 
       assert_eq!(
         values,
@@ -188,10 +188,10 @@ mod tests {
       DataValue::from_pairs(vec![("b", 3.0.into())]),
     ];
     let source = source_finite(data);
-    let stream = GroupStream::chain(TransformStream::new(source), &group);
+    let node = GroupNode::chain(TransformNode::new(source), &group);
 
     futures::executor::block_on(async {
-      let values: Vec<_> = stream.collect().await;
+      let values: Vec<_> = node.collect().await;
 
       assert_eq!(
         values,
