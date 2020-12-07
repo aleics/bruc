@@ -1,4 +1,5 @@
 use crate::scale::linear::LinearScale;
+use bruc_expreter::data::DataItem;
 
 pub mod domain;
 pub mod linear;
@@ -15,8 +16,7 @@ pub enum Scale<'a> {
 
 pub trait Scaler {
   type Item;
-
-  fn scale(&self, value: Self::Item) -> Self::Item;
+  fn scale(&self, value: &DataItem) -> Option<Self::Item>;
 }
 
 #[cfg(test)]

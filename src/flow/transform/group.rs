@@ -1,7 +1,7 @@
 use crate::data::DataValue;
 use crate::flow::data::DataStream;
 use crate::transform::group::{GroupOperator, GroupPipe};
-use bruc_expreter::data::DataItem;
+use bruc_expreter::data::{DataItem, DataSource};
 use futures::stream::LocalBoxStream;
 use futures::task::{Context, Poll};
 use futures::{FutureExt, Stream, StreamExt};
@@ -111,7 +111,7 @@ impl<'a> RepsNode<'a> {
       .fold(
         HashMap::<DataItem, usize>::new(),
         move |mut acc, item| async move {
-          if let Some(target) = item.find(by) {
+          if let Some(target) = item.get(by) {
             match acc.get_mut(target) {
               Some(count) => count.add_assign(1),
               None => {
@@ -119,7 +119,6 @@ impl<'a> RepsNode<'a> {
               }
             }
           }
-
           acc
         },
       )
