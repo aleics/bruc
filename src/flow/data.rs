@@ -10,30 +10,43 @@ pub fn source(data: Vec<DataValue>) -> DataStream {
 }
 
 pub fn source_finite(data: Vec<DataValue>) -> DataStream {
-  Box::new(Source::finite(data))
+  Box::new(SourceFinite::new(data.into_iter()))
+}
+
+pub struct SourceFinite<I> {
+  source: I,
+}
+
+impl<'a, I> SourceFinite<I>
+where
+  I: Iterator<Item = DataValue<'a>>,
+{
+  pub fn new(source: I) -> SourceFinite<I> {
+    SourceFinite { source }
+  }
+}
+
+impl<I> Unpin for SourceFinite<I> {}
+
+impl<'a, I> Stream for SourceFinite<I>
+where
+  I: Iterator<Item = DataValue<'a>>,
+{
+  type Item = DataValue<'a>;
+
+  fn poll_next(mut self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+    Poll::Ready(self.source.next())
+  }
 }
 
 pub struct Source<'a> {
   source: Vec<DataValue<'a>>,
   index: usize,
-  terminate: bool,
 }
 
 impl<'a> Source<'a> {
   pub fn new(source: Vec<DataValue<'a>>) -> Source<'a> {
-    Source {
-      source,
-      index: 0,
-      terminate: false,
-    }
-  }
-
-  pub fn finite(source: Vec<DataValue<'a>>) -> Source<'a> {
-    Source {
-      source,
-      index: 0,
-      terminate: true,
-    }
+    Source { source, index: 0 }
   }
 }
 
@@ -54,8 +67,7 @@ impl<'a> Stream for Source<'a> {
         self.index += 1;
         Poll::Ready(Some(value))
       }
-      None if !self.terminate => Poll::Pending,
-      _ => Poll::Ready(None),
+      None => Poll::Pending,
     }
   }
 }
@@ -63,16 +75,16 @@ impl<'a> Stream for Source<'a> {
 #[cfg(test)]
 mod tests {
   use crate::data::DataValue;
-  use crate::flow::data::Source;
+  use crate::flow::data::{Source, SourceFinite};
   use futures::StreamExt;
 
   #[test]
-  fn sends() {
+  fn sends_finite() {
     let data = vec![
       DataValue::from_pairs(vec![("a", 2.0.into())]),
       DataValue::from_pairs(vec![("a", 4.0.into())]),
     ];
-    let source = Source::finite(data);
+    let source = SourceFinite::new(data.into_iter());
 
     futures::executor::block_on(async {
       let values: Vec<_> = source.collect().await;
@@ -87,12 +99,31 @@ mod tests {
   }
 
   #[test]
+  fn sends() {
+    let data = vec![
+      DataValue::from_pairs(vec![("a", 2.0.into())]),
+      DataValue::from_pairs(vec![("a", 4.0.into())]),
+    ];
+    let mut source = Source::new(data);
+
+    futures::executor::block_on(async {
+      assert_eq!(
+        vec![source.next().await.unwrap(), source.next().await.unwrap()],
+        vec![
+          DataValue::from_pairs(vec![("a", 2.0.into())]),
+          DataValue::from_pairs(vec![("a", 4.0.into())]),
+        ]
+      )
+    })
+  }
+
+  #[test]
   fn appends() {
     let data = vec![
       DataValue::from_pairs(vec![("a", 2.0.into())]),
       DataValue::from_pairs(vec![("a", 4.0.into())]),
     ];
-    let mut source = Source::finite(data);
+    let mut source = Source::new(data);
 
     source.extend(vec![
       DataValue::from_pairs(vec![("a", 6.0.into())]),
@@ -100,10 +131,13 @@ mod tests {
     ]);
 
     futures::executor::block_on(async {
-      let values: Vec<_> = source.collect().await;
-
       assert_eq!(
-        values,
+        vec![
+          source.next().await.unwrap(),
+          source.next().await.unwrap(),
+          source.next().await.unwrap(),
+          source.next().await.unwrap()
+        ],
         vec![
           DataValue::from_pairs(vec![("a", 2.0.into())]),
           DataValue::from_pairs(vec![("a", 4.0.into())]),
