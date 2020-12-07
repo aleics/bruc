@@ -1,6 +1,5 @@
 use crate::data::DataValue;
 use crate::flow::data::DataStream;
-use crate::flow::transform::TransformNode;
 use crate::transform::group::{GroupOperator, GroupPipe};
 use bruc_expreter::data::DataItem;
 use futures::stream::LocalBoxStream;
@@ -20,13 +19,13 @@ impl<'a> GroupNode<'a> {
   }
 
   #[inline]
-  pub fn chain(source: TransformNode<'a>, pipe: &'a GroupPipe<'a>) -> TransformNode<'a> {
+  pub fn chain(source: DataStream<'a>, pipe: &'a GroupPipe<'a>) -> DataStream<'a> {
     let group_source = match pipe.op() {
       GroupOperator::Count => CountNode::chain(source, pipe),
     };
 
     let node = GroupNode::new(Box::new(group_source));
-    TransformNode::new(Box::new(node))
+    Box::new(node)
   }
 }
 
@@ -55,7 +54,7 @@ struct CountNode<'a> {
 }
 
 impl<'a> CountNode<'a> {
-  pub fn new(data: TransformNode<'a>, by: &'a str, output: &'a str) -> CountNode<'a> {
+  pub fn new(data: DataStream<'a>, by: &'a str, output: &'a str) -> CountNode<'a> {
     CountNode {
       source: RepsNode::new(data, by),
       by,
@@ -64,9 +63,9 @@ impl<'a> CountNode<'a> {
   }
 
   #[inline]
-  fn chain(source: TransformNode<'a>, pipe: &'a GroupPipe<'a>) -> TransformNode<'a> {
+  fn chain(source: DataStream<'a>, pipe: &'a GroupPipe<'a>) -> DataStream<'a> {
     let node = CountNode::new(source, pipe.by(), pipe.output());
-    TransformNode::new(Box::new(node))
+    Box::new(node)
   }
 }
 
@@ -100,13 +99,14 @@ struct RepsNode<'a> {
 }
 
 impl<'a> RepsNode<'a> {
-  pub fn new(data: TransformNode<'a>, by: &'a str) -> RepsNode<'a> {
+  pub fn new(data: DataStream<'a>, by: &'a str) -> RepsNode<'a> {
     RepsNode {
       source: RepsNode::reps(data, by),
     }
   }
 
-  fn reps(data: TransformNode<'a>, by: &'a str) -> LocalBoxStream<'a, (DataItem, usize)> {
+  #[inline]
+  fn reps(data: DataStream<'a>, by: &'a str) -> LocalBoxStream<'a, (DataItem, usize)> {
     data
       .fold(
         HashMap::<DataItem, usize>::new(),
@@ -154,7 +154,6 @@ mod tests {
   use crate::data::DataValue;
   use crate::flow::data::source_finite;
   use crate::flow::transform::group::GroupNode;
-  use crate::flow::transform::TransformNode;
   use crate::transform::group::{GroupOperator, GroupPipe};
 
   #[test]
@@ -165,7 +164,7 @@ mod tests {
       DataValue::from_pairs(vec![("a", 2.0.into())]),
     ];
     let source = source_finite(data);
-    let node = GroupNode::chain(TransformNode::new(source), &group);
+    let node = GroupNode::chain(source, &group);
 
     futures::executor::block_on(async {
       let values: Vec<_> = node.collect().await;
@@ -188,7 +187,7 @@ mod tests {
       DataValue::from_pairs(vec![("b", 3.0.into())]),
     ];
     let source = source_finite(data);
-    let node = GroupNode::chain(TransformNode::new(source), &group);
+    let node = GroupNode::chain(source, &group);
 
     futures::executor::block_on(async {
       let values: Vec<_> = node.collect().await;

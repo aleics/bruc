@@ -1,6 +1,5 @@
 use crate::data::DataValue;
 use crate::flow::data::DataStream;
-use crate::flow::transform::TransformNode;
 use crate::transform::filter::FilterPipe;
 use futures::task::{Context, Poll};
 use futures::Stream;
@@ -17,9 +16,9 @@ impl<'a> FilterNode<'a> {
   }
 
   #[inline]
-  pub fn chain(source: TransformNode<'a>, pipe: &'a FilterPipe<'a>) -> TransformNode<'a> {
-    let node = FilterNode::new(Box::new(source), pipe);
-    TransformNode::new(Box::new(node))
+  pub fn chain(source: DataStream<'a>, pipe: &'a FilterPipe<'a>) -> DataStream<'a> {
+    let node = FilterNode::new(source, pipe);
+    Box::new(node)
   }
 }
 
@@ -56,7 +55,6 @@ mod tests {
   use crate::data::DataValue;
   use crate::flow::data::source_finite;
   use crate::flow::transform::filter::FilterNode;
-  use crate::flow::transform::TransformNode;
   use crate::transform::filter::FilterPipe;
 
   #[test]
@@ -67,7 +65,7 @@ mod tests {
       DataValue::from_pairs(vec![("a", 4.0.into())]),
     ];
     let source = source_finite(data);
-    let node = FilterNode::chain(TransformNode::new(source), &filter);
+    let node = FilterNode::chain(source, &filter);
 
     futures::executor::block_on(async {
       let values: Vec<_> = node.collect().await;

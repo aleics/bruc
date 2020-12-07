@@ -1,6 +1,5 @@
 use crate::data::DataValue;
 use crate::flow::data::DataStream;
-use crate::flow::transform::TransformNode;
 use crate::transform::map::MapPipe;
 use futures::task::{Context, Poll};
 use futures::Stream;
@@ -17,9 +16,9 @@ impl<'a> MapNode<'a> {
   }
 
   #[inline]
-  pub fn chain(source: TransformNode<'a>, pipe: &'a MapPipe<'a>) -> TransformNode<'a> {
-    let node = MapNode::new(Box::new(source), pipe);
-    TransformNode::new(Box::new(node))
+  pub fn chain(source: DataStream<'a>, pipe: &'a MapPipe<'a>) -> DataStream<'a> {
+    let node = MapNode::new(source, pipe);
+    Box::new(node)
   }
 }
 
@@ -52,7 +51,6 @@ mod tests {
   use crate::data::DataValue;
   use crate::flow::data::source_finite;
   use crate::flow::transform::map::MapNode;
-  use crate::flow::transform::TransformNode;
   use crate::transform::map::MapPipe;
 
   #[test]
@@ -64,7 +62,7 @@ mod tests {
     ];
     let source = source_finite(data);
 
-    let node = MapNode::chain(TransformNode::new(source), &map);
+    let node = MapNode::chain(source, &map);
 
     futures::executor::block_on(async {
       let values: Vec<_> = node.collect().await;

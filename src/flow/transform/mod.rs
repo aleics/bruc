@@ -1,56 +1,27 @@
-use crate::data::DataValue;
 use crate::flow::data::DataStream;
 use crate::flow::transform::filter::FilterNode;
 use crate::flow::transform::group::GroupNode;
 use crate::flow::transform::map::MapNode;
 use crate::transform::pipe::Pipe;
-use futures::task::{Context, Poll};
-use futures::Stream;
-use std::pin::Pin;
 
 pub mod filter;
 pub mod group;
 pub mod map;
 
 #[inline]
-pub fn chain<'a>(source: DataStream<'a>, pipes: &'a [Pipe<'a>]) -> TransformNode<'a> {
-  pipes
-    .iter()
-    .fold(TransformNode::new(source), |mut acc, pipe| {
-      acc = TransformNode::chain(acc, pipe);
-      acc
-    })
+pub fn chain<'a>(source: DataStream<'a>, pipes: &'a [Pipe<'a>]) -> DataStream<'a> {
+  pipes.iter().fold(source, |mut acc, pipe| {
+    acc = chain_transform(acc, pipe);
+    acc
+  })
 }
 
-pub struct TransformNode<'a> {
-  source: DataStream<'a>,
-}
-
-impl<'a> TransformNode<'a> {
-  pub fn new(source: DataStream<'a>) -> TransformNode<'a> {
-    TransformNode { source }
-  }
-
-  pub fn chain(source: TransformNode<'a>, pipe: &'a Pipe<'a>) -> TransformNode<'a> {
-    match pipe {
-      Pipe::Filter(pipe) => FilterNode::chain(source, pipe),
-      Pipe::Map(pipe) => MapNode::chain(source, pipe),
-      Pipe::Group(pipe) => GroupNode::chain(source, pipe),
-    }
-  }
-}
-
-impl<'a> Unpin for TransformNode<'a> {}
-
-impl<'a> Stream for TransformNode<'a> {
-  type Item = DataValue<'a>;
-
-  fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-    Pin::new(&mut self.source).poll_next(cx)
-  }
-
-  fn size_hint(&self) -> (usize, Option<usize>) {
-    self.source.size_hint()
+#[inline]
+fn chain_transform<'a>(source: DataStream<'a>, pipe: &'a Pipe<'a>) -> DataStream<'a> {
+  match pipe {
+    Pipe::Filter(pipe) => FilterNode::chain(source, pipe),
+    Pipe::Map(pipe) => MapNode::chain(source, pipe),
+    Pipe::Group(pipe) => GroupNode::chain(source, pipe),
   }
 }
 
