@@ -47,10 +47,6 @@ impl<'a> DataValue<'a> {
     vars
   }
 
-  pub fn find(&self, key: &str) -> Option<&DataItem> {
-    self.instance.get(key)
-  }
-
   pub fn insert(&mut self, key: &'a str, value: DataItem) {
     self.instance.insert(key, value);
   }
