@@ -32,12 +32,14 @@ impl<'a> Stream for LinearNode<'a> {
       if let Poll::Ready(source) = Pin::new(&mut self.source).poll_next(cx) {
         match source {
           Some(item) => {
-            let result = item
-              .get(self.field)
-              .and_then(|value| self.scale.scale(value));
+            if let Some(value) = item {
+              let result = value
+                .get(self.field)
+                .and_then(|value| self.scale.scale(value));
 
-            if result.is_some() {
-              break result;
+              if result.is_some() {
+                break result;
+              }
             }
           }
           None => break None,
@@ -54,7 +56,7 @@ impl<'a> Stream for LinearNode<'a> {
 #[cfg(test)]
 mod tests {
   use crate::data::DataValue;
-  use crate::flow::data::source_finite;
+  use crate::flow::data::chunk_source;
   use crate::flow::scale::linear::LinearNode;
   use crate::scale::domain::Domain;
   use crate::scale::linear::LinearScale;
@@ -63,7 +65,7 @@ mod tests {
 
   #[test]
   fn applies() {
-    let source = source_finite(vec![
+    let source = chunk_source(vec![
       DataValue::from_pairs(vec![("x", (-2.0).into()), ("y", 1.0.into())]),
       DataValue::from_pairs(vec![("x", 5.0.into()), ("y", 1.0.into())]),
       DataValue::from_pairs(vec![("x", 10.0.into()), ("y", 1.0.into())]),
@@ -86,7 +88,7 @@ mod tests {
 
   #[test]
   fn ignores_boolean() {
-    let source = source_finite(vec![
+    let source = chunk_source(vec![
       DataValue::from_pairs(vec![("x", true.into()), ("y", 1.0.into())]),
       DataValue::from_pairs(vec![("x", false.into()), ("y", 1.0.into())]),
       DataValue::from_pairs(vec![("x", 2.0.into()), ("y", 1.0.into())]),

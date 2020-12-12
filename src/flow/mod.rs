@@ -36,24 +36,26 @@ mod tests {
         vec![
           stream.next().await.unwrap(),
           stream.next().await.unwrap(),
+          stream.next().await.unwrap(),
           stream.next().await.unwrap()
         ],
         vec![
-          DataValue::from_pairs(vec![
+          Some(DataValue::from_pairs(vec![
             ("x", 3.0.into()),
             ("y", 1.0.into()),
             ("z", 5.0.into())
-          ]),
-          DataValue::from_pairs(vec![
+          ])),
+          Some(DataValue::from_pairs(vec![
             ("x", 7.0.into()),
             ("y", 4.0.into()),
             ("z", 9.0.into())
-          ]),
-          DataValue::from_pairs(vec![
+          ])),
+          Some(DataValue::from_pairs(vec![
             ("x", 5.0.into()),
             ("y", 3.0.into()),
             ("z", 7.0.into())
-          ]),
+          ])),
+          None
         ]
       );
     });

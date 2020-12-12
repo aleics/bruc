@@ -4,10 +4,16 @@ use futures::task::{Context, Poll};
 use futures::{SinkExt, Stream};
 use std::pin::Pin;
 
-pub type DataStream<'a> = Box<dyn Stream<Item = DataValue<'a>> + Unpin + 'a>;
+pub type DataStream<'a> = Box<dyn Stream<Item = Option<DataValue<'a>>> + Unpin + 'a>;
 
 pub fn source_finite(data: Vec<DataValue>) -> DataStream {
-  Box::new(futures::stream::iter(data.into_iter()))
+  let mut stream = Vec::new();
+  for value in data {
+    stream.push(Some(value));
+  }
+  stream.push(None);
+
+  Box::new(futures::stream::iter(stream))
 }
 
 pub fn source<'a>() -> (Source<'a>, DataStream<'a>) {
@@ -16,11 +22,11 @@ pub fn source<'a>() -> (Source<'a>, DataStream<'a>) {
 }
 
 pub struct SourceNode<'a> {
-  receiver: mpsc::UnboundedReceiver<DataValue<'a>>,
+  receiver: mpsc::UnboundedReceiver<Option<DataValue<'a>>>,
 }
 
 impl<'a> SourceNode<'a> {
-  fn chain(receiver: mpsc::UnboundedReceiver<DataValue<'a>>) -> DataStream<'a> {
+  fn chain(receiver: mpsc::UnboundedReceiver<Option<DataValue<'a>>>) -> DataStream<'a> {
     Box::new(SourceNode { receiver })
   }
 }
@@ -28,7 +34,7 @@ impl<'a> SourceNode<'a> {
 impl<'a> Unpin for SourceNode<'a> {}
 
 impl<'a> Stream for SourceNode<'a> {
-  type Item = DataValue<'a>;
+  type Item = Option<DataValue<'a>>;
 
   fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
     Poll::Ready(loop {
@@ -40,18 +46,19 @@ impl<'a> Stream for SourceNode<'a> {
 }
 
 pub struct Source<'a> {
-  sender: mpsc::UnboundedSender<DataValue<'a>>,
+  sender: mpsc::UnboundedSender<Option<DataValue<'a>>>,
 }
 
 impl<'a> Source<'a> {
-  fn new(sender: mpsc::UnboundedSender<DataValue<'a>>) -> Source<'a> {
+  fn new(sender: mpsc::UnboundedSender<Option<DataValue<'a>>>) -> Source<'a> {
     Source { sender }
   }
 
   pub async fn append(&mut self, data: Vec<DataValue<'a>>) -> Result<(), mpsc::SendError> {
     for item in &data {
-      self.sender.send(item.clone()).await?;
+      self.sender.send(Some(item.clone())).await?;
     }
+    self.sender.send(None).await?;
     Ok(())
   }
 }
@@ -75,8 +82,9 @@ mod tests {
       assert_eq!(
         values,
         vec![
-          DataValue::from_pairs(vec![("a", 2.0.into())]),
-          DataValue::from_pairs(vec![("a", 4.0.into())]),
+          Some(DataValue::from_pairs(vec![("a", 2.0.into())])),
+          Some(DataValue::from_pairs(vec![("a", 4.0.into())])),
+          None
         ]
       )
     })
@@ -96,10 +104,15 @@ mod tests {
         .unwrap();
 
       assert_eq!(
-        vec![stream.next().await.unwrap(), stream.next().await.unwrap()],
         vec![
-          DataValue::from_pairs(vec![("a", 2.0.into())]),
-          DataValue::from_pairs(vec![("a", 4.0.into())]),
+          stream.next().await.unwrap(),
+          stream.next().await.unwrap(),
+          stream.next().await.unwrap()
+        ],
+        vec![
+          Some(DataValue::from_pairs(vec![("a", 2.0.into())])),
+          Some(DataValue::from_pairs(vec![("a", 4.0.into())])),
+          None
         ]
       );
 
@@ -112,10 +125,15 @@ mod tests {
         .unwrap();
 
       assert_eq!(
-        vec![stream.next().await.unwrap(), stream.next().await.unwrap()],
         vec![
-          DataValue::from_pairs(vec![("a", 6.0.into())]),
-          DataValue::from_pairs(vec![("a", 8.0.into())]),
+          stream.next().await.unwrap(),
+          stream.next().await.unwrap(),
+          stream.next().await.unwrap()
+        ],
+        vec![
+          Some(DataValue::from_pairs(vec![("a", 6.0.into())])),
+          Some(DataValue::from_pairs(vec![("a", 8.0.into())])),
+          None
         ]
       );
     });

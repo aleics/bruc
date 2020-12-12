@@ -25,16 +25,21 @@ impl<'a> MapNode<'a> {
 impl<'a> Unpin for MapNode<'a> {}
 
 impl<'a> Stream for MapNode<'a> {
-  type Item = DataValue<'a>;
+  type Item = Option<DataValue<'a>>;
 
   fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
     Poll::Ready(loop {
       if let Poll::Ready(source) = Pin::new(&mut self.source).poll_next(cx) {
-        let result = source.map(|mut value| {
-          self.pipe.apply(&mut value);
-          value
-        });
-        break result;
+        match source {
+          Some(value) => {
+            let result = value.map(|mut value| {
+              self.pipe.apply(&mut value);
+              value
+            });
+            break Some(result);
+          }
+          None => break None,
+        }
       }
     })
   }
@@ -49,7 +54,7 @@ mod tests {
   use futures::StreamExt;
 
   use crate::data::DataValue;
-  use crate::flow::data::source_finite;
+  use crate::flow::data::chunk_source;
   use crate::flow::transform::map::MapNode;
   use crate::transform::map::MapPipe;
 
@@ -60,7 +65,7 @@ mod tests {
       DataValue::from_pairs(vec![("a", 2.0.into())]),
       DataValue::from_pairs(vec![("a", 4.0.into())]),
     ];
-    let source = source_finite(data);
+    let source = chunk_source(data);
 
     let node = MapNode::chain(source, &map);
 
@@ -70,8 +75,15 @@ mod tests {
       assert_eq!(
         values,
         vec![
-          DataValue::from_pairs(vec![("a", 2.0.into()), ("b", 5.0.into())]),
-          DataValue::from_pairs(vec![("a", 4.0.into()), ("b", 7.0.into())]),
+          Some(DataValue::from_pairs(vec![
+            ("a", 2.0.into()),
+            ("b", 5.0.into())
+          ])),
+          Some(DataValue::from_pairs(vec![
+            ("a", 4.0.into()),
+            ("b", 7.0.into())
+          ])),
+          None
         ]
       )
     })

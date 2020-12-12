@@ -25,18 +25,21 @@ impl<'a> FilterNode<'a> {
 impl<'a> Unpin for FilterNode<'a> {}
 
 impl<'a> Stream for FilterNode<'a> {
-  type Item = DataValue<'a>;
+  type Item = Option<DataValue<'a>>;
 
   fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
     Poll::Ready(loop {
       if let Poll::Ready(source) = Pin::new(&mut self.source).poll_next(cx) {
         match source {
-          Some(item) => {
-            let result = self.pipe.apply(item);
-            if result.is_some() {
-              break result;
+          Some(item) => match item {
+            Some(value) => {
+              let result = self.pipe.apply(value);
+              if result.is_some() {
+                break Some(result);
+              }
             }
-          }
+            None => break Some(None),
+          },
           None => break None,
         }
       }
@@ -53,7 +56,7 @@ mod tests {
   use futures::StreamExt;
 
   use crate::data::DataValue;
-  use crate::flow::data::source_finite;
+  use crate::flow::data::chunk_source;
   use crate::flow::transform::filter::FilterNode;
   use crate::transform::filter::FilterPipe;
 
@@ -64,7 +67,7 @@ mod tests {
       DataValue::from_pairs(vec![("a", 2.0.into())]),
       DataValue::from_pairs(vec![("a", 4.0.into())]),
     ];
-    let source = source_finite(data);
+    let source = chunk_source(data);
     let node = FilterNode::chain(source, &filter);
 
     futures::executor::block_on(async {
@@ -72,7 +75,7 @@ mod tests {
 
       assert_eq!(
         values,
-        vec![DataValue::from_pairs(vec![("a", 4.0.into())]),]
+        vec![Some(DataValue::from_pairs(vec![("a", 4.0.into())])), None]
       )
     })
   }

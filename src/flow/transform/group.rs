@@ -32,7 +32,7 @@ impl<'a> GroupNode<'a> {
 impl<'a> Unpin for GroupNode<'a> {}
 
 impl<'a> Stream for GroupNode<'a> {
-  type Item = DataValue<'a>;
+  type Item = Option<DataValue<'a>>;
 
   fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
     Poll::Ready(loop {
@@ -72,19 +72,24 @@ impl<'a> CountNode<'a> {
 impl<'a> Unpin for CountNode<'a> {}
 
 impl<'a> Stream for CountNode<'a> {
-  type Item = DataValue<'a>;
+  type Item = Option<DataValue<'a>>;
 
   fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
     Poll::Ready(loop {
       if let Poll::Ready(source) = Pin::new(&mut self.source).poll_next(cx) {
-        let result = source.map(|(var, count)| {
-          DataValue::from_pairs(vec![
-            (self.by, var),
-            (self.output, DataItem::Number(count as f32)),
-          ])
-        });
+        match source {
+          Some(source) => {
+            let result = source.map(|(var, count)| {
+              DataValue::from_pairs(vec![
+                (self.by, var),
+                (self.output, DataItem::Number(count as f32)),
+              ])
+            });
 
-        break result;
+            break Some(result);
+          }
+          None => break None,
+        }
       }
     })
   }
@@ -95,7 +100,7 @@ impl<'a> Stream for CountNode<'a> {
 }
 
 struct RepsNode<'a> {
-  source: LocalBoxStream<'a, (DataItem, usize)>,
+  source: LocalBoxStream<'a, Option<(DataItem, usize)>>,
 }
 
 impl<'a> RepsNode<'a> {
@@ -106,23 +111,32 @@ impl<'a> RepsNode<'a> {
   }
 
   #[inline]
-  fn reps(data: DataStream<'a>, by: &'a str) -> LocalBoxStream<'a, (DataItem, usize)> {
+  fn reps(data: DataStream<'a>, by: &'a str) -> LocalBoxStream<'a, Option<(DataItem, usize)>> {
     data
       .fold(
         HashMap::<DataItem, usize>::new(),
         move |mut acc, item| async move {
-          if let Some(target) = item.get(by) {
-            match acc.get_mut(target) {
+          let target = item.and_then(|value| value.get(by).copied());
+          if let Some(target) = target {
+            match acc.get_mut(&target) {
               Some(count) => count.add_assign(1),
               None => {
-                acc.insert(*target, 1);
+                acc.insert(target, 1);
               }
             }
           }
           acc
         },
       )
-      .map(|data| futures::stream::iter(data.into_iter()))
+      .map(|data| {
+        let mut result: Vec<Option<(DataItem, usize)>> = Vec::new();
+        for item in data {
+          result.push(Some(item));
+        }
+        result.push(None);
+
+        futures::stream::iter(result)
+      })
       .flatten_stream()
       .boxed_local()
   }
@@ -131,7 +145,7 @@ impl<'a> RepsNode<'a> {
 impl<'a> Unpin for RepsNode<'a> {}
 
 impl<'a> Stream for RepsNode<'a> {
-  type Item = (DataItem, usize);
+  type Item = Option<(DataItem, usize)>;
 
   fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
     Poll::Ready(loop {
@@ -151,7 +165,7 @@ mod tests {
   use futures::StreamExt;
 
   use crate::data::DataValue;
-  use crate::flow::data::source_finite;
+  use crate::flow::data::chunk_source;
   use crate::flow::transform::group::GroupNode;
   use crate::transform::group::{GroupOperator, GroupPipe};
 
@@ -162,18 +176,20 @@ mod tests {
       DataValue::from_pairs(vec![("a", 2.0.into())]),
       DataValue::from_pairs(vec![("a", 2.0.into())]),
     ];
-    let source = source_finite(data);
-    let node = GroupNode::chain(source, &group);
+    let source = chunk_source(data);
+    let mut node = GroupNode::chain(source, &group);
 
     futures::executor::block_on(async {
-      let values: Vec<_> = node.collect().await;
-
+      let values = node.collect::<Vec<_>>().await;
       assert_eq!(
         values,
-        vec![DataValue::from_pairs(vec![
-          ("a", 2.0.into()),
-          ("count", 2.0.into())
-        ]),]
+        vec![
+          Some(DataValue::from_pairs(vec![
+            ("a", 2.0.into()),
+            ("count", 2.0.into())
+          ])),
+          None
+        ]
       )
     });
   }
@@ -185,7 +201,7 @@ mod tests {
       DataValue::from_pairs(vec![("a", 2.0.into())]),
       DataValue::from_pairs(vec![("b", 3.0.into())]),
     ];
-    let source = source_finite(data);
+    let source = chunk_source(data);
     let node = GroupNode::chain(source, &group);
 
     futures::executor::block_on(async {
@@ -193,10 +209,13 @@ mod tests {
 
       assert_eq!(
         values,
-        vec![DataValue::from_pairs(vec![
-          ("a", 2.0.into()),
-          ("count", 1.0.into())
-        ]),]
+        vec![
+          Some(DataValue::from_pairs(vec![
+            ("a", 2.0.into()),
+            ("count", 1.0.into())
+          ])),
+          None
+        ]
       )
     });
   }

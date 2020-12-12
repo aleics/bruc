@@ -2,7 +2,7 @@
 extern crate test;
 
 use bruc::data::DataValue;
-use bruc::flow::data::source_finite;
+use bruc::flow::data::chunk_source;
 use bruc::flow::transform::chain;
 use bruc::transform::filter::FilterPipe;
 use bruc::transform::group::{GroupOperator, GroupPipe};
@@ -21,8 +21,8 @@ fn bench_filter_pipe_1(b: &mut Bencher) {
 
   b.iter(|| {
     futures::executor::block_on(async {
-      chain(source_finite(data.clone()), &pipes)
-        .collect::<Vec<DataValue>>()
+      chain(chunk_source(data.clone()), &pipes)
+        .collect::<Vec<_>>()
         .await;
     });
   });
@@ -58,8 +58,8 @@ fn bench_filter_pipe_20(b: &mut Bencher) {
 
   b.iter(|| {
     futures::executor::block_on(async {
-      chain(source_finite(data.clone()), &pipes)
-        .collect::<Vec<DataValue>>()
+      chain(chunk_source(data.clone()), &pipes)
+        .collect::<Vec<_>>()
         .await;
     });
   });
@@ -74,8 +74,8 @@ fn bench_map_pipe_1(b: &mut Bencher) {
 
   b.iter(|| {
     futures::executor::block_on(async {
-      chain(source_finite(data.clone()), &pipes)
-        .collect::<Vec<DataValue>>()
+      chain(chunk_source(data.clone()), &pipes)
+        .collect::<Vec<_>>()
         .await;
     });
   });
@@ -111,8 +111,8 @@ fn bench_map_pipe_20(b: &mut Bencher) {
 
   b.iter(|| {
     futures::executor::block_on(async {
-      chain(source_finite(data.clone()), &pipes)
-        .collect::<Vec<DataValue>>()
+      chain(chunk_source(data.clone()), &pipes)
+        .collect::<Vec<_>>()
         .await;
     });
   });
@@ -129,8 +129,8 @@ fn bench_group_pipe_1(b: &mut Bencher) {
 
   b.iter(|| {
     futures::executor::block_on(async {
-      chain(source_finite(data.clone()), &pipes)
-        .collect::<Vec<DataValue>>()
+      chain(chunk_source(data.clone()), &pipes)
+        .collect::<Vec<_>>()
         .await;
     });
   });
@@ -168,8 +168,8 @@ fn bench_group_pipe_20(b: &mut Bencher) {
 
   b.iter(|| {
     futures::executor::block_on(async {
-      chain(source_finite(data.clone()), &pipes)
-        .collect::<Vec<DataValue>>()
+      chain(chunk_source(data.clone()), &pipes)
+        .collect::<Vec<_>>()
         .await;
     });
   });
@@ -219,8 +219,8 @@ fn bench_10_pipes_2_10_vars_maps(b: &mut Bencher) {
 
   b.iter(|| {
     futures::executor::block_on(async {
-      chain(source_finite(data.clone()), &pipes)
-        .collect::<Vec<DataValue>>()
+      chain(chunk_source(data.clone()), &pipes)
+        .collect::<Vec<_>>()
         .await;
     });
   });
