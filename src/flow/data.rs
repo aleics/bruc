@@ -6,7 +6,7 @@ use std::pin::Pin;
 
 pub type DataStream<'a> = Box<dyn Stream<Item = Option<DataValue<'a>>> + Unpin + 'a>;
 
-pub fn source_finite(data: Vec<DataValue>) -> DataStream {
+pub fn chunk_source(data: Vec<DataValue>) -> DataStream {
   let mut stream = Vec::new();
   for value in data {
     stream.push(Some(value));
@@ -66,7 +66,7 @@ impl<'a> Source<'a> {
 #[cfg(test)]
 mod tests {
   use crate::data::DataValue;
-  use crate::flow::data::{source, source_finite};
+  use crate::flow::data::{chunk_source, source};
   use futures::StreamExt;
 
   #[test]
@@ -75,7 +75,7 @@ mod tests {
       DataValue::from_pairs(vec![("a", 2.0.into())]),
       DataValue::from_pairs(vec![("a", 4.0.into())]),
     ];
-    let source = source_finite(data);
+    let source = chunk_source(data);
 
     futures::executor::block_on(async {
       let values: Vec<_> = source.collect().await;
