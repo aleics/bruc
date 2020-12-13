@@ -37,11 +37,7 @@ impl<'a> Stream for SourceNode<'a> {
   type Item = Option<DataValue<'a>>;
 
   fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-    Poll::Ready(loop {
-      if let Poll::Ready(item) = Pin::new(&mut self.receiver).poll_next(cx) {
-        break item;
-      }
-    })
+    Pin::new(&mut self.receiver).poll_next(cx)
   }
 }
 

@@ -28,19 +28,13 @@ impl<'a> Stream for MapNode<'a> {
   type Item = Option<DataValue<'a>>;
 
   fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-    Poll::Ready(loop {
-      if let Poll::Ready(source) = Pin::new(&mut self.source).poll_next(cx) {
-        match source {
-          Some(value) => {
-            let result = value.map(|mut value| {
-              self.pipe.apply(&mut value);
-              value
-            });
-            break Some(result);
-          }
-          None => break None,
-        }
-      }
+    Pin::new(&mut self.source).poll_next(cx).map(|value| {
+      value.map(|value| {
+        value.map(|mut value| {
+          self.pipe.apply(&mut value);
+          value
+        })
+      })
     })
   }
 

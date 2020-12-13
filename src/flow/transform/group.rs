@@ -24,8 +24,7 @@ impl<'a> GroupNode<'a> {
       GroupOperator::Count => CountNode::chain(source, pipe),
     };
 
-    let node = GroupNode::new(Box::new(group_source));
-    Box::new(node)
+    Box::new(GroupNode::new(Box::new(group_source)))
   }
 }
 
@@ -35,11 +34,7 @@ impl<'a> Stream for GroupNode<'a> {
   type Item = Option<DataValue<'a>>;
 
   fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-    Poll::Ready(loop {
-      if let Poll::Ready(source) = Pin::new(&mut self.source).poll_next(cx) {
-        break source;
-      }
-    })
+    Pin::new(&mut self.source).poll_next(cx)
   }
 
   fn size_hint(&self) -> (usize, Option<usize>) {
@@ -64,8 +59,7 @@ impl<'a> CountNode<'a> {
 
   #[inline]
   fn chain(source: DataStream<'a>, pipe: &'a GroupPipe<'a>) -> DataStream<'a> {
-    let node = CountNode::new(source, pipe.by(), pipe.output());
-    Box::new(node)
+    Box::new(CountNode::new(source, pipe.by(), pipe.output()))
   }
 }
 
@@ -75,22 +69,15 @@ impl<'a> Stream for CountNode<'a> {
   type Item = Option<DataValue<'a>>;
 
   fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-    Poll::Ready(loop {
-      if let Poll::Ready(source) = Pin::new(&mut self.source).poll_next(cx) {
-        match source {
-          Some(source) => {
-            let result = source.map(|(var, count)| {
-              DataValue::from_pairs(vec![
-                (self.by, var),
-                (self.output, DataItem::Number(count as f32)),
-              ])
-            });
-
-            break Some(result);
-          }
-          None => break None,
-        }
-      }
+    Pin::new(&mut self.source).poll_next(cx).map(|value| {
+      value.map(|value| {
+        value.map(|(var, count)| {
+          DataValue::from_pairs(vec![
+            (self.by, var),
+            (self.output, DataItem::Number(count as f32)),
+          ])
+        })
+      })
     })
   }
 
@@ -148,11 +135,7 @@ impl<'a> Stream for RepsNode<'a> {
   type Item = Option<(DataItem, usize)>;
 
   fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-    Poll::Ready(loop {
-      if let Poll::Ready(source) = Pin::new(&mut self.source).poll_next(cx) {
-        break source;
-      }
-    })
+    Pin::new(&mut self.source).poll_next(cx)
   }
 
   fn size_hint(&self) -> (usize, Option<usize>) {
@@ -177,7 +160,7 @@ mod tests {
       DataValue::from_pairs(vec![("a", 2.0.into())]),
     ];
     let source = chunk_source(data);
-    let mut node = GroupNode::chain(source, &group);
+    let node = GroupNode::chain(source, &group);
 
     futures::executor::block_on(async {
       let values = node.collect::<Vec<_>>().await;
