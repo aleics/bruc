@@ -69,7 +69,7 @@ mod tests {
     ];
 
     let source = Source::new();
-    let node = MapNode::chain(Box::new(source.link()), &map);
+    let node = MapNode::chain(source.link(), &map);
 
     source.send(data);
     futures::executor::block_on(async {

@@ -30,7 +30,7 @@ mod tests {
 
     futures::executor::block_on(async {
       let source: Source<DataValue> = Source::new();
-      let node = chain(Box::new(source.link()), &pipes);
+      let node = chain(source.link(), &pipes);
 
       source.send(data);
       assert_eq!(

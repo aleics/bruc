@@ -31,20 +31,21 @@ impl Line {
   }
 }
 
-type NumberStream = Box<dyn Stream<Item = f32> + Unpin>;
-
-pub struct PointsNode {
-  x: NumberStream,
-  y: NumberStream,
+pub struct PointsNode<S> {
+  x: S,
+  y: S,
 }
 
-impl PointsNode {
-  pub fn new(x: NumberStream, y: NumberStream) -> PointsNode {
+impl<S> PointsNode<S> {
+  pub fn new(x: S, y: S) -> PointsNode<S> {
     PointsNode { x, y }
   }
 }
 
-impl Stream for PointsNode {
+impl<S> Stream for PointsNode<S>
+where
+  S: Stream<Item = f32> + Unpin,
+{
   type Item = Vec<(f32, f32)>;
 
   fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
@@ -65,36 +66,34 @@ impl Stream for PointsNode {
   }
 }
 
-pub struct LineNode {
-  points: PointsNode,
-  width: NumberStream,
-  height: NumberStream,
+pub struct LineNode<S>
+where
+  S: Stream<Item = f32> + Unpin,
+{
+  points: PointsNode<S>,
+  width: S,
+  height: S,
 }
 
-impl LineNode {
-  pub fn new() -> LineNode {
-    LineNode::default()
-  }
-
-  pub fn with_points(&mut self, x: NumberStream, y: NumberStream) -> &mut LineNode {
-    self.points = PointsNode::new(x, y);
-    self
-  }
-
-  pub fn with_width(&mut self, width: NumberStream) -> &mut LineNode {
-    self.width = width;
-    self
-  }
-
-  pub fn with_height(&mut self, height: NumberStream) -> &mut LineNode {
-    self.height = height;
-    self
+impl<S> LineNode<S>
+where
+  S: Stream<Item = f32> + Unpin,
+{
+  pub fn new(x: S, y: S, width: S, height: S) -> LineNode<S> {
+    LineNode {
+      points: PointsNode::new(x, y),
+      width,
+      height,
+    }
   }
 }
 
-impl Unpin for LineNode {}
+impl<S> Unpin for LineNode<S> where S: Stream<Item = f32> + Unpin {}
 
-impl Stream for LineNode {
+impl<S> Stream for LineNode<S>
+where
+  S: Stream<Item = f32> + Unpin,
+{
   type Item = Line;
 
   fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
@@ -116,23 +115,10 @@ impl Stream for LineNode {
   }
 }
 
-impl Default for LineNode {
-  fn default() -> Self {
-    LineNode {
-      points: PointsNode::new(
-        Box::new(futures::stream::pending()),
-        Box::new(futures::stream::pending()),
-      ),
-      width: Box::new(futures::stream::pending()),
-      height: Box::new(futures::stream::pending()),
-    }
-  }
-}
-
 #[cfg(test)]
 mod tests {
-  use crate::flow::render::line::{Line, LineNode, NumberStream, PointsNode};
-  use futures::StreamExt;
+  use crate::flow::render::line::{Line, LineNode, PointsNode};
+  use futures::{Stream, StreamExt};
 
   #[test]
   fn computes_points() {
@@ -144,11 +130,12 @@ mod tests {
 
   #[test]
   fn computes_line() {
-    let mut node = LineNode::new();
-
-    node.with_points(numbers(vec![2.0]), numbers(vec![10.0]));
-    node.with_width(numbers(vec![200.0]));
-    node.with_height(numbers(vec![50.0]));
+    let mut node = LineNode::new(
+      numbers(vec![2.0]),
+      numbers(vec![10.0]),
+      numbers(vec![200.0]),
+      numbers(vec![50.0]),
+    );
 
     futures::executor::block_on(async {
       let line: Line = node.next().await.unwrap();
@@ -156,7 +143,7 @@ mod tests {
     });
   }
 
-  fn numbers(values: Vec<f32>) -> NumberStream {
-    Box::new(futures::stream::iter(values.into_iter()))
+  fn numbers(values: Vec<f32>) -> impl Stream<Item = f32> {
+    futures::stream::iter(values.into_iter())
   }
 }

@@ -11,8 +11,11 @@ pub mod group;
 pub mod map;
 
 #[inline]
-pub fn chain<'a>(source: DataStream<'a>, pipes: &'a [Pipe<'a>]) -> DataStream<'a> {
-  pipes.iter().fold(source, |mut acc, pipe| {
+pub fn chain<'a, S>(source: S, pipes: &'a [Pipe<'a>]) -> DataStream<'a>
+where
+  S: Stream<Item = Option<DataValue<'a>>> + Unpin + 'a,
+{
+  pipes.iter().fold(Box::new(source), |mut acc, pipe| {
     acc = chain_transform(acc, pipe);
     acc
   })
@@ -54,7 +57,7 @@ mod tests {
     ];
 
     let source = Source::new();
-    let node = chain(Box::new(source.link()), &pipes);
+    let node = chain(source.link(), &pipes);
 
     source.send(data);
     futures::executor::block_on(async {
@@ -87,7 +90,7 @@ mod tests {
     ];
 
     let source = Source::new();
-    let node = chain(Box::new(source.link()), &pipes);
+    let node = chain(source.link(), &pipes);
 
     source.send(data);
     futures::executor::block_on(async {
@@ -136,7 +139,7 @@ mod tests {
     ];
 
     let source = Source::new();
-    let node = chain(Box::new(source.link()), &pipes);
+    let node = chain(source.link(), &pipes);
 
     source.send(data);
     futures::executor::block_on(async {
@@ -164,7 +167,7 @@ mod tests {
     ];
 
     let source = Source::new();
-    let node = chain(Box::new(source.link()), &pipes);
+    let node = chain(source.link(), &pipes);
 
     source.send(data);
     futures::executor::block_on(async {
@@ -197,7 +200,7 @@ mod tests {
     ];
 
     let source = Source::new();
-    let node = chain(Box::new(source.link()), &pipes);
+    let node = chain(source.link(), &pipes);
 
     source.send(data);
     futures::executor::block_on(async {
@@ -227,7 +230,7 @@ mod tests {
     ];
 
     let source = Source::new();
-    let node = chain(Box::new(source.link()), &pipes);
+    let node = chain(source.link(), &pipes);
 
     source.send(data);
     futures::executor::block_on(async {

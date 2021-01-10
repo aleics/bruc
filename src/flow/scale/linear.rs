@@ -108,7 +108,7 @@ mod tests {
     );
 
     let source = Source::new();
-    let node = LinearNode::new(Box::new(source.link()), scale, "x");
+    let node = LinearNode::new(source.link(), scale, "x");
 
     source.send(data);
     futures::executor::block_on(async {

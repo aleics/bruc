@@ -23,7 +23,7 @@ fn bench_filter_pipe_1(b: &mut Bencher) {
     futures::executor::block_on(async {
       let source: Source<DataValue> = Source::new();
 
-      let node = Chunks::new(chain(Box::new(source.link()), &pipes));
+      let node = Chunks::new(chain(source.link(), &pipes));
       source.send(data.clone());
 
       node.collect::<Vec<_>>().await;
@@ -63,7 +63,7 @@ fn bench_filter_pipe_20(b: &mut Bencher) {
     futures::executor::block_on(async {
       let source = Source::new();
 
-      let node = Chunks::new(chain(Box::new(source.link()), &pipes));
+      let node = Chunks::new(chain(source.link(), &pipes));
       source.send(data.clone());
 
       node.collect::<Vec<_>>().await;
@@ -82,7 +82,7 @@ fn bench_map_pipe_1(b: &mut Bencher) {
     futures::executor::block_on(async {
       let source = Source::new();
 
-      let node = Chunks::new(chain(Box::new(source.link()), &pipes));
+      let node = Chunks::new(chain(source.link(), &pipes));
       source.send(data.clone());
 
       node.collect::<Vec<_>>().await;
@@ -122,7 +122,7 @@ fn bench_map_pipe_20(b: &mut Bencher) {
     futures::executor::block_on(async {
       let source = Source::new();
 
-      let node = Chunks::new(chain(Box::new(source.link()), &pipes));
+      let node = Chunks::new(chain(source.link(), &pipes));
       source.send(data.clone());
 
       node.collect::<Vec<_>>().await;
@@ -143,7 +143,7 @@ fn bench_group_pipe_1(b: &mut Bencher) {
     futures::executor::block_on(async {
       let source = Source::new();
 
-      let node = Chunks::new(chain(Box::new(source.link()), &pipes));
+      let node = Chunks::new(chain(source.link(), &pipes));
       source.send(data.clone());
 
       node.collect::<Vec<_>>().await;
@@ -185,7 +185,7 @@ fn bench_group_pipe_20(b: &mut Bencher) {
     futures::executor::block_on(async {
       let source = Source::new();
 
-      let node = Chunks::new(chain(Box::new(source.link()), &pipes));
+      let node = Chunks::new(chain(source.link(), &pipes));
       source.send(data.clone());
 
       node.collect::<Vec<_>>().await;
@@ -239,7 +239,7 @@ fn bench_10_pipes_2_10_vars_maps(b: &mut Bencher) {
     futures::executor::block_on(async {
       let source = Source::new();
 
-      let node = Chunks::new(chain(Box::new(source.link()), &pipes));
+      let node = Chunks::new(chain(source.link(), &pipes));
       source.send(data.clone());
 
       node.collect::<Vec<_>>().await;

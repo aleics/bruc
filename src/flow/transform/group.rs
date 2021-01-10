@@ -25,11 +25,11 @@ where
 {
   #[inline]
   pub fn chain(source: S, pipe: &'a GroupPipe<'a>) -> DataStream<'a> {
-    let group_source = match pipe.op() {
-      GroupOperator::Count => CountNode::chain(source, pipe),
+    let node = match pipe.op() {
+      GroupOperator::Count => GroupNode::new(CountNode::new(source, pipe.by(), pipe.output())),
     };
 
-    Box::new(GroupNode::new(group_source))
+    Box::new(node)
   }
 }
 
@@ -66,14 +66,6 @@ impl<'a> CountNode<'a> {
       by,
       output,
     }
-  }
-
-  #[inline]
-  fn chain<S>(source: S, pipe: &'a GroupPipe<'a>) -> DataStream<'a>
-  where
-    S: Stream<Item = Option<DataValue<'a>>> + Unpin + 'a,
-  {
-    Box::new(CountNode::new(source, pipe.by(), pipe.output()))
   }
 }
 
@@ -180,7 +172,7 @@ mod tests {
       DataValue::from_pairs(vec![("a", 2.0.into())]),
     ];
     let source = Source::new();
-    let mut node = GroupNode::chain(Box::new(source.link()), &group);
+    let mut node = GroupNode::chain(source.link(), &group);
 
     source.send(data);
     futures::executor::block_on(async {
@@ -204,7 +196,7 @@ mod tests {
       DataValue::from_pairs(vec![("b", 3.0.into())]),
     ];
     let source = Source::new();
-    let node = GroupNode::chain(Box::new(source.link()), &group);
+    let node = GroupNode::chain(source.link(), &group);
 
     source.send(data);
     futures::executor::block_on(async {

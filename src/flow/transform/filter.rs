@@ -76,7 +76,7 @@ mod tests {
       DataValue::from_pairs(vec![("a", 4.0.into())]),
     ];
     let source = Source::new();
-    let node = FilterNode::chain(Box::new(source.link()), &filter);
+    let node = FilterNode::chain(source.link(), &filter);
 
     source.send(data);
     futures::executor::block_on(async {
