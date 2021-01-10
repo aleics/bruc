@@ -5,26 +5,34 @@ use futures::task::{Context, Poll};
 use futures::Stream;
 use std::pin::Pin;
 
-pub struct MapNode<'a> {
-  source: DataStream<'a>,
+pub struct MapNode<'a, S> {
+  source: S,
   pipe: &'a MapPipe<'a>,
 }
 
-impl<'a> MapNode<'a> {
-  pub fn new(source: DataStream<'a>, pipe: &'a MapPipe<'a>) -> MapNode<'a> {
+impl<'a, S> MapNode<'a, S> {
+  pub fn new(source: S, pipe: &'a MapPipe<'a>) -> MapNode<'a, S> {
     MapNode { source, pipe }
   }
+}
 
+impl<'a, S> MapNode<'a, S>
+where
+  S: Stream<Item = Option<DataValue<'a>>> + Unpin + 'a,
+{
   #[inline]
-  pub fn chain(source: DataStream<'a>, pipe: &'a MapPipe<'a>) -> DataStream<'a> {
+  pub fn chain(source: S, pipe: &'a MapPipe<'a>) -> DataStream<'a> {
     let node = MapNode::new(source, pipe);
     Box::new(node)
   }
 }
 
-impl<'a> Unpin for MapNode<'a> {}
+impl<'a, S> Unpin for MapNode<'a, S> {}
 
-impl<'a> Stream for MapNode<'a> {
+impl<'a, S> Stream for MapNode<'a, S>
+where
+  S: Stream<Item = Option<DataValue<'a>>> + Unpin,
+{
   type Item = Option<DataValue<'a>>;
 
   fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {

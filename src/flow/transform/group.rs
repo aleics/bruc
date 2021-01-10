@@ -9,28 +9,36 @@ use std::collections::HashMap;
 use std::ops::AddAssign;
 use std::pin::Pin;
 
-pub struct GroupNode<'a> {
-  source: DataStream<'a>,
+pub struct GroupNode<S> {
+  source: S,
 }
 
-impl<'a> GroupNode<'a> {
-  pub fn new(source: DataStream<'a>) -> GroupNode<'a> {
+impl<'a, S> GroupNode<S> {
+  pub fn new(source: S) -> GroupNode<S> {
     GroupNode { source }
   }
+}
 
+impl<'a, S> GroupNode<S>
+where
+  S: Stream<Item = Option<DataValue<'a>>> + Unpin + 'a,
+{
   #[inline]
-  pub fn chain(source: DataStream<'a>, pipe: &'a GroupPipe<'a>) -> DataStream<'a> {
+  pub fn chain(source: S, pipe: &'a GroupPipe<'a>) -> DataStream<'a> {
     let group_source = match pipe.op() {
       GroupOperator::Count => CountNode::chain(source, pipe),
     };
 
-    Box::new(GroupNode::new(Box::new(group_source)))
+    Box::new(GroupNode::new(group_source))
   }
 }
 
-impl<'a> Unpin for GroupNode<'a> {}
+impl<S> Unpin for GroupNode<S> {}
 
-impl<'a> Stream for GroupNode<'a> {
+impl<'a, S> Stream for GroupNode<S>
+where
+  S: Stream<Item = Option<DataValue<'a>>> + Unpin + 'a,
+{
   type Item = Option<DataValue<'a>>;
 
   fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
@@ -49,7 +57,10 @@ struct CountNode<'a> {
 }
 
 impl<'a> CountNode<'a> {
-  pub fn new(data: DataStream<'a>, by: &'a str, output: &'a str) -> CountNode<'a> {
+  pub fn new<S>(data: S, by: &'a str, output: &'a str) -> CountNode<'a>
+  where
+    S: Stream<Item = Option<DataValue<'a>>> + Unpin + 'a,
+  {
     CountNode {
       source: RepsNode::new(data, by),
       by,
@@ -58,7 +69,10 @@ impl<'a> CountNode<'a> {
   }
 
   #[inline]
-  fn chain(source: DataStream<'a>, pipe: &'a GroupPipe<'a>) -> DataStream<'a> {
+  fn chain<S>(source: S, pipe: &'a GroupPipe<'a>) -> DataStream<'a>
+  where
+    S: Stream<Item = Option<DataValue<'a>>> + Unpin + 'a,
+  {
     Box::new(CountNode::new(source, pipe.by(), pipe.output()))
   }
 }
@@ -91,14 +105,20 @@ struct RepsNode<'a> {
 }
 
 impl<'a> RepsNode<'a> {
-  pub fn new(data: DataStream<'a>, by: &'a str) -> RepsNode<'a> {
+  pub fn new<S>(data: S, by: &'a str) -> RepsNode<'a>
+  where
+    S: Stream<Item = Option<DataValue<'a>>> + Unpin + 'a,
+  {
     RepsNode {
       source: RepsNode::reps(data, by),
     }
   }
 
   #[inline]
-  fn reps(data: DataStream<'a>, by: &'a str) -> LocalBoxStream<'a, Option<(DataItem, usize)>> {
+  fn reps<S>(data: S, by: &'a str) -> LocalBoxStream<'a, Option<(DataItem, usize)>>
+  where
+    S: Stream<Item = Option<DataValue<'a>>> + Unpin + 'a,
+  {
     Chunks::new(data)
       .fold(
         HashMap::<DataItem, usize>::new(),

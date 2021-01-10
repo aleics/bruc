@@ -1,8 +1,10 @@
+use crate::data::DataValue;
 use crate::flow::data::DataStream;
 use crate::flow::transform::filter::FilterNode;
 use crate::flow::transform::group::GroupNode;
 use crate::flow::transform::map::MapNode;
 use crate::transform::pipe::Pipe;
+use futures::Stream;
 
 pub mod filter;
 pub mod group;
@@ -17,7 +19,10 @@ pub fn chain<'a>(source: DataStream<'a>, pipes: &'a [Pipe<'a>]) -> DataStream<'a
 }
 
 #[inline]
-fn chain_transform<'a>(source: DataStream<'a>, pipe: &'a Pipe<'a>) -> DataStream<'a> {
+fn chain_transform<'a, S>(source: S, pipe: &'a Pipe<'a>) -> DataStream<'a>
+where
+  S: Stream<Item = Option<DataValue<'a>>> + Unpin + 'a,
+{
   match pipe {
     Pipe::Filter(pipe) => FilterNode::chain(source, pipe),
     Pipe::Map(pipe) => MapNode::chain(source, pipe),

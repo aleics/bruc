@@ -1,4 +1,4 @@
-use crate::flow::data::DataStream;
+use crate::data::DataValue;
 use crate::scale::linear::LinearScale;
 use crate::scale::Scaler;
 use bruc_expreter::data::DataSource;
@@ -6,14 +6,14 @@ use futures::task::{Context, Poll};
 use futures::Stream;
 use std::pin::Pin;
 
-pub struct LinearNode<'a> {
-  source: DataStream<'a>,
+pub struct LinearNode<'a, S> {
+  source: S,
   scale: LinearScale<'a>,
   field: &'a str,
 }
 
-impl<'a> LinearNode<'a> {
-  pub fn new(source: DataStream<'a>, scale: LinearScale<'a>, field: &'a str) -> LinearNode<'a> {
+impl<'a, S> LinearNode<'a, S> {
+  pub fn new(source: S, scale: LinearScale<'a>, field: &'a str) -> LinearNode<'a, S> {
     LinearNode {
       source,
       scale,
@@ -22,9 +22,12 @@ impl<'a> LinearNode<'a> {
   }
 }
 
-impl<'a> Unpin for LinearNode<'a> {}
+impl<'a, S> Unpin for LinearNode<'a, S> {}
 
-impl<'a> Stream for LinearNode<'a> {
+impl<'a, S> Stream for LinearNode<'a, S>
+where
+  S: Stream<Item = Option<DataValue<'a>>> + Unpin,
+{
   type Item = Option<f32>;
 
   fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
@@ -81,7 +84,7 @@ mod tests {
     );
 
     let source = Source::new();
-    let node = LinearNode::new(Box::new(source.link()), scale, "x");
+    let node = LinearNode::new(source.link(), scale, "x");
 
     source.send(data);
     futures::executor::block_on(async {
