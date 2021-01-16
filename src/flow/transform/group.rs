@@ -61,80 +61,24 @@ where
 }
 
 pub struct CountNode<'a, S> {
-  source: RepsNode<'a, S>,
+  source: S,
+  tail: Option<HashMap<DataItem, usize>>,
   by: &'a str,
   output: &'a str,
 }
 
-impl<'a, S> CountNode<'a, S>
-where
-  S: Stream<Item = Option<DataValue<'a>>> + Unpin + 'a,
-{
-  pub fn new(data: S, by: &'a str, output: &'a str) -> CountNode<'a, S> {
+impl<'a, S> CountNode<'a, S> {
+  pub fn new(source: S, by: &'a str, output: &'a str) -> CountNode<'a, S> {
     CountNode {
-      source: RepsNode::new(data, by),
+      source,
+      tail: None,
       by,
       output,
     }
   }
-}
-
-impl<'a, S> Unpin for CountNode<'a, S> {}
-
-impl<'a, S> Stream for CountNode<'a, S>
-where
-  S: Stream<Item = Option<DataValue<'a>>> + Unpin + 'a,
-{
-  type Item = Option<DataValue<'a>>;
-
-  fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-    Pin::new(&mut self.source).poll_next(cx).map(|value| {
-      value.map(|value| {
-        value.map(|(var, count)| {
-          DataValue::from_pairs(vec![
-            (self.by, var),
-            (self.output, DataItem::Number(count as f32)),
-          ])
-        })
-      })
-    })
-  }
-
-  fn size_hint(&self) -> (usize, Option<usize>) {
-    self.source.size_hint()
-  }
-}
-
-impl<'a, S> Clone for CountNode<'a, S>
-where
-  S: Clone,
-{
-  fn clone(&self) -> Self {
-    CountNode {
-      source: self.source.clone(),
-      by: &self.by,
-      output: &self.output,
-    }
-  }
-}
-
-struct RepsNode<'a, S> {
-  source: S,
-  tail: Option<HashMap<DataItem, usize>>,
-  by: &'a str,
-}
-
-impl<'a, S> RepsNode<'a, S> {
-  pub fn new(source: S, by: &'a str) -> RepsNode<'a, S> {
-    RepsNode {
-      source,
-      tail: None,
-      by,
-    }
-  }
 
   #[inline]
-  pub fn count_value(&self, acc: &mut HashMap<DataItem, usize>, value: DataValue) {
+  fn count_value(&self, acc: &mut HashMap<DataItem, usize>, value: DataValue) {
     if let Some(target) = value.get(self.by) {
       match acc.get_mut(&target) {
         Some(count) => count.add_assign(1),
@@ -144,13 +88,39 @@ impl<'a, S> RepsNode<'a, S> {
       }
     }
   }
+
+  #[inline]
+  fn next_tail_value(&mut self) -> Option<Option<DataValue<'a>>> {
+    if let Some(tail) = self.tail.as_mut() {
+      if tail.is_empty() {
+        self.tail = None;
+        Some(None)
+      } else {
+        tail
+          .keys()
+          .next()
+          .cloned()
+          .map(|key| tail.remove_entry(&key))
+          .map(|entry| {
+            entry.map(|(var, count)| {
+              DataValue::from_pairs(vec![
+                (self.by, var),
+                (self.output, DataItem::Number(count as f32)),
+              ])
+            })
+          })
+      }
+    } else {
+      None
+    }
+  }
 }
 
-impl<'a, S> Stream for RepsNode<'a, S>
+impl<'a, S> Stream for CountNode<'a, S>
 where
   S: Stream<Item = Option<DataValue<'a>>> + Unpin + 'a,
 {
-  type Item = Option<(DataItem, usize)>;
+  type Item = Option<DataValue<'a>>;
 
   fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
     if self.tail.is_none() {
@@ -168,34 +138,25 @@ where
       };
     }
 
-    if let Some(tail) = self.tail.as_mut() {
-      if tail.is_empty() {
-        self.tail = None;
-        Poll::Ready(Some(None))
-      } else {
-        let entry = tail
-          .keys()
-          .next()
-          .cloned()
-          .map(|key| tail.remove_entry(&key));
-
-        Poll::Ready(entry)
-      }
+    let value = self.next_tail_value();
+    if value.is_some() {
+      Poll::Ready(value)
     } else {
       Poll::Pending
     }
   }
 }
 
-impl<'a, S> Clone for RepsNode<'a, S>
+impl<'a, S> Clone for CountNode<'a, S>
 where
   S: Clone,
 {
   fn clone(&self) -> Self {
-    RepsNode {
+    CountNode {
       source: self.source.clone(),
       tail: None,
       by: &self.by,
+      output: &self.output,
     }
   }
 }
