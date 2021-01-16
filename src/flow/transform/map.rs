@@ -51,6 +51,18 @@ where
   }
 }
 
+impl<'a, S> Clone for MapNode<'a, S>
+where
+  S: Clone,
+{
+  fn clone(&self) -> Self {
+    MapNode {
+      source: self.source.clone(),
+      pipe: self.pipe,
+    }
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use futures::StreamExt;

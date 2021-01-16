@@ -59,6 +59,18 @@ where
   }
 }
 
+impl<'a, S> Clone for FilterNode<'a, S>
+where
+  S: Clone,
+{
+  fn clone(&self) -> Self {
+    FilterNode {
+      source: self.source.clone(),
+      pipe: self.pipe,
+    }
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use futures::StreamExt;
