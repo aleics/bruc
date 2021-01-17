@@ -6,7 +6,7 @@ pub mod transform;
 #[cfg(test)]
 mod tests {
   use crate::data::DataValue;
-  use crate::flow::data::source;
+  use crate::flow::data::{Chunks, Source};
   use crate::flow::transform::chain;
   use crate::transform::filter::FilterPipe;
   use crate::transform::map::MapPipe;
@@ -29,34 +29,28 @@ mod tests {
     ];
 
     futures::executor::block_on(async {
-      let (mut sink, source) = source();
-      let mut stream = chain(source, &pipes);
+      let source: Source<DataValue> = Source::new();
+      let node = chain(Box::new(source.link()), &pipes);
 
-      sink.append(data).await.unwrap();
+      source.send(data);
       assert_eq!(
+        Chunks::new(node).collect::<Vec<_>>().await,
         vec![
-          stream.next().await.unwrap(),
-          stream.next().await.unwrap(),
-          stream.next().await.unwrap(),
-          stream.next().await.unwrap()
-        ],
-        vec![
-          Some(DataValue::from_pairs(vec![
+          DataValue::from_pairs(vec![
             ("x", 3.0.into()),
             ("y", 1.0.into()),
             ("z", 5.0.into())
-          ])),
-          Some(DataValue::from_pairs(vec![
+          ]),
+          DataValue::from_pairs(vec![
             ("x", 7.0.into()),
             ("y", 4.0.into()),
             ("z", 9.0.into())
-          ])),
-          Some(DataValue::from_pairs(vec![
+          ]),
+          DataValue::from_pairs(vec![
             ("x", 5.0.into()),
             ("y", 3.0.into()),
             ("z", 7.0.into())
-          ])),
-          None
+          ])
         ]
       );
     });

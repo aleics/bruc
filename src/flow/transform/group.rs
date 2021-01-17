@@ -1,5 +1,5 @@
 use crate::data::DataValue;
-use crate::flow::data::DataStream;
+use crate::flow::data::{Chunks, DataStream};
 use crate::transform::group::{GroupOperator, GroupPipe};
 use bruc_expreter::data::{DataItem, DataSource};
 use futures::stream::LocalBoxStream;
@@ -99,11 +99,11 @@ impl<'a> RepsNode<'a> {
 
   #[inline]
   fn reps(data: DataStream<'a>, by: &'a str) -> LocalBoxStream<'a, Option<(DataItem, usize)>> {
-    data
+    Chunks::new(data)
       .fold(
         HashMap::<DataItem, usize>::new(),
-        move |mut acc, item| async move {
-          let target = item.and_then(|value| value.get(by).copied());
+        move |mut acc, value| async move {
+          let target = value.get(by).copied();
           if let Some(target) = target {
             match acc.get_mut(&target) {
               Some(count) => count.add_assign(1),
@@ -148,7 +148,7 @@ mod tests {
   use futures::StreamExt;
 
   use crate::data::DataValue;
-  use crate::flow::data::chunk_source;
+  use crate::flow::data::{Chunks, Source};
   use crate::flow::transform::group::GroupNode;
   use crate::transform::group::{GroupOperator, GroupPipe};
 
@@ -159,20 +159,19 @@ mod tests {
       DataValue::from_pairs(vec![("a", 2.0.into())]),
       DataValue::from_pairs(vec![("a", 2.0.into())]),
     ];
-    let source = chunk_source(data);
-    let node = GroupNode::chain(source, &group);
+    let source = Source::new();
+    let mut node = GroupNode::chain(Box::new(source.link()), &group);
 
+    source.send(data);
     futures::executor::block_on(async {
-      let values = node.collect::<Vec<_>>().await;
+      // let values: Vec<_> = Chunks::new(node).collect().await;
+
       assert_eq!(
-        values,
-        vec![
-          Some(DataValue::from_pairs(vec![
-            ("a", 2.0.into()),
-            ("count", 2.0.into())
-          ])),
-          None
-        ]
+        vec![node.next().await],
+        vec![Some(Some(DataValue::from_pairs(vec![
+          ("a", 2.0.into()),
+          ("count", 2.0.into())
+        ])))]
       )
     });
   }
@@ -184,21 +183,19 @@ mod tests {
       DataValue::from_pairs(vec![("a", 2.0.into())]),
       DataValue::from_pairs(vec![("b", 3.0.into())]),
     ];
-    let source = chunk_source(data);
-    let node = GroupNode::chain(source, &group);
+    let source = Source::new();
+    let node = GroupNode::chain(Box::new(source.link()), &group);
 
+    source.send(data);
     futures::executor::block_on(async {
-      let values: Vec<_> = node.collect().await;
+      let values: Vec<_> = Chunks::new(node).collect().await;
 
       assert_eq!(
         values,
-        vec![
-          Some(DataValue::from_pairs(vec![
-            ("a", 2.0.into()),
-            ("count", 1.0.into())
-          ])),
-          None
-        ]
+        vec![DataValue::from_pairs(vec![
+          ("a", 2.0.into()),
+          ("count", 1.0.into())
+        ])]
       )
     });
   }

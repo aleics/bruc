@@ -5,7 +5,7 @@ authors = ["aleics <aleics.casanovas@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-futures = "0.3.7"
+futures = "0.3.8"
 bruc-expreter = { git = "ssh://git@github.com/aleics/bruc-expreter.git", features = ["serde"] }
 
 # For external trait impls

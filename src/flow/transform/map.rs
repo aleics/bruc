@@ -48,7 +48,7 @@ mod tests {
   use futures::StreamExt;
 
   use crate::data::DataValue;
-  use crate::flow::data::chunk_source;
+  use crate::flow::data::{Chunks, Source};
   use crate::flow::transform::map::MapNode;
   use crate::transform::map::MapPipe;
 
@@ -59,25 +59,19 @@ mod tests {
       DataValue::from_pairs(vec![("a", 2.0.into())]),
       DataValue::from_pairs(vec![("a", 4.0.into())]),
     ];
-    let source = chunk_source(data);
 
-    let node = MapNode::chain(source, &map);
+    let source = Source::new();
+    let node = MapNode::chain(Box::new(source.link()), &map);
 
+    source.send(data);
     futures::executor::block_on(async {
-      let values: Vec<_> = node.collect().await;
+      let values: Vec<_> = Chunks::new(node).collect().await;
 
       assert_eq!(
         values,
         vec![
-          Some(DataValue::from_pairs(vec![
-            ("a", 2.0.into()),
-            ("b", 5.0.into())
-          ])),
-          Some(DataValue::from_pairs(vec![
-            ("a", 4.0.into()),
-            ("b", 7.0.into())
-          ])),
-          None
+          DataValue::from_pairs(vec![("a", 2.0.into()), ("b", 5.0.into())]),
+          DataValue::from_pairs(vec![("a", 4.0.into()), ("b", 7.0.into())])
         ]
       )
     })

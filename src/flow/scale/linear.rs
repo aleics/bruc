@@ -25,7 +25,7 @@ impl<'a> LinearNode<'a> {
 impl<'a> Unpin for LinearNode<'a> {}
 
 impl<'a> Stream for LinearNode<'a> {
-  type Item = f32;
+  type Item = Option<f32>;
 
   fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
     Poll::Ready(loop {
@@ -38,8 +38,10 @@ impl<'a> Stream for LinearNode<'a> {
                 .and_then(|value| self.scale.scale(value));
 
               if result.is_some() {
-                break result;
+                break Some(result);
               }
+            } else {
+              break Some(None);
             }
           }
           None => break None,
@@ -56,7 +58,7 @@ impl<'a> Stream for LinearNode<'a> {
 #[cfg(test)]
 mod tests {
   use crate::data::DataValue;
-  use crate::flow::data::chunk_source;
+  use crate::flow::data::{Chunks, Source};
   use crate::flow::scale::linear::LinearNode;
   use crate::scale::domain::Domain;
   use crate::scale::linear::LinearScale;
@@ -65,12 +67,12 @@ mod tests {
 
   #[test]
   fn applies() {
-    let source = chunk_source(vec![
+    let data = vec![
       DataValue::from_pairs(vec![("x", (-2.0).into()), ("y", 1.0.into())]),
       DataValue::from_pairs(vec![("x", 5.0.into()), ("y", 1.0.into())]),
       DataValue::from_pairs(vec![("x", 10.0.into()), ("y", 1.0.into())]),
       DataValue::from_pairs(vec![("x", 15.0.into()), ("y", 1.0.into())]),
-    ]);
+    ];
 
     let scale = LinearScale::new(
       "horizontal",
@@ -78,21 +80,23 @@ mod tests {
       Range::Literal(0.0, 1.0),
     );
 
-    let node = LinearNode::new(source, scale, "x");
+    let source = Source::new();
+    let node = LinearNode::new(Box::new(source.link()), scale, "x");
 
+    source.send(data);
     futures::executor::block_on(async {
-      let values: Vec<_> = node.collect().await;
+      let values: Vec<_> = Chunks::new(node).collect().await;
       assert_eq!(values, vec![0.0, 0.5, 1.0, 1.0]);
     })
   }
 
   #[test]
   fn ignores_boolean() {
-    let source = chunk_source(vec![
+    let data = vec![
       DataValue::from_pairs(vec![("x", true.into()), ("y", 1.0.into())]),
       DataValue::from_pairs(vec![("x", false.into()), ("y", 1.0.into())]),
       DataValue::from_pairs(vec![("x", 2.0.into()), ("y", 1.0.into())]),
-    ]);
+    ];
 
     let scale = LinearScale::new(
       "horizontal",
@@ -100,10 +104,12 @@ mod tests {
       Range::Literal(0.0, 1.0),
     );
 
-    let node = LinearNode::new(source, scale, "x");
+    let source = Source::new();
+    let node = LinearNode::new(Box::new(source.link()), scale, "x");
 
+    source.send(data);
     futures::executor::block_on(async {
-      let values: Vec<_> = node.collect().await;
+      let values: Vec<_> = Chunks::new(node).collect().await;
       assert_eq!(values, vec![0.2]);
     })
   }

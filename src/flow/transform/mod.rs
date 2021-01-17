@@ -30,7 +30,7 @@ mod tests {
   use futures::StreamExt;
 
   use crate::data::DataValue;
-  use crate::flow::data::chunk_source;
+  use crate::flow::data::{Chunks, Source};
   use crate::flow::transform::chain;
   use crate::transform::filter::FilterPipe;
   use crate::transform::group::{GroupOperator, GroupPipe};
@@ -48,19 +48,20 @@ mod tests {
       DataValue::from_pairs(vec![("a", 4.0.into())]),
     ];
 
-    let node = chain(chunk_source(data), &pipes);
+    let source = Source::new();
+    let node = chain(Box::new(source.link()), &pipes);
 
+    source.send(data);
     futures::executor::block_on(async {
-      let values: Vec<_> = node.collect().await;
+      let values: Vec<_> = Chunks::new(node).collect().await;
 
       assert_eq!(
         values,
         vec![
-          Some(DataValue::from_pairs(vec![("a", 1.0.into())])),
-          Some(DataValue::from_pairs(vec![("a", 2.0.into())])),
-          Some(DataValue::from_pairs(vec![("a", 3.0.into())])),
-          Some(DataValue::from_pairs(vec![("a", 4.0.into())])),
-          None
+          DataValue::from_pairs(vec![("a", 1.0.into())]),
+          DataValue::from_pairs(vec![("a", 2.0.into())]),
+          DataValue::from_pairs(vec![("a", 3.0.into())]),
+          DataValue::from_pairs(vec![("a", 4.0.into())])
         ]
       )
     });
@@ -80,35 +81,36 @@ mod tests {
       DataValue::from_pairs(vec![("a", 4.0.into())]),
     ];
 
-    let node = chain(chunk_source(data), &pipes);
+    let source = Source::new();
+    let node = chain(Box::new(source.link()), &pipes);
 
+    source.send(data);
     futures::executor::block_on(async {
-      let values: Vec<_> = node.collect().await;
+      let values: Vec<_> = Chunks::new(node).collect().await;
 
       assert_eq!(
         values,
         vec![
-          Some(DataValue::from_pairs(vec![
+          DataValue::from_pairs(vec![
             ("a", 1.0.into()),
             ("b", 3.0.into()),
             ("c", 5.0.into())
-          ])),
-          Some(DataValue::from_pairs(vec![
+          ]),
+          DataValue::from_pairs(vec![
             ("a", 2.0.into()),
             ("b", 4.0.into()),
             ("c", 6.0.into())
-          ])),
-          Some(DataValue::from_pairs(vec![
+          ]),
+          DataValue::from_pairs(vec![
             ("a", 3.0.into()),
             ("b", 5.0.into()),
             ("c", 7.0.into())
-          ])),
-          Some(DataValue::from_pairs(vec![
+          ]),
+          DataValue::from_pairs(vec![
             ("a", 4.0.into()),
             ("b", 6.0.into()),
             ("c", 8.0.into())
-          ])),
-          None
+          ])
         ]
       )
     });
@@ -128,14 +130,13 @@ mod tests {
       DataValue::from_pairs(vec![("a", 4.0.into())]),
     ];
 
-    let node = chain(chunk_source(data), &pipes);
+    let source = Source::new();
+    let node = chain(Box::new(source.link()), &pipes);
 
+    source.send(data);
     futures::executor::block_on(async {
-      let values: Vec<_> = node.collect().await;
-      assert_eq!(
-        values,
-        vec![Some(DataValue::from_pairs(vec![("a", 3.0.into())])), None]
-      );
+      let values: Vec<_> = Chunks::new(node).collect().await;
+      assert_eq!(values, vec![DataValue::from_pairs(vec![("a", 3.0.into())])]);
     });
   }
 
@@ -157,21 +158,22 @@ mod tests {
       DataValue::from_pairs(vec![("a", 4.0.into())]),
     ];
 
-    let node = chain(chunk_source(data), &pipes);
+    let source = Source::new();
+    let node = chain(Box::new(source.link()), &pipes);
 
+    source.send(data);
     futures::executor::block_on(async {
-      let result = node.collect::<Vec<_>>().await;
+      let values = Chunks::new(node).collect::<Vec<_>>().await;
 
-      assert_eq!(result.len(), 3);
-      assert!(result.contains(&Some(DataValue::from_pairs(vec![
+      assert_eq!(values.len(), 2);
+      assert!(values.contains(&DataValue::from_pairs(vec![
         ("a_count", 2.0.into()),
         ("count_a_count", 1.0.into())
-      ]))));
-      assert!(result.contains(&Some(DataValue::from_pairs(vec![
+      ])));
+      assert!(values.contains(&DataValue::from_pairs(vec![
         ("a_count", 1.0.into()),
         ("count_a_count", 2.0.into())
-      ]))));
-      // assert_eq!(result.last().unwrap(), None);
+      ])));
     });
   }
 
@@ -189,22 +191,17 @@ mod tests {
       DataValue::from_pairs(vec![("a", 4.0.into())]),
     ];
 
-    let node = chain(chunk_source(data), &pipes);
+    let source = Source::new();
+    let node = chain(Box::new(source.link()), &pipes);
 
+    source.send(data);
     futures::executor::block_on(async {
-      let result = node.collect::<Vec<_>>().await;
+      let values = Chunks::new(node).collect::<Vec<_>>().await;
       assert_eq!(
-        result,
+        values,
         vec![
-          Some(DataValue::from_pairs(vec![
-            ("a", 3.0.into()),
-            ("b", 6.0.into())
-          ])),
-          Some(DataValue::from_pairs(vec![
-            ("a", 4.0.into()),
-            ("b", 8.0.into())
-          ])),
-          None
+          DataValue::from_pairs(vec![("a", 3.0.into()), ("b", 6.0.into())]),
+          DataValue::from_pairs(vec![("a", 4.0.into()), ("b", 8.0.into())])
         ]
       );
     });
@@ -224,19 +221,21 @@ mod tests {
       DataValue::from_pairs(vec![("a", 4.0.into())]),
     ];
 
-    let node = chain(chunk_source(data), &pipes);
+    let source = Source::new();
+    let node = chain(Box::new(source.link()), &pipes);
 
+    source.send(data);
     futures::executor::block_on(async {
-      let result = node.collect::<Vec<_>>().await;
-      assert_eq!(result.len(), 3);
-      assert!(result.contains(&Some(DataValue::from_pairs(vec![
+      let result = Chunks::new(node).collect::<Vec<_>>().await;
+      assert_eq!(result.len(), 2);
+      assert!(result.contains(&DataValue::from_pairs(vec![
         ("a", 3.0.into()),
         ("a_count", 1.0.into())
-      ]))));
-      assert!(result.contains(&Some(DataValue::from_pairs(vec![
+      ])));
+      assert!(result.contains(&DataValue::from_pairs(vec![
         ("a", 4.0.into()),
         ("a_count", 1.0.into())
-      ]))));
+      ])));
     });
   }
 }

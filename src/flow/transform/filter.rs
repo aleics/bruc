@@ -56,7 +56,7 @@ mod tests {
   use futures::StreamExt;
 
   use crate::data::DataValue;
-  use crate::flow::data::chunk_source;
+  use crate::flow::data::{Chunks, Source};
   use crate::flow::transform::filter::FilterNode;
   use crate::transform::filter::FilterPipe;
 
@@ -67,16 +67,14 @@ mod tests {
       DataValue::from_pairs(vec![("a", 2.0.into())]),
       DataValue::from_pairs(vec![("a", 4.0.into())]),
     ];
-    let source = chunk_source(data);
-    let node = FilterNode::chain(source, &filter);
+    let source = Source::new();
+    let node = FilterNode::chain(Box::new(source.link()), &filter);
 
+    source.send(data);
     futures::executor::block_on(async {
-      let values: Vec<_> = node.collect().await;
+      let values: Vec<_> = Chunks::new(node).collect().await;
 
-      assert_eq!(
-        values,
-        vec![Some(DataValue::from_pairs(vec![("a", 4.0.into())])), None]
-      )
+      assert_eq!(values, vec![DataValue::from_pairs(vec![("a", 4.0.into())])])
     })
   }
 }
