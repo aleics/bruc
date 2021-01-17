@@ -1,5 +1,4 @@
 use crate::data::DataValue;
-use crate::flow::data::DataStream;
 use crate::transform::map::MapPipe;
 use futures::task::{Context, Poll};
 use futures::Stream;
@@ -13,17 +12,6 @@ pub struct MapNode<'a, S> {
 impl<'a, S> MapNode<'a, S> {
   pub fn new(source: S, pipe: &'a MapPipe<'a>) -> MapNode<'a, S> {
     MapNode { source, pipe }
-  }
-}
-
-impl<'a, S> MapNode<'a, S>
-where
-  S: Stream<Item = Option<DataValue<'a>>> + Unpin + 'a,
-{
-  #[inline]
-  pub fn chain(source: S, pipe: &'a MapPipe<'a>) -> DataStream<'a> {
-    let node = MapNode::new(source, pipe);
-    Box::new(node)
   }
 }
 

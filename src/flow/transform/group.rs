@@ -1,5 +1,4 @@
 use crate::data::DataValue;
-use crate::flow::data::DataStream;
 use crate::transform::group::{GroupOperator, GroupPipe};
 use bruc_expreter::data::{DataItem, DataSource};
 use futures::task::{Context, Poll};
@@ -12,19 +11,11 @@ pub enum GroupNode<'a, S> {
   Count(CountNode<'a, S>),
 }
 
-impl<'a, S> GroupNode<'a, S>
-where
-  S: Stream<Item = Option<DataValue<'a>>> + Unpin + 'a,
-{
+impl<'a, S> GroupNode<'a, S> {
   pub fn new(source: S, pipe: &'a GroupPipe<'a>) -> GroupNode<'a, S> {
     match pipe.op() {
       GroupOperator::Count => GroupNode::Count(CountNode::new(source, pipe.by(), pipe.output())),
     }
-  }
-
-  #[inline]
-  pub fn chain(source: S, pipe: &'a GroupPipe<'a>) -> DataStream<'a> {
-    Box::new(GroupNode::new(source, pipe))
   }
 }
 

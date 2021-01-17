@@ -1,5 +1,4 @@
 use crate::data::DataValue;
-use crate::flow::data::DataStream;
 use crate::transform::filter::FilterPipe;
 use futures::task::{Context, Poll};
 use futures::Stream;
@@ -13,17 +12,6 @@ pub struct FilterNode<'a, S> {
 impl<'a, S> FilterNode<'a, S> {
   pub fn new(source: S, pipe: &'a FilterPipe<'a>) -> FilterNode<'a, S> {
     FilterNode { source, pipe }
-  }
-}
-
-impl<'a, S> FilterNode<'a, S>
-where
-  S: Stream<Item = Option<DataValue<'a>>> + Unpin + 'a,
-{
-  #[inline]
-  pub fn chain(source: S, pipe: &'a FilterPipe<'a>) -> DataStream<'a> {
-    let node = FilterNode::new(source, pipe);
-    Box::new(node)
   }
 }
 

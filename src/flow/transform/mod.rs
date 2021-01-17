@@ -15,10 +15,9 @@ pub fn chain<'a, S>(source: S, pipes: &'a [Pipe<'a>]) -> DataStream<'a>
 where
   S: Stream<Item = Option<DataValue<'a>>> + Unpin + 'a,
 {
-  pipes.iter().fold(Box::new(source), |mut acc, pipe| {
-    acc = chain_transform(acc, pipe);
-    acc
-  })
+  pipes
+    .iter()
+    .fold(Box::new(source), |acc, pipe| chain_transform(acc, pipe))
 }
 
 #[inline]
@@ -27,9 +26,9 @@ where
   S: Stream<Item = Option<DataValue<'a>>> + Unpin + 'a,
 {
   match pipe {
-    Pipe::Filter(pipe) => FilterNode::chain(source, pipe),
-    Pipe::Map(pipe) => MapNode::chain(source, pipe),
-    Pipe::Group(pipe) => GroupNode::chain(source, pipe),
+    Pipe::Filter(pipe) => Box::new(FilterNode::new(source, pipe)),
+    Pipe::Map(pipe) => Box::new(MapNode::new(source, pipe)),
+    Pipe::Group(pipe) => Box::new(GroupNode::new(source, pipe)),
   }
 }
 
