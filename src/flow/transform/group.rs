@@ -217,4 +217,39 @@ mod tests {
       )
     });
   }
+
+  #[test]
+  fn clones() {
+    let group = GroupPipe::new("a", GroupOperator::Count, "count");
+    let data = vec![
+      DataValue::from_pairs(vec![("a", 2.0.into())]),
+      DataValue::from_pairs(vec![("a", 2.0.into())]),
+    ];
+
+    let source = Source::new();
+
+    let first = GroupNode::new(source.link(), &group);
+    let second = first.clone();
+
+    source.send(data);
+    futures::executor::block_on(async {
+      let values: Vec<_> = Chunks::new(first).collect().await;
+      assert_eq!(
+        values,
+        vec![DataValue::from_pairs(vec![
+          ("a", 2.0.into()),
+          ("count", 2.0.into())
+        ])]
+      );
+
+      let values: Vec<_> = Chunks::new(second).collect().await;
+      assert_eq!(
+        values,
+        vec![DataValue::from_pairs(vec![
+          ("a", 2.0.into()),
+          ("count", 2.0.into())
+        ])]
+      );
+    });
+  }
 }

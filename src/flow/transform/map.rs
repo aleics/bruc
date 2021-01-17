@@ -81,7 +81,7 @@ mod tests {
     ];
 
     let source = Source::new();
-    let node = MapNode::chain(source.link(), &map);
+    let node = MapNode::new(source.link(), &map);
 
     source.send(data);
     futures::executor::block_on(async {
@@ -93,7 +93,43 @@ mod tests {
           DataValue::from_pairs(vec![("a", 2.0.into()), ("b", 5.0.into())]),
           DataValue::from_pairs(vec![("a", 4.0.into()), ("b", 7.0.into())])
         ]
-      )
+      );
+    })
+  }
+
+  #[test]
+  fn clones() {
+    let map = MapPipe::new("a + 3", "b").unwrap();
+    let data = vec![
+      DataValue::from_pairs(vec![("a", 2.0.into())]),
+      DataValue::from_pairs(vec![("a", 4.0.into())]),
+    ];
+
+    let source = Source::new();
+    let first = MapNode::new(source.link(), &map);
+    let second = first.clone();
+
+    source.send(data);
+    futures::executor::block_on(async {
+      let values: Vec<_> = Chunks::new(first).collect().await;
+
+      assert_eq!(
+        values,
+        vec![
+          DataValue::from_pairs(vec![("a", 2.0.into()), ("b", 5.0.into())]),
+          DataValue::from_pairs(vec![("a", 4.0.into()), ("b", 7.0.into())])
+        ]
+      );
+
+      let values: Vec<_> = Chunks::new(second).collect().await;
+
+      assert_eq!(
+        values,
+        vec![
+          DataValue::from_pairs(vec![("a", 2.0.into()), ("b", 5.0.into())]),
+          DataValue::from_pairs(vec![("a", 4.0.into()), ("b", 7.0.into())])
+        ]
+      );
     })
   }
 }
