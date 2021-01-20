@@ -1,3 +1,4 @@
+use crate::data::Data;
 use crate::mark::Mark;
 use crate::scale::Scale;
 use crate::transform::Transform;
@@ -22,6 +23,7 @@ impl<'a> Engine<'a> {
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 pub struct Specification<'a> {
+  data: Data<'a>,
   #[cfg_attr(feature = "serde", serde(borrow))]
   transform: Option<Transform<'a>>,
   scales: Vec<Scale<'a>>,
@@ -30,11 +32,13 @@ pub struct Specification<'a> {
 
 impl<'a> Specification<'a> {
   pub fn new(
+    data: Data<'a>,
     transform: Option<Transform<'a>>,
     scales: Vec<Scale<'a>>,
     marks: Vec<Mark<'a>>,
   ) -> Specification<'a> {
     Specification {
+      data,
       transform,
       scales,
       marks,
@@ -45,6 +49,7 @@ impl<'a> Specification<'a> {
 #[cfg(feature = "serde")]
 #[cfg(test)]
 mod serde_tests {
+  use crate::data::{Data, DataValue};
   use crate::mark::line::{Interpolate, LineMark, LineMarkProperties};
   use crate::mark::{DataSource, Mark};
   use crate::scale::domain::Domain;
@@ -60,20 +65,32 @@ mod serde_tests {
   fn deserializes_empty_spec() {
     let spec: Specification = serde_json::from_str(
       r#"{
+        "data": {},
         "scales": [],
         "marks": []
       }"#,
     )
     .unwrap();
-    assert_eq!(spec, Specification::new(None, vec![], vec![]));
+    assert_eq!(
+      spec,
+      Specification::new(Data::from_pairs(vec![]), None, vec![], vec![])
+    );
   }
 
   #[test]
   fn deserializes_spec() {
     let spec: Specification = serde_json::from_str(
       r#"{
+        "data": {
+          "primary": [
+            { "a": 10, "b": 1 },
+            { "a": 0, "b": 5 },
+            { "a": 3, "b": 3 }
+          ]  
+        },      
         "transform": {
-          "source": "primary",
+          "from": "primary",
+          "as": "valid",
           "pipes": [
             { "type": "filter", "fn": "a > 2" }
           ]
@@ -88,7 +105,7 @@ mod serde_tests {
         ],
         "marks": [
           {
-            "from": "primary",
+            "from": "valid",
             "type": "line",
             "on": {
               "update": {
@@ -103,8 +120,17 @@ mod serde_tests {
     assert_eq!(
       spec,
       Specification::new(
+        Data::from_pairs(vec![(
+          "primary",
+          vec![
+            DataValue::from_pairs(vec![("a", 10.0.into()), ("b", 1.0.into())]),
+            DataValue::from_pairs(vec![("a", 0.0.into()), ("b", 5.0.into())]),
+            DataValue::from_pairs(vec![("a", 3.0.into()), ("b", 3.0.into())])
+          ]
+        )]),
         Some(Transform::new(
           "primary",
+          "valid",
           vec![Pipe::Filter(FilterPipe::new("a > 2").unwrap())],
         )),
         vec![Scale::Linear(LinearScale::new(
@@ -113,7 +139,7 @@ mod serde_tests {
           Range::Literal(0.0, 20.0),
         ))],
         vec![Mark::line(
-          "primary",
+          "valid",
           LineMark::new(LineMarkProperties::new(
             Some(DataSource::field("x", Some("horizontal"))),
             None,

@@ -10,18 +10,29 @@ pub mod pipe;
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 pub struct Transform<'a> {
   #[cfg_attr(feature = "serde", serde(borrow))]
-  source: &'a str,
+  from: &'a str,
+  #[cfg_attr(feature = "serde", serde(borrow))]
+  #[cfg_attr(feature = "serde", serde(rename = "as"))]
+  output: &'a str,
   #[cfg_attr(feature = "serde", serde(borrow))]
   pipes: Vec<Pipe<'a>>,
 }
 
 impl<'a> Transform<'a> {
-  pub fn new(source: &'a str, pipes: Vec<Pipe<'a>>) -> Transform<'a> {
-    Transform { source, pipes }
+  pub fn new(source: &'a str, output: &'a str, pipes: Vec<Pipe<'a>>) -> Transform<'a> {
+    Transform {
+      from: source,
+      output,
+      pipes,
+    }
   }
 
-  pub fn source(&self) -> &str {
-    &self.source
+  pub fn from(&self) -> &str {
+    self.from
+  }
+
+  pub fn output(&self) -> &str {
+    self.output
   }
 
   pub fn pipes(&self) -> &Vec<Pipe<'a>> {
@@ -41,7 +52,8 @@ mod serde_tests {
   #[test]
   fn deserializes_transform() {
     let transform_json = r#"{
-      "source": "primary",
+      "from": "primary",
+      "as": "x",
       "pipes": [
         { "type": "filter", "fn": "a > 2" },
         { "type": "map", "fn": "a + 2", "output": "b" },
@@ -50,7 +62,8 @@ mod serde_tests {
     }"#;
 
     let transform: Transform = serde_json::from_str(transform_json).unwrap();
-    assert_eq!(transform.source(), "primary");
+    assert_eq!(transform.from(), "primary");
+    assert_eq!(transform.output(), "x");
     assert_eq!(
       transform.pipes(),
       &vec![
