@@ -7,13 +7,13 @@ use bruc_expreter::data::DataItem;
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 pub struct LinearScale<'a> {
   #[cfg_attr(feature = "serde", serde(borrow))]
-  name: &'a str,
+  pub(crate) name: &'a str,
 
   #[cfg_attr(feature = "serde", serde(default = "Domain::default_literal"))]
-  domain: Domain,
+  pub(crate) domain: Domain,
 
   #[cfg_attr(feature = "serde", serde(default = "Range::default_literal"))]
-  range: Range,
+  pub(crate) range: Range,
 }
 
 impl<'a> LinearScale<'a> {
@@ -23,18 +23,6 @@ impl<'a> LinearScale<'a> {
       domain,
       range,
     }
-  }
-
-  pub fn name(&self) -> &'a str {
-    &self.name
-  }
-
-  pub fn domain(&self) -> &Domain {
-    &self.domain
-  }
-
-  pub fn range(&self) -> &Range {
-    &self.range
   }
 }
 
