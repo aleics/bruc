@@ -5,7 +5,7 @@ use crate::mark::DataSource;
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 pub struct LineMark<'a> {
   #[cfg_attr(feature = "serde", serde(borrow))]
-  on: Phases<LineMarkProperties<'a>>,
+  pub(crate) on: Phases<LineMarkProperties<'a>>,
 }
 
 impl<'a> LineMark<'a> {
@@ -20,11 +20,11 @@ impl<'a> LineMark<'a> {
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 pub struct LineMarkProperties<'a> {
   #[cfg_attr(feature = "serde", serde(default))]
-  interpolate: Interpolate,
+  pub(crate) interpolate: Interpolate,
 
   #[cfg_attr(feature = "serde", serde(borrow))]
   #[cfg_attr(feature = "serde", serde(flatten))]
-  base: BaseMarkProperties<'a>,
+  pub(crate) base: BaseMarkProperties<'a>,
 }
 
 impl<'a> LineMarkProperties<'a> {
@@ -42,7 +42,7 @@ impl<'a> LineMarkProperties<'a> {
   }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub enum Interpolate {

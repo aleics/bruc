@@ -7,9 +7,9 @@ pub mod line;
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 pub struct Mark<'a> {
-  from: &'a str,
+  pub(crate) from: &'a str,
   #[cfg_attr(feature = "serde", serde(flatten))]
-  kind: MarkKind<'a>,
+  pub(crate) kind: MarkKind<'a>,
 }
 
 impl<'a> Mark<'a> {
@@ -25,7 +25,7 @@ impl<'a> Mark<'a> {
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(tag = "type"))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
-enum MarkKind<'a> {
+pub enum MarkKind<'a> {
   #[cfg_attr(feature = "serde", serde(borrow))]
   Line(LineMark<'a>),
 }
@@ -39,6 +39,16 @@ pub enum DataSource<'a> {
     scale: Option<&'a str>,
   },
   ValueSource(DataItem),
+}
+
+impl<'a> DataSource<'a> {
+  pub fn field(field: &'a str, scale: Option<&'a str>) -> DataSource<'a> {
+    DataSource::FieldSource { field, scale }
+  }
+
+  pub fn value(item: DataItem) -> DataSource<'a> {
+    DataSource::ValueSource(item)
+  }
 }
 
 #[cfg(test)]

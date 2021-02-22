@@ -1,10 +1,9 @@
 use crate::mark::DataSource;
-use bruc_expreter::data::DataItem;
 
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 pub struct Phases<T> {
-  update: Phase<T>,
+  pub(crate) update: Phase<T>,
 }
 
 impl<T> Phases<T> {
@@ -19,20 +18,20 @@ impl<T> Phases<T> {
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 pub struct Phase<T> {
   #[cfg_attr(feature = "serde", serde(flatten))]
-  props: T,
+  pub(crate) props: T,
 }
 
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 pub struct BaseMarkProperties<'a> {
   #[cfg_attr(feature = "serde", serde(borrow))]
-  x: Option<DataSource<'a>>,
+  pub(crate) x: Option<DataSource<'a>>,
   #[cfg_attr(feature = "serde", serde(borrow))]
-  y: Option<DataSource<'a>>,
+  pub(crate) y: Option<DataSource<'a>>,
   #[cfg_attr(feature = "serde", serde(borrow))]
-  width: Option<DataSource<'a>>,
+  pub(crate) width: Option<DataSource<'a>>,
   #[cfg_attr(feature = "serde", serde(borrow))]
-  height: Option<DataSource<'a>>,
+  pub(crate) height: Option<DataSource<'a>>,
 }
 
 impl<'a> BaseMarkProperties<'a> {
@@ -48,16 +47,6 @@ impl<'a> BaseMarkProperties<'a> {
       width,
       height,
     }
-  }
-}
-
-impl<'a> DataSource<'a> {
-  pub fn field(field: &'a str, scale: Option<&'a str>) -> DataSource<'a> {
-    DataSource::FieldSource { field, scale }
-  }
-
-  pub fn value(item: DataItem) -> DataSource<'a> {
-    DataSource::ValueSource(item)
   }
 }
 
