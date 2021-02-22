@@ -56,23 +56,12 @@ impl Scaler for LinearScale<'_> {
 }
 
 fn normalize(x: f32, (min, max): (f32, f32)) -> f32 {
-  let x = clamp(x, (min, max));
+  let x = x.clamp(min, max);
   (x - min) / max
 }
 
 fn interpolate(x: f32, (min, max): (f32, f32)) -> f32 {
   (max - min) * x + min
-}
-
-// TODO: replace for native clamp implementation once is stabilised (see: https://github.com/rust-lang/rust/pull/77872)
-fn clamp(x: f32, (min, max): (f32, f32)) -> f32 {
-  if x < min {
-    min
-  } else if x > max {
-    max
-  } else {
-    x
-  }
 }
 
 #[cfg(test)]
