@@ -1,29 +1,14 @@
 #[derive(PartialEq, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 pub struct GroupPipe<'a> {
-  by: &'a str,
-  op: GroupOperator,
-  output: &'a str,
+  pub(crate) by: &'a str,
+  pub(crate) op: GroupOperator,
+  pub(crate) output: &'a str,
 }
 
 impl<'a> GroupPipe<'a> {
   pub fn new(by: &'a str, op: GroupOperator, output: &'a str) -> GroupPipe<'a> {
     GroupPipe { by, op, output }
-  }
-
-  #[inline]
-  pub fn by(&self) -> &'a str {
-    &self.by
-  }
-
-  #[inline]
-  pub fn op(&self) -> &GroupOperator {
-    &self.op
-  }
-
-  #[inline]
-  pub fn output(&self) -> &'a str {
-    &self.output
   }
 }
 
@@ -59,8 +44,8 @@ mod serde_tests {
     )
     .unwrap();
 
-    assert_eq!(group.by(), "a");
-    assert_eq!(group.op(), &GroupOperator::Count);
-    assert_eq!(group.output(), "count_a");
+    assert_eq!(group.by, "a");
+    assert_eq!(group.op, GroupOperator::Count);
+    assert_eq!(group.output, "count_a");
   }
 }

@@ -6,8 +6,8 @@ use bruc_expreter::PredicateParser;
 
 #[derive(PartialEq, Debug)]
 pub struct MapPipe<'a> {
-  predicate: MapPredicate<'a>,
-  output: &'a str,
+  pub(crate) predicate: MapPredicate<'a>,
+  pub(crate) output: &'a str,
 }
 
 impl<'a> MapPipe<'a> {
@@ -21,16 +21,6 @@ impl<'a> MapPipe<'a> {
   pub fn apply(&self, item: &mut DataValue<'a>) {
     let var = self.predicate.interpret(&item).unwrap();
     item.insert(self.output, var.into());
-  }
-
-  #[inline]
-  pub fn predicate(&self) -> &'_ MapPredicate<'a> {
-    &self.predicate
-  }
-
-  #[inline]
-  pub fn output(&self) -> &'_ str {
-    &self.output
   }
 }
 
@@ -118,7 +108,7 @@ mod serde_tests {
   fn deserialize_map() {
     let map = serde_json::from_str::<MapPipe>(r#"{ "fn": "a + 2.0", "output": "b" }"#).unwrap();
 
-    assert_eq!(map.predicate(), &MapPredicate::new("a + 2.0").unwrap());
-    assert_eq!(map.output(), "b");
+    assert_eq!(map.predicate, MapPredicate::new("a + 2.0").unwrap());
+    assert_eq!(map.output, "b");
   }
 }

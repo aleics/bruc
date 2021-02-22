@@ -13,8 +13,8 @@ pub enum GroupNode<'a, S> {
 
 impl<'a, S> GroupNode<'a, S> {
   pub fn new(source: S, pipe: &'a GroupPipe<'a>) -> GroupNode<'a, S> {
-    match pipe.op() {
-      GroupOperator::Count => GroupNode::Count(CountNode::new(source, pipe.by(), pipe.output())),
+    match pipe.op {
+      GroupOperator::Count => GroupNode::Count(CountNode::new(source, pipe.by, pipe.output)),
     }
   }
 }

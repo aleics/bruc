@@ -7,7 +7,7 @@ use crate::transform::pipe::Predicate;
 
 #[derive(PartialEq, Debug)]
 pub struct FilterPipe<'a> {
-  predicate: FilterPredicate<'a>,
+  pub(crate) predicate: FilterPredicate<'a>,
 }
 
 impl<'a> FilterPipe<'a> {
@@ -15,11 +15,6 @@ impl<'a> FilterPipe<'a> {
   pub fn new(predicate: &'a str) -> Result<FilterPipe<'a>, Error> {
     let predicate = FilterPredicate::new(predicate)?;
     Ok(FilterPipe { predicate })
-  }
-
-  #[inline]
-  pub fn predicate(&self) -> &'_ FilterPredicate<'a> {
-    &self.predicate
   }
 
   #[inline]
@@ -102,9 +97,6 @@ mod serde_tests {
   #[test]
   fn deserialize_filter() {
     let filter = serde_json::from_str::<FilterPipe>(r#"{ "fn": "a > 2.0" }"#).unwrap();
-    assert_eq!(
-      filter.predicate(),
-      &FilterPredicate::new("a > 2.0").unwrap()
-    );
+    assert_eq!(filter.predicate, FilterPredicate::new("a > 2.0").unwrap());
   }
 }

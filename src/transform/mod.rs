@@ -10,12 +10,12 @@ pub mod pipe;
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 pub struct Transform<'a> {
   #[cfg_attr(feature = "serde", serde(borrow))]
-  from: &'a str,
+  pub(crate) from: &'a str,
   #[cfg_attr(feature = "serde", serde(borrow))]
   #[cfg_attr(feature = "serde", serde(rename = "as"))]
-  output: &'a str,
+  pub(crate) output: &'a str,
   #[cfg_attr(feature = "serde", serde(borrow))]
-  pipes: Vec<Pipe<'a>>,
+  pub(crate) pipes: Vec<Pipe<'a>>,
 }
 
 impl<'a> Transform<'a> {
@@ -25,18 +25,6 @@ impl<'a> Transform<'a> {
       output,
       pipes,
     }
-  }
-
-  pub fn from(&self) -> &str {
-    self.from
-  }
-
-  pub fn output(&self) -> &str {
-    self.output
-  }
-
-  pub fn pipes(&self) -> &Vec<Pipe<'a>> {
-    &self.pipes
   }
 }
 
@@ -62,11 +50,11 @@ mod serde_tests {
     }"#;
 
     let transform: Transform = serde_json::from_str(transform_json).unwrap();
-    assert_eq!(transform.from(), "primary");
-    assert_eq!(transform.output(), "x");
+    assert_eq!(transform.from, "primary");
+    assert_eq!(transform.output, "x");
     assert_eq!(
-      transform.pipes(),
-      &vec![
+      transform.pipes,
+      vec![
         Pipe::Filter(FilterPipe::new("a > 2").unwrap()),
         Pipe::Map(MapPipe::new("a + 2", "b").unwrap()),
         Pipe::Group(GroupPipe::new("b", GroupOperator::Count, "count"))
