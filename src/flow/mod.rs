@@ -7,18 +7,23 @@ pub mod transform;
 mod tests {
   use crate::data::DataValue;
   use crate::flow::data::{Chunks, Source};
-  use crate::flow::transform::chain;
+  use crate::flow::transform::TransformNode;
   use crate::transform::filter::FilterPipe;
   use crate::transform::map::MapPipe;
   use crate::transform::pipe::Pipe;
+  use crate::transform::Transform;
   use futures::StreamExt;
 
   #[test]
   fn chains_source_transform() {
-    let pipes = [
-      Pipe::Filter(FilterPipe::new("x >= 2 && y < 5").unwrap()),
-      Pipe::Map(MapPipe::new("x + 2", "z").unwrap()),
-    ];
+    let transform = Transform::new(
+      "table",
+      "data",
+      vec![
+        Pipe::Filter(FilterPipe::new("x >= 2 && y < 5").unwrap()),
+        Pipe::Map(MapPipe::new("x + 2", "z").unwrap()),
+      ],
+    );
     let data = vec![
       DataValue::from_pairs(vec![("x", 1.0.into()), ("y", 1.0.into())]),
       DataValue::from_pairs(vec![("x", 3.0.into()), ("y", 1.0.into())]),
@@ -30,7 +35,7 @@ mod tests {
 
     futures::executor::block_on(async {
       let source: Source<DataValue> = Source::new();
-      let node = chain(source.link(), &pipes);
+      let node = TransformNode::node(source.link(), &transform);
 
       source.send(data);
       assert_eq!(

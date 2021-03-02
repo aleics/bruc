@@ -3,11 +3,12 @@ extern crate test;
 
 use bruc::data::DataValue;
 use bruc::flow::data::{Chunks, Source};
-use bruc::flow::transform::chain;
+use bruc::flow::transform::TransformNode;
 use bruc::transform::filter::FilterPipe;
 use bruc::transform::group::{GroupOperator, GroupPipe};
 use bruc::transform::map::MapPipe;
 use bruc::transform::pipe::Pipe;
+use bruc::transform::Transform;
 use bruc_expreter::data::DataItem;
 use futures::StreamExt;
 use test::Bencher;
@@ -15,15 +16,19 @@ use test::Bencher;
 #[bench]
 fn bench_filter_pipe_1(b: &mut Bencher) {
   let data = vec![DataValue::from_pairs(vec![("a", DataItem::Number(1.0))])];
-  let pipes = vec![Pipe::Filter(
-    FilterPipe::new("(a > 1) && (a < 4) && (a != 3)").unwrap(),
-  )];
+  let transform = Transform::new(
+    "table",
+    "data",
+    vec![Pipe::Filter(
+      FilterPipe::new("(a > 1) && (a < 4) && (a != 3)").unwrap(),
+    )],
+  );
 
   b.iter(|| {
     futures::executor::block_on(async {
       let source: Source<DataValue> = Source::new();
 
-      let node = Chunks::new(chain(source.link(), &pipes));
+      let node = Chunks::new(TransformNode::node(source.link(), &transform));
       source.send(data.clone());
 
       node.collect::<Vec<_>>().await;
@@ -55,15 +60,19 @@ fn bench_filter_pipe_20(b: &mut Bencher) {
     DataValue::from_pairs(vec![("a", DataItem::Number(19.0))]),
     DataValue::from_pairs(vec![("a", DataItem::Number(20.0))]),
   ];
-  let pipes = vec![Pipe::Filter(
-    FilterPipe::new("(a > 1) && (a < 4) && (a != 3)").unwrap(),
-  )];
+  let transform = Transform::new(
+    "table",
+    "data",
+    vec![Pipe::Filter(
+      FilterPipe::new("(a > 1) && (a < 4) && (a != 3)").unwrap(),
+    )],
+  );
 
   b.iter(|| {
     futures::executor::block_on(async {
       let source = Source::new();
 
-      let node = Chunks::new(chain(source.link(), &pipes));
+      let node = Chunks::new(TransformNode::node(source.link(), &transform));
       source.send(data.clone());
 
       node.collect::<Vec<_>>().await;
@@ -74,15 +83,19 @@ fn bench_filter_pipe_20(b: &mut Bencher) {
 #[bench]
 fn bench_map_pipe_1(b: &mut Bencher) {
   let data = vec![DataValue::from_pairs(vec![("a", DataItem::Number(1.0))])];
-  let pipes = vec![Pipe::Map(
-    MapPipe::new("(a + 1) / (a * 4) - (a + 2)", "b").unwrap(),
-  )];
+  let transform = Transform::new(
+    "table",
+    "data",
+    vec![Pipe::Map(
+      MapPipe::new("(a + 1) / (a * 4) - (a + 2)", "b").unwrap(),
+    )],
+  );
 
   b.iter(|| {
     futures::executor::block_on(async {
       let source = Source::new();
 
-      let node = Chunks::new(chain(source.link(), &pipes));
+      let node = Chunks::new(TransformNode::node(source.link(), &transform));
       source.send(data.clone());
 
       node.collect::<Vec<_>>().await;
@@ -114,15 +127,19 @@ fn bench_map_pipe_20(b: &mut Bencher) {
     DataValue::from_pairs(vec![("a", DataItem::Number(19.0))]),
     DataValue::from_pairs(vec![("a", DataItem::Number(20.0))]),
   ];
-  let pipes = vec![Pipe::Map(
-    MapPipe::new("(a + 1) / (a * 4) - (a + 2)", "b").unwrap(),
-  )];
+  let transform = Transform::new(
+    "table",
+    "data",
+    vec![Pipe::Map(
+      MapPipe::new("(a + 1) / (a * 4) - (a + 2)", "b").unwrap(),
+    )],
+  );
 
   b.iter(|| {
     futures::executor::block_on(async {
       let source = Source::new();
 
-      let node = Chunks::new(chain(source.link(), &pipes));
+      let node = Chunks::new(TransformNode::node(source.link(), &transform));
       source.send(data.clone());
 
       node.collect::<Vec<_>>().await;
@@ -133,17 +150,21 @@ fn bench_map_pipe_20(b: &mut Bencher) {
 #[bench]
 fn bench_group_pipe_1(b: &mut Bencher) {
   let data = vec![DataValue::from_pairs(vec![("a", DataItem::Number(1.0))])];
-  let pipes = vec![Pipe::Group(GroupPipe::new(
-    "a",
-    GroupOperator::Count,
-    "count",
-  ))];
+  let transform = Transform::new(
+    "table",
+    "data",
+    vec![Pipe::Group(GroupPipe::new(
+      "a",
+      GroupOperator::Count,
+      "count",
+    ))],
+  );
 
   b.iter(|| {
     futures::executor::block_on(async {
       let source = Source::new();
 
-      let node = Chunks::new(chain(source.link(), &pipes));
+      let node = Chunks::new(TransformNode::node(source.link(), &transform));
       source.send(data.clone());
 
       node.collect::<Vec<_>>().await;
@@ -175,17 +196,21 @@ fn bench_group_pipe_20(b: &mut Bencher) {
     DataValue::from_pairs(vec![("a", DataItem::Number(19.0))]),
     DataValue::from_pairs(vec![("a", DataItem::Number(20.0))]),
   ];
-  let pipes = vec![Pipe::Group(GroupPipe::new(
-    "a",
-    GroupOperator::Count,
-    "count",
-  ))];
+  let transform = Transform::new(
+    "table",
+    "data",
+    vec![Pipe::Group(GroupPipe::new(
+      "a",
+      GroupOperator::Count,
+      "count",
+    ))],
+  );
 
   b.iter(|| {
     futures::executor::block_on(async {
       let source = Source::new();
 
-      let node = Chunks::new(chain(source.link(), &pipes));
+      let node = Chunks::new(TransformNode::node(source.link(), &transform));
       source.send(data.clone());
 
       node.collect::<Vec<_>>().await;
@@ -195,19 +220,22 @@ fn bench_group_pipe_20(b: &mut Bencher) {
 
 #[bench]
 fn bench_10_pipes_2_10_vars_maps(b: &mut Bencher) {
-  let pipes = vec![
-    Pipe::Map(MapPipe::new("(a + 1)", "k").unwrap()),
-    Pipe::Map(MapPipe::new("(b + 2)", "l").unwrap()),
-    Pipe::Map(MapPipe::new("(c + 3)", "m").unwrap()),
-    Pipe::Map(MapPipe::new("(d + 4)", "n").unwrap()),
-    Pipe::Map(MapPipe::new("(e + 5)", "o").unwrap()),
-    Pipe::Map(MapPipe::new("(f + 6)", "p").unwrap()),
-    Pipe::Map(MapPipe::new("(g + 7)", "q").unwrap()),
-    Pipe::Map(MapPipe::new("(h + 8)", "r").unwrap()),
-    Pipe::Map(MapPipe::new("(i + 9)", "s").unwrap()),
-    Pipe::Map(MapPipe::new("(j + 10)", "t").unwrap()),
-  ];
-
+  let transform = Transform::new(
+    "table",
+    "data",
+    vec![
+      Pipe::Map(MapPipe::new("(a + 1)", "k").unwrap()),
+      Pipe::Map(MapPipe::new("(b + 2)", "l").unwrap()),
+      Pipe::Map(MapPipe::new("(c + 3)", "m").unwrap()),
+      Pipe::Map(MapPipe::new("(d + 4)", "n").unwrap()),
+      Pipe::Map(MapPipe::new("(e + 5)", "o").unwrap()),
+      Pipe::Map(MapPipe::new("(f + 6)", "p").unwrap()),
+      Pipe::Map(MapPipe::new("(g + 7)", "q").unwrap()),
+      Pipe::Map(MapPipe::new("(h + 8)", "r").unwrap()),
+      Pipe::Map(MapPipe::new("(i + 9)", "s").unwrap()),
+      Pipe::Map(MapPipe::new("(j + 10)", "t").unwrap()),
+    ],
+  );
   let data = vec![
     DataValue::from_pairs(vec![
       ("a", DataItem::Number(1.0)),
@@ -239,7 +267,7 @@ fn bench_10_pipes_2_10_vars_maps(b: &mut Bencher) {
     futures::executor::block_on(async {
       let source = Source::new();
 
-      let node = Chunks::new(chain(source.link(), &pipes));
+      let node = Chunks::new(TransformNode::node(source.link(), &transform));
       source.send(data.clone());
 
       node.collect::<Vec<_>>().await;
