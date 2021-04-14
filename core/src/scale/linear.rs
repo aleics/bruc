@@ -1,7 +1,7 @@
 use crate::scale::domain::Domain;
 use crate::scale::range::Range;
 use crate::scale::Scaler;
-use bruc_expreter::data::DataItem;
+use expression::data::DataItem;
 
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
