@@ -25,11 +25,11 @@ impl<'a> Lexer<'a> {
   }
 
   #[inline]
-  fn symbol_from_word(&self, word: &'a str) -> Option<Symbol<'a>> {
+  fn symbol_from_word(&self, word: &'a str) -> Symbol<'a> {
     match word {
-      TRUE => Some(Symbol::Boolean(true)),
-      FALSE => Some(Symbol::Boolean(false)),
-      _ => Some(Symbol::Variable(word)),
+      TRUE => Symbol::Boolean(true),
+      FALSE => Symbol::Boolean(false),
+      _ => Symbol::Variable(word),
     }
   }
 
@@ -42,18 +42,18 @@ impl<'a> Lexer<'a> {
       GREATER => self.eat_ge(),
       LESS => self.eat_le(),
       EQUAL => self.eat_eq(),
-      SUM => self.eat_sum(),
-      SUB => self.eat_sub(),
-      MUL => self.eat_mul(),
-      DIV => self.eat_div(),
+      SUM => Some(self.eat_sum()),
+      SUB => Some(self.eat_sub()),
+      MUL => Some(self.eat_mul()),
+      DIV => Some(self.eat_div()),
       OPEN => Some(Symbol::Open),
       CLOSE => Some(Symbol::Close),
       _ => None,
     }
   }
 
-  fn symbol_from_number(&self, number: f32) -> Option<Symbol<'a>> {
-    Some(Symbol::Number(number))
+  fn symbol_from_number(&self, number: f32) -> Symbol<'a> {
+    Symbol::Number(number)
   }
 
   #[inline]
@@ -128,20 +128,20 @@ impl<'a> Lexer<'a> {
     }
   }
 
-  fn eat_sum(&mut self) -> Option<Symbol<'a>> {
-    Some(Symbol::Operator(Operator::Sum))
+  fn eat_sum(&mut self) -> Symbol<'a> {
+    Symbol::Operator(Operator::Sum)
   }
 
-  fn eat_sub(&mut self) -> Option<Symbol<'a>> {
-    Some(Symbol::Operator(Operator::Sub))
+  fn eat_sub(&mut self) -> Symbol<'a> {
+    Symbol::Operator(Operator::Sub)
   }
 
-  fn eat_mul(&mut self) -> Option<Symbol<'a>> {
-    Some(Symbol::Operator(Operator::Mul))
+  fn eat_mul(&mut self) -> Symbol<'a> {
+    Symbol::Operator(Operator::Mul)
   }
 
-  fn eat_div(&mut self) -> Option<Symbol<'a>> {
-    Some(Symbol::Operator(Operator::Div))
+  fn eat_div(&mut self) -> Symbol<'a> {
+    Symbol::Operator(Operator::Div)
   }
 }
 
@@ -156,8 +156,8 @@ impl<'a> Iterator for Lexer<'a> {
       TokenKind::Character(character) => self.symbol_from_character(*character),
       TokenKind::Word => slice
         .parse()
-        .map(|number| self.symbol_from_number(number))
-        .unwrap_or_else(|_| self.symbol_from_word(slice)),
+        .map(|number| Some(self.symbol_from_number(number)))
+        .unwrap_or_else(|_| Some(self.symbol_from_word(slice))),
     }
   }
 }
