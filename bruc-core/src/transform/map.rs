@@ -14,7 +14,10 @@ impl MapPipe {
   #[inline]
   pub fn new(predicate: &str, output: &str) -> Result<MapPipe, Error> {
     let predicate = MapPredicate::new(predicate)?;
-    Ok(MapPipe { predicate, output: output.to_string() })
+    Ok(MapPipe {
+      predicate,
+      output: output.to_string(),
+    })
   }
 
   #[inline]

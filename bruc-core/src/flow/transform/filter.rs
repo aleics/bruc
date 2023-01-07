@@ -29,9 +29,8 @@ where
         match source {
           Some(item) => match item {
             Some(value) => {
-              let result = self.pipe.apply(value);
-              if result.is_some() {
-                break Some(result);
+              if self.pipe.apply(&value) {
+                break Some(Some(value));
               }
             }
             None => break Some(None),

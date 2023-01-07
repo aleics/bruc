@@ -18,13 +18,8 @@ impl FilterPipe {
   }
 
   #[inline]
-  pub fn apply(&self, item: DataValue) -> Option<DataValue> {
-    let result = self.predicate.interpret(&item).unwrap();
-    if result {
-      Some(item)
-    } else {
-      None
-    }
+  pub fn apply(&self, item: &DataValue) -> bool {
+    self.predicate.interpret(item).unwrap()
   }
 }
 

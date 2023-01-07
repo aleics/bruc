@@ -6,11 +6,11 @@ use bruc_expression::data::{DataItem, DataSource};
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 pub struct Data {
   #[cfg_attr(feature = "serde", serde(flatten))]
-  values: HashMap<String, Vec<DataValue>>,
+  pub(crate) values: HashMap<String, Series>,
 }
 
 impl Data {
-  pub fn from_pairs(pairs: Vec<(&str, Vec<DataValue>)>) -> Data {
+  pub fn from_pairs(pairs: Vec<(&str, Series)>) -> Data {
     let mut values = HashMap::new();
     for (key, var) in pairs {
       values.insert(key.to_string(), var);
@@ -19,11 +19,13 @@ impl Data {
   }
 }
 
+pub type Series = Vec<DataValue>;
+
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 pub struct DataValue {
   #[cfg_attr(feature = "serde", serde(flatten))]
-  instance: HashMap<String, DataItem>,
+  pub(crate) instance: HashMap<String, DataItem>,
 }
 
 impl DataValue {
@@ -37,7 +39,7 @@ impl DataValue {
     DataValue { instance }
   }
 
-  pub fn from_pairs(pairs: Vec<(&str, DataItem)>) -> DataValue{
+  pub fn from_pairs(pairs: Vec<(&str, DataItem)>) -> DataValue {
     let mut vars = DataValue::new();
     for (key, var) in pairs {
       vars.insert(key, var);
@@ -63,9 +65,21 @@ impl Default for DataValue {
 }
 
 impl Display for DataValue {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{{ {:?} }}", self.instance)
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    let mut keys = self.instance.keys().cloned().collect::<Vec<String>>();
+    keys.sort();
+
+    let result = keys
+      .iter()
+      .map(|key| format!("\"{}\": {}", key, self.instance.get(key).unwrap()))
+      .collect::<Vec<String>>();
+
+    if result.is_empty() {
+      write!(f, "{{}}")
+    } else {
+      write!(f, "{{ {} }}", result.join(", "))
     }
+  }
 }
 
 #[cfg(feature = "serde")]
