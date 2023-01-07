@@ -4,20 +4,20 @@ use futures::task::{Context, Poll};
 use futures::Stream;
 use std::pin::Pin;
 
-pub struct FilterNode<'a, S> {
+pub struct FilterNode<S> {
   source: S,
-  pipe: &'a FilterPipe<'a>,
+  pipe: FilterPipe,
 }
 
-impl<'a, S> FilterNode<'a, S> {
-  pub fn new(source: S, pipe: &'a FilterPipe<'a>) -> FilterNode<'a, S> {
+impl<S> FilterNode<S> {
+  pub fn new(source: S, pipe: FilterPipe) -> FilterNode<S> {
     FilterNode { source, pipe }
   }
 }
 
-impl<'a, S> Unpin for FilterNode<'a, S> {}
+impl<S> Unpin for FilterNode<S> {}
 
-impl<'a, S> Stream for FilterNode<'a, S>
+impl<S> Stream for FilterNode<S>
 where
   S: Stream<Item = Option<DataValue>> + Unpin,
 {
@@ -47,14 +47,14 @@ where
   }
 }
 
-impl<'a, S> Clone for FilterNode<'a, S>
+impl<S> Clone for FilterNode<S>
 where
   S: Clone,
 {
   fn clone(&self) -> Self {
     FilterNode {
       source: self.source.clone(),
-      pipe: self.pipe,
+      pipe: self.pipe.clone(),
     }
   }
 }
@@ -76,7 +76,7 @@ mod tests {
       DataValue::from_pairs(vec![("a", 4.0.into())]),
     ];
     let source = Source::new();
-    let node = FilterNode::new(source.link(), &filter);
+    let node = FilterNode::new(source.link(), filter);
 
     source.send(data);
     futures::executor::block_on(async {
@@ -94,7 +94,7 @@ mod tests {
       DataValue::from_pairs(vec![("a", 4.0.into())]),
     ];
     let source = Source::new();
-    let first = FilterNode::new(source.link(), &filter);
+    let first = FilterNode::new(source.link(), filter);
     let second = first.clone();
 
     source.send(data);

@@ -7,23 +7,23 @@ use std::collections::HashMap;
 use std::ops::AddAssign;
 use std::pin::Pin;
 
-pub enum GroupNode<'a, S> {
-  Count(CountNode<'a, S>),
+pub enum GroupNode<S> {
+  Count(CountNode<S>),
 }
 
-impl<'a, S> GroupNode<'a, S> {
-  pub fn new(source: S, pipe: &'a GroupPipe<'a>) -> GroupNode<'a, S> {
+impl<S> GroupNode<S> {
+  pub fn new(source: S, pipe: GroupPipe) -> GroupNode<S> {
     match pipe.op {
-      GroupOperator::Count => GroupNode::Count(CountNode::new(source, pipe.by, pipe.output)),
+      GroupOperator::Count => GroupNode::Count(CountNode::new(source, &pipe.by, &pipe.output)),
     }
   }
 }
 
-impl<'a, S> Unpin for GroupNode<'a, S> {}
+impl<S> Unpin for GroupNode<S> {}
 
-impl<'a, S> Stream for GroupNode<'a, S>
+impl<S> Stream for GroupNode<S>
 where
-  S: Stream<Item = Option<DataValue>> + Unpin + 'a,
+  S: Stream<Item = Option<DataValue>> + Unpin,
 {
   type Item = Option<DataValue>;
 
@@ -40,7 +40,7 @@ where
   }
 }
 
-impl<'a, S> Clone for GroupNode<'a, S>
+impl<S> Clone for GroupNode<S>
 where
   S: Clone,
 {
@@ -51,26 +51,26 @@ where
   }
 }
 
-pub struct CountNode<'a, S> {
+pub struct CountNode<S> {
   source: S,
   tail: Option<HashMap<DataItem, usize>>,
-  by: &'a str,
-  output: &'a str,
+  by: String,
+  output: String,
 }
 
-impl<'a, S> CountNode<'a, S> {
-  pub fn new(source: S, by: &'a str, output: &'a str) -> CountNode<'a, S> {
+impl<S> CountNode<S> {
+  pub fn new(source: S, by: &str, output: &str) -> CountNode<S> {
     CountNode {
       source,
       tail: None,
-      by,
-      output,
+      by: by.to_string(),
+      output: output.to_string(),
     }
   }
 
   #[inline]
   fn count_value(&self, acc: &mut HashMap<DataItem, usize>, value: DataValue) {
-    if let Some(target) = value.get(self.by) {
+    if let Some(target) = value.get(&self.by) {
       match acc.get_mut(&target) {
         Some(count) => count.add_assign(1),
         None => {
@@ -95,8 +95,8 @@ impl<'a, S> CountNode<'a, S> {
           .map(|entry| {
             entry.map(|(var, count)| {
               DataValue::from_pairs(vec![
-                (self.by, var),
-                (self.output, DataItem::Number(count as f32)),
+                (&self.by, var),
+                (&self.output, DataItem::Number(count as f32)),
               ])
             })
           })
@@ -107,9 +107,9 @@ impl<'a, S> CountNode<'a, S> {
   }
 }
 
-impl<'a, S> Stream for CountNode<'a, S>
+impl<S> Stream for CountNode<S>
 where
-  S: Stream<Item = Option<DataValue>> + Unpin + 'a,
+  S: Stream<Item = Option<DataValue>> + Unpin,
 {
   type Item = Option<DataValue>;
 
@@ -138,7 +138,7 @@ where
   }
 }
 
-impl<'a, S> Clone for CountNode<'a, S>
+impl<'a, S> Clone for CountNode<S>
 where
   S: Clone,
 {
@@ -146,8 +146,8 @@ where
     CountNode {
       source: self.source.clone(),
       tail: None,
-      by: &self.by,
-      output: &self.output,
+      by: self.by.clone(),
+      output: self.output.clone(),
     }
   }
 }
@@ -169,7 +169,7 @@ mod tests {
       DataValue::from_pairs(vec![("a", 2.0.into())]),
     ];
     let source = Source::new();
-    let node = GroupNode::new(source.link(), &group);
+    let node = GroupNode::new(source.link(), group);
 
     source.send(data);
     futures::executor::block_on(async {
@@ -193,7 +193,7 @@ mod tests {
       DataValue::from_pairs(vec![("b", 3.0.into())]),
     ];
     let source = Source::new();
-    let node = GroupNode::new(source.link(), &group);
+    let node = GroupNode::new(source.link(), group);
 
     source.send(data);
     futures::executor::block_on(async {
@@ -219,7 +219,7 @@ mod tests {
 
     let source = Source::new();
 
-    let first = GroupNode::new(source.link(), &group);
+    let first = GroupNode::new(source.link(), group);
     let second = first.clone();
 
     source.send(data);

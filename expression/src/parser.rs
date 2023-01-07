@@ -40,12 +40,12 @@ impl<'a> Parser<'a> {
     }
   }
 
-  pub(crate) fn parse(&mut self) -> Result<Expression<'a>> {
+  pub(crate) fn parse(&mut self) -> Result<Expression> {
     self.expression(0)
   }
 
   #[inline]
-  fn expression(&mut self, min_binding_power: u8) -> Result<Expression<'a>> {
+  fn expression(&mut self, min_binding_power: u8) -> Result<Expression> {
     let mut left = self.factor()?;
 
     loop {
@@ -79,7 +79,7 @@ impl<'a> Parser<'a> {
   }
 
   #[inline]
-  fn factor(&mut self) -> Result<Expression<'a>> {
+  fn factor(&mut self) -> Result<Expression> {
     let symbol = self
       .lexer
       .next()

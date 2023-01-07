@@ -4,17 +4,14 @@ use crate::transform::filter::FilterPipe;
 use crate::transform::group::GroupPipe;
 use crate::transform::map::MapPipe;
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(tag = "type"))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
-pub enum Pipe<'a> {
-  #[cfg_attr(feature = "serde", serde(borrow))]
-  Filter(FilterPipe<'a>),
-  #[cfg_attr(feature = "serde", serde(borrow))]
-  Map(MapPipe<'a>),
-  #[cfg_attr(feature = "serde", serde(borrow))]
-  Group(GroupPipe<'a>),
+pub enum Pipe {
+  Filter(FilterPipe),
+  Map(MapPipe),
+  Group(GroupPipe),
 }
 
 pub trait Predicate {

@@ -6,7 +6,7 @@ use std::collections::VecDeque;
 use std::pin::Pin;
 use std::rc::Rc;
 
-pub type DataNode<'a> = Box<dyn Stream<Item = Option<DataValue>> + Unpin + 'a>;
+pub type DataNode = Box<dyn Stream<Item = Option<DataValue>> + Unpin>;
 
 struct SourceInner<T> {
   queues: Vec<VecDeque<T>>,

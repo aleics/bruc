@@ -5,14 +5,14 @@ use crate::data::DataValue;
 use crate::transform::error::Error;
 use crate::transform::pipe::Predicate;
 
-#[derive(PartialEq, Debug)]
-pub struct FilterPipe<'a> {
-  pub(crate) predicate: FilterPredicate<'a>,
+#[derive(PartialEq, Debug, Clone)]
+pub struct FilterPipe {
+  pub(crate) predicate: FilterPredicate,
 }
 
-impl<'a> FilterPipe<'a> {
+impl FilterPipe {
   #[inline]
-  pub fn new(predicate: &'a str) -> Result<FilterPipe<'a>, Error> {
+  pub fn new(predicate: &str) -> Result<FilterPipe, Error> {
     let predicate = FilterPredicate::new(predicate)?;
     Ok(FilterPipe { predicate })
   }
@@ -28,19 +28,19 @@ impl<'a> FilterPipe<'a> {
   }
 }
 
-#[derive(PartialEq, Debug)]
-pub struct FilterPredicate<'a> {
-  expression: Expression<'a>,
+#[derive(PartialEq, Debug, Clone)]
+pub struct FilterPredicate {
+  expression: Expression,
 }
 
-impl<'a> FilterPredicate<'a> {
-  pub fn new(input: &'a str) -> Result<FilterPredicate<'a>, Error> {
+impl FilterPredicate {
+  pub fn new(input: &str) -> Result<FilterPredicate, Error> {
     let expression = PredicateParser::new(input).parse()?;
     Ok(FilterPredicate { expression })
   }
 }
 
-impl<'a> Predicate for FilterPredicate<'a> {
+impl Predicate for FilterPredicate {
   type Value = bool;
 
   fn interpret(&self, vars: &DataValue) -> Result<Self::Value, Error> {
@@ -58,12 +58,12 @@ pub mod serde {
   use serde::{de, Deserialize, Deserializer};
   use std::fmt;
 
-  impl<'de: 'a, 'a> Deserialize<'de> for FilterPipe<'a> {
+  impl<'de> Deserialize<'de> for FilterPipe {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
       struct FilterPipeVisitor;
 
       impl<'a> Visitor<'a> for FilterPipeVisitor {
-        type Value = FilterPipe<'a>;
+        type Value = FilterPipe;
 
         fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
           formatter.write_str("any valid predicate (string)")

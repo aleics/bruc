@@ -14,12 +14,11 @@ pub struct Transform<'a> {
   #[cfg_attr(feature = "serde", serde(borrow))]
   #[cfg_attr(feature = "serde", serde(rename = "as"))]
   pub(crate) output: &'a str,
-  #[cfg_attr(feature = "serde", serde(borrow))]
-  pub(crate) pipes: Vec<Pipe<'a>>,
+  pub(crate) pipes: Vec<Pipe>,
 }
 
 impl<'a> Transform<'a> {
-  pub fn new(source: &'a str, output: &'a str, pipes: Vec<Pipe<'a>>) -> Transform<'a> {
+  pub fn new(source: &'a str, output: &'a str, pipes: Vec<Pipe>) -> Transform<'a> {
     Transform {
       from: source,
       output,

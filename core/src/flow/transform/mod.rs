@@ -13,17 +13,17 @@ pub mod filter;
 pub mod group;
 pub mod map;
 
-pub enum TransformNode<'a, S> {
-  Filter(FilterNode<'a, S>),
-  Map(MapNode<'a, S>),
-  Group(GroupNode<'a, S>),
+pub enum TransformNode<S> {
+  Filter(FilterNode<S>),
+  Map(MapNode<S>),
+  Group(GroupNode<S>),
 }
 
-impl<'a, S> TransformNode<'a, S>
+impl<S> TransformNode<S>
 where
-  S: Stream<Item = Option<DataValue>> + Unpin + 'a,
+  S: Stream<Item = Option<DataValue>> + Unpin,
 {
-  pub fn new(source: S, pipe: &'a Pipe<'a>) -> TransformNode<S> {
+  pub fn new(source: S, pipe: Pipe) -> TransformNode<S> {
     match pipe {
       Pipe::Filter(pipe) => TransformNode::Filter(FilterNode::new(source, pipe)),
       Pipe::Map(pipe) => TransformNode::Map(MapNode::new(source, pipe)),
@@ -32,21 +32,24 @@ where
   }
 
   #[inline]
-  pub fn node(source: S, transform: &'a Transform<'a>) -> DataNode<'a>
+  pub fn node(source: S, transform: &Transform) -> DataNode
   where
-    S: Stream<Item = Option<DataValue>> + Unpin + 'a,
+    S: Stream<Item = Option<DataValue>> + Unpin + 'static,
   {
-    transform.pipes.iter().fold(Box::new(source), |acc, pipe| {
-      Box::new(TransformNode::new(acc, pipe))
-    })
+    transform.pipes
+      .iter()
+      .cloned()
+      .fold(Box::new(source), |acc, pipe| {
+        Box::new(TransformNode::new(acc, pipe))
+      })
   }
 }
 
-impl<'a, S> Unpin for TransformNode<'a, S> {}
+impl<S> Unpin for TransformNode<S> {}
 
-impl<'a, S> Stream for TransformNode<'a, S>
+impl<S> Stream for TransformNode<S>
 where
-  S: Stream<Item = Option<DataValue>> + Unpin + 'a,
+  S: Stream<Item = Option<DataValue>> + Unpin,
 {
   type Item = Option<DataValue>;
 
@@ -67,7 +70,7 @@ where
   }
 }
 
-impl<'a, S> Clone for TransformNode<'a, S>
+impl<S> Clone for TransformNode<S>
 where
   S: Clone,
 {

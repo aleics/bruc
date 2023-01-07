@@ -8,13 +8,13 @@ pub trait Interpretable<T> {
   fn interpret(&self, variables: &impl DataSource) -> Result<T>;
 }
 
-#[derive(Debug, PartialEq)]
-pub enum Cons<'a> {
-  Binary(Operator, (Expression<'a>, Expression<'a>)),
-  Unary(Operator, Expression<'a>),
+#[derive(Debug, PartialEq, Clone)]
+pub enum Cons {
+  Binary(Operator, (Expression, Expression)),
+  Unary(Operator, Expression),
 }
 
-impl<'a> fmt::Display for Cons<'a> {
+impl fmt::Display for Cons {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self {
       Cons::Binary(operator, (left, right)) => write!(
@@ -29,7 +29,7 @@ impl<'a> fmt::Display for Cons<'a> {
   }
 }
 
-impl<'a> Interpretable<bool> for Cons<'a> {
+impl Interpretable<bool> for Cons {
   #[inline]
   fn interpret(&self, source: &impl DataSource) -> Result<bool> {
     match self {
@@ -110,7 +110,7 @@ impl<'a> Interpretable<bool> for Cons<'a> {
   }
 }
 
-impl<'a> Interpretable<f32> for Cons<'a> {
+impl Interpretable<f32> for Cons {
   #[inline]
   fn interpret(&self, source: &impl DataSource) -> Result<f32> {
     match self {
@@ -153,13 +153,13 @@ impl<'a> Interpretable<f32> for Cons<'a> {
   }
 }
 
-#[derive(Debug, PartialEq)]
-pub enum Expression<'a> {
-  Atom(Symbol<'a>),
-  Cons(Box<Cons<'a>>),
+#[derive(Debug, PartialEq, Clone)]
+pub enum Expression {
+  Atom(Symbol),
+  Cons(Box<Cons>),
 }
 
-impl<'a> fmt::Display for Expression<'a> {
+impl fmt::Display for Expression {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self {
       Expression::Atom(symbol) => write!(f, "{}", symbol.to_string()),
@@ -168,7 +168,7 @@ impl<'a> fmt::Display for Expression<'a> {
   }
 }
 
-impl<'a> Interpretable<bool> for Expression<'a> {
+impl Interpretable<bool> for Expression {
   #[inline]
   fn interpret(&self, source: &impl DataSource) -> Result<bool> {
     match self {
@@ -195,7 +195,7 @@ impl<'a> Interpretable<bool> for Expression<'a> {
   }
 }
 
-impl<'a> Interpretable<f32> for Expression<'a> {
+impl Interpretable<f32> for Expression {
   #[inline]
   fn interpret(&self, source: &impl DataSource) -> Result<f32> {
     match self {
@@ -222,32 +222,32 @@ impl<'a> Interpretable<f32> for Expression<'a> {
   }
 }
 
-impl<'a> From<Symbol<'a>> for Expression<'a> {
-  fn from(symbol: Symbol<'a>) -> Self {
+impl From<Symbol> for Expression {
+  fn from(symbol: Symbol) -> Self {
     Expression::Atom(symbol)
   }
 }
 
-impl<'a> From<bool> for Expression<'a> {
+impl From<bool> for Expression {
   fn from(value: bool) -> Self {
     Expression::Atom(Symbol::Boolean(value))
   }
 }
 
-impl<'a> From<f32> for Expression<'a> {
+impl From<f32> for Expression {
   fn from(value: f32) -> Self {
     Expression::Atom(Symbol::Number(value))
   }
 }
 
-impl<'a> From<&'a str> for Expression<'a> {
-  fn from(name: &'a str) -> Self {
-    Expression::Atom(Symbol::Variable(name))
+impl From<&str> for Expression {
+  fn from(name: &str) -> Self {
+    Expression::Atom(Symbol::Variable(name.to_string()))
   }
 }
 
-impl<'a> From<Cons<'a>> for Expression<'a> {
-  fn from(cons: Cons<'a>) -> Self {
+impl From<Cons> for Expression {
+  fn from(cons: Cons) -> Self {
     Expression::Cons(Box::new(cons))
   }
 }
@@ -263,7 +263,7 @@ mod tests {
     Expression::from(Cons::Unary(operator, root))
   }
 
-  fn binary<'a>(left: Expression<'a>, operator: Operator, right: Expression<'a>) -> Expression<'a> {
+  fn binary<'a>(left: Expression, operator: Operator, right: Expression) -> Expression {
     Expression::from(Cons::Binary(operator, (left, right)))
   }
 

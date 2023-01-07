@@ -6,7 +6,7 @@ use serde::{Deserialize, Deserializer};
 use crate::expr::Expression;
 use crate::PredicateParser;
 
-impl<'de, 'a> Deserialize<'de> for Expression<'a>
+impl<'de, 'a> Deserialize<'de> for Expression
 where
   'de: 'a,
 {
@@ -14,7 +14,7 @@ where
     struct ExpressionVisitor;
 
     impl<'a> Visitor<'a> for ExpressionVisitor {
-      type Value = Expression<'a>;
+      type Value = Expression;
 
       fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_str("valid predicate")

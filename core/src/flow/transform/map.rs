@@ -4,20 +4,20 @@ use futures::task::{Context, Poll};
 use futures::Stream;
 use std::pin::Pin;
 
-pub struct MapNode<'a, S> {
+pub struct MapNode<S> {
   source: S,
-  pipe: &'a MapPipe<'a>,
+  pipe: MapPipe,
 }
 
-impl<'a, S> MapNode<'a, S> {
-  pub fn new(source: S, pipe: &'a MapPipe<'a>) -> MapNode<'a, S> {
+impl<S> MapNode<S> {
+  pub fn new(source: S, pipe: MapPipe) -> MapNode<S> {
     MapNode { source, pipe }
   }
 }
 
-impl<'a, S> Unpin for MapNode<'a, S> {}
+impl<S> Unpin for MapNode<S> {}
 
-impl<'a, S> Stream for MapNode<'a, S>
+impl<S> Stream for MapNode<S>
 where
   S: Stream<Item = Option<DataValue>> + Unpin,
 {
@@ -39,14 +39,14 @@ where
   }
 }
 
-impl<'a, S> Clone for MapNode<'a, S>
+impl<S> Clone for MapNode<S>
 where
   S: Clone,
 {
   fn clone(&self) -> Self {
     MapNode {
       source: self.source.clone(),
-      pipe: self.pipe,
+      pipe: self.pipe.clone(),
     }
   }
 }
@@ -69,7 +69,7 @@ mod tests {
     ];
 
     let source = Source::new();
-    let node = MapNode::new(source.link(), &map);
+    let node = MapNode::new(source.link(), map);
 
     source.send(data);
     futures::executor::block_on(async {
@@ -94,7 +94,7 @@ mod tests {
     ];
 
     let source = Source::new();
-    let first = MapNode::new(source.link(), &map);
+    let first = MapNode::new(source.link(), map);
     let second = first.clone();
 
     source.send(data);

@@ -24,7 +24,7 @@ impl<'a> PredicateParser<'a> {
     }
   }
 
-  pub fn parse(&mut self) -> Result<Expression<'a>> {
+  pub fn parse(&mut self) -> Result<Expression> {
     self.parser.parse()
   }
 }

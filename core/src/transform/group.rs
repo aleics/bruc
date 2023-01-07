@@ -1,18 +1,18 @@
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
-pub struct GroupPipe<'a> {
-  pub(crate) by: &'a str,
+pub struct GroupPipe {
+  pub(crate) by: String,
   pub(crate) op: GroupOperator,
-  pub(crate) output: &'a str,
+  pub(crate) output: String,
 }
 
-impl<'a> GroupPipe<'a> {
-  pub fn new(by: &'a str, op: GroupOperator, output: &'a str) -> GroupPipe<'a> {
-    GroupPipe { by, op, output }
+impl GroupPipe {
+  pub fn new(by: &str, op: GroupOperator, output: &str) -> GroupPipe {
+    GroupPipe { by: by.to_string(), op, output: output.to_string() }
   }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub enum GroupOperator {

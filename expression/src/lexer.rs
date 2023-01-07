@@ -25,16 +25,16 @@ impl<'a> Lexer<'a> {
   }
 
   #[inline]
-  fn symbol_from_word(&self, word: &'a str) -> Symbol<'a> {
+  fn symbol_from_word(&self, word: &str) -> Symbol {
     match word {
       TRUE => Symbol::Boolean(true),
       FALSE => Symbol::Boolean(false),
-      _ => Symbol::Variable(word),
+      _ => Symbol::Variable(word.to_string()),
     }
   }
 
   #[inline]
-  fn symbol_from_character(&mut self, character: char) -> Option<Symbol<'a>> {
+  fn symbol_from_character(&mut self, character: char) -> Option<Symbol> {
     match character {
       AND => self.eat_and(),
       OR => self.eat_or(),
@@ -52,12 +52,12 @@ impl<'a> Lexer<'a> {
     }
   }
 
-  fn symbol_from_number(&self, number: f32) -> Symbol<'a> {
+  fn symbol_from_number(&self, number: f32) -> Symbol {
     Symbol::Number(number)
   }
 
   #[inline]
-  fn eat_and(&mut self) -> Option<Symbol<'a>> {
+  fn eat_and(&mut self) -> Option<Symbol> {
     let (token, _, _) = self.tokenizer.peek()?;
 
     if token.is_character_equal(AND) {
@@ -69,7 +69,7 @@ impl<'a> Lexer<'a> {
   }
 
   #[inline]
-  fn eat_or(&mut self) -> Option<Symbol<'a>> {
+  fn eat_or(&mut self) -> Option<Symbol> {
     let (token, _, _) = self.tokenizer.peek()?;
 
     if token.is_character_equal(OR) {
@@ -81,7 +81,7 @@ impl<'a> Lexer<'a> {
   }
 
   #[inline]
-  fn eat_ne(&mut self) -> Option<Symbol<'a>> {
+  fn eat_ne(&mut self) -> Option<Symbol> {
     let (token, _, _) = self.tokenizer.peek()?;
 
     if token.is_character_equal(EQUAL) {
@@ -93,7 +93,7 @@ impl<'a> Lexer<'a> {
   }
 
   #[inline]
-  fn eat_eq(&mut self) -> Option<Symbol<'a>> {
+  fn eat_eq(&mut self) -> Option<Symbol> {
     let (token, _, _) = self.tokenizer.peek()?;
 
     if token.is_character_equal(EQUAL) {
@@ -105,7 +105,7 @@ impl<'a> Lexer<'a> {
   }
 
   #[inline]
-  fn eat_ge(&mut self) -> Option<Symbol<'a>> {
+  fn eat_ge(&mut self) -> Option<Symbol> {
     let (token, _, _) = self.tokenizer.peek()?;
 
     if token.is_character_equal(EQUAL) {
@@ -117,7 +117,7 @@ impl<'a> Lexer<'a> {
   }
 
   #[inline]
-  fn eat_le(&mut self) -> Option<Symbol<'a>> {
+  fn eat_le(&mut self) -> Option<Symbol> {
     let (token, _, _) = self.tokenizer.peek()?;
 
     if token.is_character_equal(EQUAL) {
@@ -128,25 +128,25 @@ impl<'a> Lexer<'a> {
     }
   }
 
-  fn eat_sum(&mut self) -> Symbol<'a> {
+  fn eat_sum(&mut self) -> Symbol {
     Symbol::Operator(Operator::Sum)
   }
 
-  fn eat_sub(&mut self) -> Symbol<'a> {
+  fn eat_sub(&mut self) -> Symbol {
     Symbol::Operator(Operator::Sub)
   }
 
-  fn eat_mul(&mut self) -> Symbol<'a> {
+  fn eat_mul(&mut self) -> Symbol {
     Symbol::Operator(Operator::Mul)
   }
 
-  fn eat_div(&mut self) -> Symbol<'a> {
+  fn eat_div(&mut self) -> Symbol {
     Symbol::Operator(Operator::Div)
   }
 }
 
 impl<'a> Iterator for Lexer<'a> {
-  type Item = Symbol<'a>;
+  type Item = Symbol;
 
   #[inline]
   fn next(&mut self) -> Option<Self::Item> {
@@ -270,7 +270,7 @@ mod tests {
       symbols,
       vec![
         Symbol::Open,
-        Symbol::Variable("foo"),
+        Symbol::Variable("foo".to_string()),
         Symbol::Operator(Operator::And),
         Symbol::Boolean(false),
         Symbol::Close

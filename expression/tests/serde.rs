@@ -26,7 +26,7 @@ fn deserializes_expression() {
     Expression::from(Cons::Binary(
       Operator::Greater,
       (
-        Expression::Atom(Symbol::Variable("a")),
+        Expression::Atom(Symbol::Variable("a".to_string())),
         Expression::Atom(Symbol::Number(2.0))
       ),
     ))

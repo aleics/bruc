@@ -52,17 +52,17 @@ impl fmt::Display for Operator {
   }
 }
 
-#[derive(Debug, PartialEq, Copy, Clone)]
-pub enum Symbol<'a> {
+#[derive(Debug, PartialEq, Clone)]
+pub enum Symbol {
   Operator(Operator),
   Open,
   Close,
   Number(f32),
   Boolean(bool),
-  Variable(&'a str),
+  Variable(String),
 }
 
-impl<'a> Symbol<'a> {
+impl Symbol {
   pub fn operator(&self) -> Option<Operator> {
     match self {
       Symbol::Operator(operator) => Some(*operator),
@@ -71,7 +71,7 @@ impl<'a> Symbol<'a> {
   }
 }
 
-impl<'a> fmt::Display for Symbol<'a> {
+impl<'a> fmt::Display for Symbol {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self {
       Symbol::Operator(operator) => match operator {

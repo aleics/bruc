@@ -4,39 +4,39 @@ use crate::transform::pipe::Predicate;
 use expression::expr::{Expression, Interpretable};
 use expression::PredicateParser;
 
-#[derive(PartialEq, Debug)]
-pub struct MapPipe<'a> {
-  pub(crate) predicate: MapPredicate<'a>,
-  pub(crate) output: &'a str,
+#[derive(PartialEq, Debug, Clone)]
+pub struct MapPipe {
+  pub(crate) predicate: MapPredicate,
+  pub(crate) output: String,
 }
 
-impl<'a> MapPipe<'a> {
+impl MapPipe {
   #[inline]
-  pub fn new(predicate: &'a str, output: &'a str) -> Result<MapPipe<'a>, Error> {
+  pub fn new(predicate: &str, output: &str) -> Result<MapPipe, Error> {
     let predicate = MapPredicate::new(predicate)?;
-    Ok(MapPipe { predicate, output })
+    Ok(MapPipe { predicate, output: output.to_string() })
   }
 
   #[inline]
   pub fn apply(&self, item: &mut DataValue) {
     let var = self.predicate.interpret(&item).unwrap();
-    item.insert(self.output, var.into());
+    item.insert(&self.output, var.into());
   }
 }
 
-#[derive(PartialEq, Debug)]
-pub struct MapPredicate<'a> {
-  expression: Expression<'a>,
+#[derive(PartialEq, Debug, Clone)]
+pub struct MapPredicate {
+  expression: Expression,
 }
 
-impl<'a> MapPredicate<'a> {
-  pub fn new(input: &'a str) -> Result<MapPredicate<'a>, Error> {
+impl MapPredicate {
+  pub fn new(input: &str) -> Result<MapPredicate, Error> {
     let expression = PredicateParser::new(input).parse()?;
     Ok(MapPredicate { expression })
   }
 }
 
-impl<'a> Predicate for MapPredicate<'a> {
+impl Predicate for MapPredicate {
   type Value = f32;
 
   fn interpret(&self, vars: &DataValue) -> Result<Self::Value, Error> {
@@ -54,12 +54,12 @@ pub mod serde {
   use serde::{de, Deserialize, Deserializer};
   use std::fmt;
 
-  impl<'de: 'a, 'a> Deserialize<'de> for MapPipe<'a> {
+  impl<'de: 'a, 'a> Deserialize<'de> for MapPipe {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
       struct MapPipeVisitor;
 
       impl<'a> Visitor<'a> for MapPipeVisitor {
-        type Value = MapPipe<'a>;
+        type Value = MapPipe;
 
         fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
           formatter.write_str("struct MapPipe")
