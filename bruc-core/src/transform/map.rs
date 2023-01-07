@@ -22,7 +22,7 @@ impl MapPipe {
 
   #[inline]
   pub fn apply(&self, item: &mut DataValue) {
-    let var = self.predicate.interpret(&item).unwrap();
+    let var = self.predicate.interpret(item).unwrap();
     item.insert(&self.output, var.into());
   }
 }

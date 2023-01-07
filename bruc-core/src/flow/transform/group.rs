@@ -71,7 +71,7 @@ impl<S> CountNode<S> {
   #[inline]
   fn count_value(&self, acc: &mut HashMap<DataItem, usize>, value: DataValue) {
     if let Some(target) = value.get(&self.by) {
-      match acc.get_mut(&target) {
+      match acc.get_mut(target) {
         Some(count) => count.add_assign(1),
         None => {
           acc.insert(*target, 1);
@@ -138,7 +138,7 @@ where
   }
 }
 
-impl<'a, S> Clone for CountNode<S>
+impl<S> Clone for CountNode<S>
 where
   S: Clone,
 {

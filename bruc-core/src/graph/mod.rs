@@ -7,7 +7,7 @@ pub mod node;
 
 /// `graph-pulse` is a library to build graphs that can be evaluated in topological order,
 /// where a Pulse instance is being used to collect the data being passed between nodes.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Graph {
   /// List of nodes of the graph.
   nodes: Vec<Node>,
@@ -52,7 +52,7 @@ impl Graph {
 
     self.order = self.sort_order();
 
-    return id;
+    id
   }
 
   // Add root node with connections to existing target nodes
@@ -65,7 +65,7 @@ impl Graph {
 
     self.order = self.sort_order();
 
-    return id;
+    id
   }
 
   /// Add single node without any connections
@@ -199,21 +199,7 @@ impl Graph {
       .map(|node| node.pulse.clone())
       .collect();
 
-    return Some(Pulse::merge(source_pulses));
-  }
-}
-
-impl Default for Graph {
-  fn default() -> Self {
-    Graph {
-      nodes: Vec::new(),
-      edges: Vec::new(),
-      targets: BTreeMap::new(),
-      sources: BTreeMap::new(),
-      degrees: BTreeMap::new(),
-      nodes_in_degree: BTreeMap::new(),
-      order: Vec::new(),
-    }
+    Some(Pulse::merge(source_pulses))
   }
 }
 

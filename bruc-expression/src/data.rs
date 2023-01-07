@@ -17,8 +17,8 @@ pub enum DataItem {
 impl Display for DataItem {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self {
-      DataItem::Bool(value) => write!(f, "{}", value),
-      DataItem::Number(value) => write!(f, "{}", value),
+      DataItem::Bool(value) => write!(f, "{value}"),
+      DataItem::Number(value) => write!(f, "{value}"),
     }
   }
 }

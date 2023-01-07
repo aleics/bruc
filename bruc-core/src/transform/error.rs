@@ -14,7 +14,7 @@ impl fmt::Display for Error {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self {
       Error::Pipe(error) => match error {
-        PipeError::Expression(error) => write!(f, "PipeError::Expression: {}", error.to_string()),
+        PipeError::Expression(error) => write!(f, "PipeError::Expression: {error}"),
       },
     }
   }

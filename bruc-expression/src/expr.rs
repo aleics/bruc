@@ -19,12 +19,9 @@ impl fmt::Display for Cons {
     match self {
       Cons::Binary(operator, (left, right)) => write!(
         f,
-        "({} {} {})",
-        operator.to_string(),
-        left.to_string(),
-        right.to_string()
+        "({operator} {left} {right})"
       ),
-      Cons::Unary(operator, root) => write!(f, "({} {})", operator.to_string(), root.to_string()),
+      Cons::Unary(operator, root) => write!(f, "({operator} {root})"),
     }
   }
 }
@@ -162,8 +159,8 @@ pub enum Expression {
 impl fmt::Display for Expression {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self {
-      Expression::Atom(symbol) => write!(f, "{}", symbol.to_string()),
-      Expression::Cons(cons) => write!(f, "{}", cons.to_string()),
+      Expression::Atom(symbol) => write!(f, "{symbol}"),
+      Expression::Cons(cons) => write!(f, "{cons}"),
     }
   }
 }
