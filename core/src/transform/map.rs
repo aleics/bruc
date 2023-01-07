@@ -18,7 +18,7 @@ impl<'a> MapPipe<'a> {
   }
 
   #[inline]
-  pub fn apply(&self, item: &mut DataValue<'a>) {
+  pub fn apply(&self, item: &mut DataValue) {
     let var = self.predicate.interpret(&item).unwrap();
     item.insert(self.output, var.into());
   }

@@ -4,17 +4,16 @@ use expression::data::{DataItem, DataSource};
 
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
-pub struct Data<'a> {
+pub struct Data {
   #[cfg_attr(feature = "serde", serde(flatten))]
-  #[cfg_attr(feature = "serde", serde(borrow))]
-  values: HashMap<&'a str, Vec<DataValue<'a>>>,
+  values: HashMap<String, Vec<DataValue>>,
 }
 
-impl<'a> Data<'a> {
-  pub fn from_pairs(pairs: Vec<(&'a str, Vec<DataValue<'a>>)>) -> Data<'a> {
+impl Data {
+  pub fn from_pairs(pairs: Vec<(&str, Vec<DataValue>)>) -> Data {
     let mut values = HashMap::new();
     for (key, var) in pairs {
-      values.insert(key, var);
+      values.insert(key.to_string(), var);
     }
     Data { values }
   }
@@ -22,24 +21,23 @@ impl<'a> Data<'a> {
 
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
-pub struct DataValue<'a> {
+pub struct DataValue {
   #[cfg_attr(feature = "serde", serde(flatten))]
-  #[cfg_attr(feature = "serde", serde(borrow))]
-  instance: HashMap<&'a str, DataItem>,
+  instance: HashMap<String, DataItem>,
 }
 
-impl<'a> DataValue<'a> {
-  pub fn new() -> DataValue<'a> {
+impl DataValue {
+  pub fn new() -> DataValue {
     DataValue {
       instance: HashMap::new(),
     }
   }
 
-  pub fn with_instance(instance: HashMap<&'a str, DataItem>) -> DataValue<'a> {
+  pub fn with_instance(instance: HashMap<String, DataItem>) -> DataValue {
     DataValue { instance }
   }
 
-  pub fn from_pairs(pairs: Vec<(&'a str, DataItem)>) -> DataValue<'a> {
+  pub fn from_pairs(pairs: Vec<(&str, DataItem)>) -> DataValue{
     let mut vars = DataValue::new();
     for (key, var) in pairs {
       vars.insert(key, var);
@@ -47,18 +45,18 @@ impl<'a> DataValue<'a> {
     vars
   }
 
-  pub fn insert(&mut self, key: &'a str, value: DataItem) {
-    self.instance.insert(key, value);
+  pub fn insert(&mut self, key: &str, value: DataItem) {
+    self.instance.insert(key.to_string(), value);
   }
 }
 
-impl<'a> DataSource for DataValue<'a> {
+impl DataSource for DataValue {
   fn get(&self, key: &str) -> Option<&DataItem> {
     self.instance.get(key)
   }
 }
 
-impl<'a> Default for DataValue<'a> {
+impl Default for DataValue {
   fn default() -> Self {
     Self::new()
   }

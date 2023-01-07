@@ -26,7 +26,7 @@ impl<'a, S> Unpin for LinearNode<'a, S> {}
 
 impl<'a, S> Stream for LinearNode<'a, S>
 where
-  S: Stream<Item = Option<DataValue<'a>>> + Unpin,
+  S: Stream<Item = Option<DataValue>> + Unpin,
 {
   type Item = Option<f32>;
 

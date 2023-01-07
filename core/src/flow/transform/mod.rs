@@ -21,7 +21,7 @@ pub enum TransformNode<'a, S> {
 
 impl<'a, S> TransformNode<'a, S>
 where
-  S: Stream<Item = Option<DataValue<'a>>> + Unpin + 'a,
+  S: Stream<Item = Option<DataValue>> + Unpin + 'a,
 {
   pub fn new(source: S, pipe: &'a Pipe<'a>) -> TransformNode<S> {
     match pipe {
@@ -34,7 +34,7 @@ where
   #[inline]
   pub fn node(source: S, transform: &'a Transform<'a>) -> DataNode<'a>
   where
-    S: Stream<Item = Option<DataValue<'a>>> + Unpin + 'a,
+    S: Stream<Item = Option<DataValue>> + Unpin + 'a,
   {
     transform.pipes.iter().fold(Box::new(source), |acc, pipe| {
       Box::new(TransformNode::new(acc, pipe))
@@ -46,9 +46,9 @@ impl<'a, S> Unpin for TransformNode<'a, S> {}
 
 impl<'a, S> Stream for TransformNode<'a, S>
 where
-  S: Stream<Item = Option<DataValue<'a>>> + Unpin + 'a,
+  S: Stream<Item = Option<DataValue>> + Unpin + 'a,
 {
-  type Item = Option<DataValue<'a>>;
+  type Item = Option<DataValue>;
 
   fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
     match self.get_mut() {

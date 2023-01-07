@@ -23,9 +23,9 @@ impl<'a, S> Unpin for GroupNode<'a, S> {}
 
 impl<'a, S> Stream for GroupNode<'a, S>
 where
-  S: Stream<Item = Option<DataValue<'a>>> + Unpin + 'a,
+  S: Stream<Item = Option<DataValue>> + Unpin + 'a,
 {
-  type Item = Option<DataValue<'a>>;
+  type Item = Option<DataValue>;
 
   fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
     match self.get_mut() {
@@ -81,7 +81,7 @@ impl<'a, S> CountNode<'a, S> {
   }
 
   #[inline]
-  fn next_tail_value(&mut self) -> Option<Option<DataValue<'a>>> {
+  fn next_tail_value(&mut self) -> Option<Option<DataValue>> {
     if let Some(tail) = self.tail.as_mut() {
       if tail.is_empty() {
         self.tail = None;
@@ -109,9 +109,9 @@ impl<'a, S> CountNode<'a, S> {
 
 impl<'a, S> Stream for CountNode<'a, S>
 where
-  S: Stream<Item = Option<DataValue<'a>>> + Unpin + 'a,
+  S: Stream<Item = Option<DataValue>> + Unpin + 'a,
 {
-  type Item = Option<DataValue<'a>>;
+  type Item = Option<DataValue>;
 
   fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
     if self.tail.is_none() {

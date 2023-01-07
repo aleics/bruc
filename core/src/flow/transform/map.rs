@@ -19,9 +19,9 @@ impl<'a, S> Unpin for MapNode<'a, S> {}
 
 impl<'a, S> Stream for MapNode<'a, S>
 where
-  S: Stream<Item = Option<DataValue<'a>>> + Unpin,
+  S: Stream<Item = Option<DataValue>> + Unpin,
 {
-  type Item = Option<DataValue<'a>>;
+  type Item = Option<DataValue>;
 
   fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
     Pin::new(&mut self.source).poll_next(cx).map(|value| {

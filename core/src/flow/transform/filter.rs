@@ -19,9 +19,9 @@ impl<'a, S> Unpin for FilterNode<'a, S> {}
 
 impl<'a, S> Stream for FilterNode<'a, S>
 where
-  S: Stream<Item = Option<DataValue<'a>>> + Unpin,
+  S: Stream<Item = Option<DataValue>> + Unpin,
 {
-  type Item = Option<DataValue<'a>>;
+  type Item = Option<DataValue>;
 
   fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
     Poll::Ready(loop {

@@ -23,7 +23,7 @@ impl<'a> Engine<'a> {
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 pub struct Specification<'a> {
-  data: Data<'a>,
+  data: Data,
   #[cfg_attr(feature = "serde", serde(borrow))]
   transform: Option<Transform<'a>>,
   scales: Vec<Scale<'a>>,
@@ -32,7 +32,7 @@ pub struct Specification<'a> {
 
 impl<'a> Specification<'a> {
   pub fn new(
-    data: Data<'a>,
+    data: Data,
     transform: Option<Transform<'a>>,
     scales: Vec<Scale<'a>>,
     marks: Vec<Mark<'a>>,

@@ -18,7 +18,7 @@ impl<'a> FilterPipe<'a> {
   }
 
   #[inline]
-  pub fn apply(&self, item: DataValue<'a>) -> Option<DataValue<'a>> {
+  pub fn apply(&self, item: DataValue) -> Option<DataValue> {
     let result = self.predicate.interpret(&item).unwrap();
     if result {
       Some(item)

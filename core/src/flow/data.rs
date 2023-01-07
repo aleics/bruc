@@ -6,7 +6,7 @@ use std::collections::VecDeque;
 use std::pin::Pin;
 use std::rc::Rc;
 
-pub type DataNode<'a> = Box<dyn Stream<Item = Option<DataValue<'a>>> + Unpin + 'a>;
+pub type DataNode<'a> = Box<dyn Stream<Item = Option<DataValue>> + Unpin + 'a>;
 
 struct SourceInner<T> {
   queues: Vec<VecDeque<T>>,
@@ -107,8 +107,8 @@ impl<T: Clone> Clone for SourceNode<T> {
 
 impl<T> Unpin for SourceNode<T> {}
 
-impl<'a> Stream for SourceNode<DataValue<'a>> {
-  type Item = Option<DataValue<'a>>;
+impl<'a> Stream for SourceNode<DataValue> {
+  type Item = Option<DataValue>;
 
   fn poll_next(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
     Poll::Ready(loop {
