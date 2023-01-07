@@ -263,7 +263,7 @@ mod tests {
     Expression::from(Cons::Unary(operator, root))
   }
 
-  fn binary<'a>(left: Expression, operator: Operator, right: Expression) -> Expression {
+  fn binary(left: Expression, operator: Operator, right: Expression) -> Expression {
     Expression::from(Cons::Binary(operator, (left, right)))
   }
 

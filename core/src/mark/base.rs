@@ -23,24 +23,20 @@ pub struct Phase<T> {
 
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
-pub struct BaseMarkProperties<'a> {
-  #[cfg_attr(feature = "serde", serde(borrow))]
-  pub(crate) x: Option<DataSource<'a>>,
-  #[cfg_attr(feature = "serde", serde(borrow))]
-  pub(crate) y: Option<DataSource<'a>>,
-  #[cfg_attr(feature = "serde", serde(borrow))]
-  pub(crate) width: Option<DataSource<'a>>,
-  #[cfg_attr(feature = "serde", serde(borrow))]
-  pub(crate) height: Option<DataSource<'a>>,
+pub struct BaseMarkProperties {
+  pub(crate) x: Option<DataSource>,
+  pub(crate) y: Option<DataSource>,
+  pub(crate) width: Option<DataSource>,
+  pub(crate) height: Option<DataSource>,
 }
 
-impl<'a> BaseMarkProperties<'a> {
+impl BaseMarkProperties {
   pub fn new(
-    x: Option<DataSource<'a>>,
-    y: Option<DataSource<'a>>,
-    width: Option<DataSource<'a>>,
-    height: Option<DataSource<'a>>,
-  ) -> BaseMarkProperties<'a> {
+    x: Option<DataSource>,
+    y: Option<DataSource>,
+    width: Option<DataSource>,
+    height: Option<DataSource>,
+  ) -> BaseMarkProperties {
     BaseMarkProperties {
       x,
       y,
@@ -72,14 +68,8 @@ mod serde_tests {
       phase,
       Phase {
         props: BaseMarkProperties {
-          x: Some(DataSource::FieldSource {
-            field: "x",
-            scale: Some("xscale"),
-          }),
-          y: Some(DataSource::FieldSource {
-            field: "y",
-            scale: Some("yscale"),
-          }),
+          x: Some(DataSource::field("x", Some("xscale"))),
+          y: Some(DataSource::field("y", Some("yscale"))),
           width: Some(DataSource::ValueSource(100.0.into())),
           height: Some(DataSource::ValueSource(100.0.into())),
         }
@@ -98,10 +88,7 @@ mod serde_tests {
     assert_eq!(
       mark_style,
       BaseMarkProperties {
-        x: Some(DataSource::FieldSource {
-          field: "x",
-          scale: Some("xscale"),
-        }),
+        x: Some(DataSource::field("x", Some("xscale"))),
         y: None,
         width: None,
         height: None,
@@ -130,10 +117,7 @@ mod serde_tests {
       BaseMarkProperties {
         x: None,
         y: None,
-        width: Some(DataSource::FieldSource {
-          field: "x",
-          scale: Some("widthscale"),
-        }),
+        width: Some(DataSource::field("x", Some("widthscale"))),
         height: None,
       }
     );

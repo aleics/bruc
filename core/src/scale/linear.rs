@@ -5,9 +5,8 @@ use expression::data::DataItem;
 
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
-pub struct LinearScale<'a> {
-  #[cfg_attr(feature = "serde", serde(borrow))]
-  pub(crate) name: &'a str,
+pub struct LinearScale {
+  pub(crate) name: String,
 
   #[cfg_attr(feature = "serde", serde(default = "Domain::default_literal"))]
   pub(crate) domain: Domain,
@@ -16,17 +15,17 @@ pub struct LinearScale<'a> {
   pub(crate) range: Range,
 }
 
-impl<'a> LinearScale<'a> {
-  pub fn new(name: &'a str, domain: Domain, range: Range) -> LinearScale<'a> {
+impl LinearScale {
+  pub fn new(name: &str, domain: Domain, range: Range) -> LinearScale {
     LinearScale {
-      name,
+      name: name.to_string(),
       domain,
       range,
     }
   }
 }
 
-impl Scaler for LinearScale<'_> {
+impl Scaler for LinearScale {
   type Item = f32;
 
   fn scale(&self, value: &DataItem) -> Option<Self::Item> {

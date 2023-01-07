@@ -10,33 +10,32 @@ pub mod scale;
 pub mod transform;
 
 #[derive(Debug, PartialEq)]
-pub struct Engine<'a> {
-  spec: Specification<'a>,
+pub struct Engine {
+  spec: Specification,
 }
 
-impl<'a> Engine<'a> {
-  pub fn new(spec: Specification<'a>) -> Engine<'a> {
+impl Engine {
+  pub fn new(spec: Specification) -> Engine {
     Engine { spec }
   }
 }
 
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
-pub struct Specification<'a> {
+pub struct Specification {
   data: Data,
-  #[cfg_attr(feature = "serde", serde(borrow))]
-  transform: Option<Transform<'a>>,
-  scales: Vec<Scale<'a>>,
-  marks: Vec<Mark<'a>>,
+  transform: Option<Transform>,
+  scales: Vec<Scale>,
+  marks: Vec<Mark>,
 }
 
-impl<'a> Specification<'a> {
+impl Specification {
   pub fn new(
     data: Data,
-    transform: Option<Transform<'a>>,
-    scales: Vec<Scale<'a>>,
-    marks: Vec<Mark<'a>>,
-  ) -> Specification<'a> {
+    transform: Option<Transform>,
+    scales: Vec<Scale>,
+    marks: Vec<Mark>,
+  ) -> Specification {
     Specification {
       data,
       transform,

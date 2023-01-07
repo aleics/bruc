@@ -3,13 +3,12 @@ use crate::mark::DataSource;
 
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
-pub struct LineMark<'a> {
-  #[cfg_attr(feature = "serde", serde(borrow))]
-  pub(crate) on: Phases<LineMarkProperties<'a>>,
+pub struct LineMark {
+  pub(crate) on: Phases<LineMarkProperties>,
 }
 
-impl<'a> LineMark<'a> {
-  pub fn new(props: LineMarkProperties<'a>) -> LineMark<'a> {
+impl LineMark {
+  pub fn new(props: LineMarkProperties) -> LineMark {
     LineMark {
       on: Phases::new(props),
     }
@@ -18,23 +17,22 @@ impl<'a> LineMark<'a> {
 
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
-pub struct LineMarkProperties<'a> {
+pub struct LineMarkProperties {
   #[cfg_attr(feature = "serde", serde(default))]
   pub(crate) interpolate: Interpolate,
 
-  #[cfg_attr(feature = "serde", serde(borrow))]
   #[cfg_attr(feature = "serde", serde(flatten))]
-  pub(crate) base: BaseMarkProperties<'a>,
+  pub(crate) base: BaseMarkProperties,
 }
 
-impl<'a> LineMarkProperties<'a> {
+impl LineMarkProperties {
   pub fn new(
-    x: Option<DataSource<'a>>,
-    y: Option<DataSource<'a>>,
-    width: Option<DataSource<'a>>,
-    height: Option<DataSource<'a>>,
+    x: Option<DataSource>,
+    y: Option<DataSource>,
+    width: Option<DataSource>,
+    height: Option<DataSource>,
     interpolate: Interpolate,
-  ) -> LineMarkProperties<'a> {
+  ) -> LineMarkProperties {
     LineMarkProperties {
       interpolate,
       base: BaseMarkProperties::new(x, y, width, height),

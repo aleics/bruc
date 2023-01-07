@@ -8,20 +8,18 @@ pub mod pipe;
 
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
-pub struct Transform<'a> {
-  #[cfg_attr(feature = "serde", serde(borrow))]
-  pub(crate) from: &'a str,
-  #[cfg_attr(feature = "serde", serde(borrow))]
+pub struct Transform {
+  pub(crate) from: String,
   #[cfg_attr(feature = "serde", serde(rename = "as"))]
-  pub(crate) output: &'a str,
+  pub(crate) output :String,
   pub(crate) pipes: Vec<Pipe>,
 }
 
-impl<'a> Transform<'a> {
-  pub fn new(source: &'a str, output: &'a str, pipes: Vec<Pipe>) -> Transform<'a> {
+impl Transform {
+  pub fn new(source: &str, output: &str, pipes: Vec<Pipe>) -> Transform {
     Transform {
-      from: source,
-      output,
+      from: source.to_string(),
+      output: output.to_string(),
       pipes,
     }
   }

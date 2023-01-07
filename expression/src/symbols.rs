@@ -71,7 +71,7 @@ impl Symbol {
   }
 }
 
-impl<'a> fmt::Display for Symbol {
+impl fmt::Display for Symbol {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self {
       Symbol::Operator(operator) => match operator {

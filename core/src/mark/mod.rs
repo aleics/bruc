@@ -6,16 +6,16 @@ pub mod line;
 
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
-pub struct Mark<'a> {
-  pub(crate) from: &'a str,
+pub struct Mark {
+  pub(crate) from: String,
   #[cfg_attr(feature = "serde", serde(flatten))]
-  pub(crate) kind: MarkKind<'a>,
+  pub(crate) kind: MarkKind,
 }
 
-impl<'a> Mark<'a> {
-  pub fn line(from: &'a str, mark: LineMark<'a>) -> Mark<'a> {
+impl Mark {
+  pub fn line(from: &str, mark: LineMark) -> Mark {
     Mark {
-      from,
+      from: from.to_string(),
       kind: MarkKind::Line(mark),
     }
   }
@@ -25,28 +25,27 @@ impl<'a> Mark<'a> {
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(tag = "type"))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
-pub enum MarkKind<'a> {
-  #[cfg_attr(feature = "serde", serde(borrow))]
-  Line(LineMark<'a>),
+pub enum MarkKind {
+  Line(LineMark),
 }
 
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(untagged))]
-pub enum DataSource<'a> {
+pub enum DataSource {
   FieldSource {
-    field: &'a str,
-    scale: Option<&'a str>,
+    field: String,
+    scale: Option<String>,
   },
   ValueSource(DataItem),
 }
 
-impl<'a> DataSource<'a> {
-  pub fn field(field: &'a str, scale: Option<&'a str>) -> DataSource<'a> {
-    DataSource::FieldSource { field, scale }
+impl DataSource {
+  pub fn field(field: &str, scale: Option<&str>) -> DataSource {
+    DataSource::FieldSource { field: field.to_string(), scale: scale.map(|value| value.to_string()) }
   }
 
-  pub fn value(item: DataItem) -> DataSource<'a> {
+  pub fn value(item: DataItem) -> DataSource {
     DataSource::ValueSource(item)
   }
 }
@@ -93,20 +92,14 @@ mod serde_tests {
     let data_source: DataSource = serde_json::from_str(r#"{ "field": "x" }"#).unwrap();
     assert_eq!(
       data_source,
-      DataSource::FieldSource {
-        field: "x",
-        scale: None,
-      }
+      DataSource::field("x", None)
     );
 
     let data_source: DataSource =
       serde_json::from_str(r#"{ "field": "x", "scale": "horizontal" }"#).unwrap();
     assert_eq!(
       data_source,
-      DataSource::FieldSource {
-        field: "x",
-        scale: Some("horizontal"),
-      }
+      DataSource::field("x", Some("horizontal"))
     );
 
     let data_source: DataSource = serde_json::from_str(r#"1"#).unwrap();

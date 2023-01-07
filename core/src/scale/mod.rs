@@ -9,9 +9,8 @@ pub mod range;
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(tag = "type"))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
-pub enum Scale<'a> {
-  #[cfg_attr(feature = "serde", serde(borrow))]
-  Linear(LinearScale<'a>),
+pub enum Scale {
+  Linear(LinearScale),
 }
 
 pub trait Scaler {

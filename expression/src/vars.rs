@@ -4,24 +4,23 @@ use crate::data::{DataItem, DataSource};
 
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
-pub struct Variables<'a> {
+pub struct Variables {
   #[cfg_attr(feature = "serde", serde(flatten))]
-  #[cfg_attr(feature = "serde", serde(borrow))]
-  instance: HashMap<&'a str, DataItem>,
+  instance: HashMap<String, DataItem>,
 }
 
-impl<'a> Variables<'a> {
-  pub fn new() -> Variables<'a> {
+impl Variables {
+  pub fn new() -> Variables {
     Variables {
       instance: HashMap::new(),
     }
   }
 
-  pub fn with_instance(instance: HashMap<&'a str, DataItem>) -> Variables<'a> {
+  pub fn with_instance(instance: HashMap<String, DataItem>) -> Variables {
     Variables { instance }
   }
 
-  pub fn from_pairs(pairs: Vec<(&'a str, DataItem)>) -> Variables<'a> {
+  pub fn from_pairs(pairs: Vec<(&str, DataItem)>) -> Variables {
     let mut vars = Variables::new();
     for (key, var) in pairs {
       vars.insert(key, var);
@@ -37,18 +36,18 @@ impl<'a> Variables<'a> {
     self.instance.contains_key(key)
   }
 
-  pub fn insert(&mut self, key: &'a str, value: DataItem) {
-    self.instance.insert(key, value);
+  pub fn insert(&mut self, key: &str, value: DataItem) {
+    self.instance.insert(key.to_string(), value);
   }
 }
 
-impl<'a> Default for Variables<'a> {
+impl Default for Variables {
   fn default() -> Self {
     Variables::new()
   }
 }
 
-impl<'a> DataSource for Variables<'a> {
+impl DataSource for Variables {
   fn get(&self, key: &str) -> Option<&DataItem> {
     self.find(key)
   }

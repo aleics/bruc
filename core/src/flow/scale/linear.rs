@@ -6,25 +6,25 @@ use futures::task::{Context, Poll};
 use futures::Stream;
 use std::pin::Pin;
 
-pub struct LinearNode<'a, S> {
+pub struct LinearNode<S> {
   source: S,
-  scale: LinearScale<'a>,
-  field: &'a str,
+  scale: LinearScale,
+  field: String,
 }
 
-impl<'a, S> LinearNode<'a, S> {
-  pub fn new(source: S, scale: LinearScale<'a>, field: &'a str) -> LinearNode<'a, S> {
+impl<S> LinearNode<S> {
+  pub fn new(source: S, scale: LinearScale, field: &str) -> LinearNode<S> {
     LinearNode {
       source,
       scale,
-      field,
+      field: field.to_string(),
     }
   }
 }
 
-impl<'a, S> Unpin for LinearNode<'a, S> {}
+impl<S> Unpin for LinearNode<S> {}
 
-impl<'a, S> Stream for LinearNode<'a, S>
+impl<S> Stream for LinearNode<S>
 where
   S: Stream<Item = Option<DataValue>> + Unpin,
 {
@@ -37,7 +37,7 @@ where
           Some(item) => {
             if let Some(value) = item {
               let result = value
-                .get(self.field)
+                .get(&self.field)
                 .and_then(|value| self.scale.scale(value));
 
               if result.is_some() {

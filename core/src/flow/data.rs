@@ -107,7 +107,7 @@ impl<T: Clone> Clone for SourceNode<T> {
 
 impl<T> Unpin for SourceNode<T> {}
 
-impl<'a> Stream for SourceNode<DataValue> {
+impl Stream for SourceNode<DataValue> {
   type Item = Option<DataValue>;
 
   fn poll_next(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
