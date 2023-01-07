@@ -1,7 +1,7 @@
-use expression::data::DataItem;
-use expression::expr::Interpretable;
-use expression::vars::Variables;
-use expression::PredicateParser;
+use bruc_expression::data::DataItem;
+use bruc_expression::expr::Interpretable;
+use bruc_expression::vars::Variables;
+use bruc_expression::PredicateParser;
 
 #[test]
 fn interprets_simple_bool() {

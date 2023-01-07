@@ -1,8 +1,8 @@
 use crate::data::DataValue;
 use crate::transform::error::Error;
 use crate::transform::pipe::Predicate;
-use expression::expr::{Expression, Interpretable};
-use expression::PredicateParser;
+use bruc_expression::expr::{Expression, Interpretable};
+use bruc_expression::PredicateParser;
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct MapPipe {

@@ -1,3 +1,5 @@
+#![feature(async_fn_in_trait)]
+
 use crate::data::Data;
 use crate::mark::Mark;
 use crate::scale::Scale;
@@ -5,6 +7,7 @@ use crate::transform::Transform;
 
 pub mod data;
 pub mod flow;
+pub mod graph;
 pub mod mark;
 pub mod scale;
 pub mod transform;

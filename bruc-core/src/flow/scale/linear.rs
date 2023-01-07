@@ -1,7 +1,7 @@
 use crate::data::DataValue;
 use crate::scale::linear::LinearScale;
 use crate::scale::Scaler;
-use expression::data::DataSource;
+use bruc_expression::data::DataSource;
 use futures::task::{Context, Poll};
 use futures::Stream;
 use std::pin::Pin;

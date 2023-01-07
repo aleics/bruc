@@ -4,9 +4,9 @@ extern crate test;
 
 use test::Bencher;
 
-use expression::expr::Interpretable;
-use expression::vars::Variables;
-use expression::PredicateParser;
+use bruc_expression::expr::Interpretable;
+use bruc_expression::vars::Variables;
+use bruc_expression::PredicateParser;
 
 #[bench]
 fn bench_parsing_boolean_predicate(b: &mut Bencher) {

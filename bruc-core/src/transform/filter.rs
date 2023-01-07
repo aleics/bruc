@@ -1,5 +1,5 @@
-use expression::expr::{Expression, Interpretable};
-use expression::PredicateParser;
+use bruc_expression::expr::{Expression, Interpretable};
+use bruc_expression::PredicateParser;
 
 use crate::data::DataValue;
 use crate::transform::error::Error;

@@ -1,20 +1,22 @@
 [package]
-name = "core"
+name = "bruc-core"
 version = "0.1.0"
 authors = ["aleics <aleics.casanovas@gmail.com>"]
 edition = "2018"
 
 [dependencies]
 futures = "0.3.12"
+async-std = "1.12.0"
 
 # For external trait impls
 serde = { version = "1.0.123", features = ["derive"], optional = true }
 
 # Internal packages
-expression = { path = "../expression", features = ["serde"] }
+bruc-expression = { path = "../bruc-expression", features = ["serde"] }
 
 [dev-dependencies]
 serde_json = "1.0.61"
+tokio = { version = "1.23.0", features = ["rt", "macros"] }
 
 [package.metadata.docs.rs]
 features = ["serde"]

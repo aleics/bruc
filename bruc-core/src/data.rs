@@ -1,6 +1,6 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Display};
 
-use expression::data::{DataItem, DataSource};
+use bruc_expression::data::{DataItem, DataSource};
 
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
@@ -60,6 +60,12 @@ impl Default for DataValue {
   fn default() -> Self {
     Self::new()
   }
+}
+
+impl Display for DataValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{{ {:?} }}", self.instance)
+    }
 }
 
 #[cfg(feature = "serde")]

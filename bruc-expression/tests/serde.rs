@@ -1,9 +1,9 @@
 #![cfg(feature = "serde")]
 
-use expression::data::DataItem;
-use expression::expr::{Cons, Expression};
-use expression::symbols::{Operator, Symbol};
-use expression::vars::Variables;
+use bruc_expression::data::DataItem;
+use bruc_expression::expr::{Cons, Expression};
+use bruc_expression::symbols::{Operator, Symbol};
+use bruc_expression::vars::Variables;
 
 #[test]
 fn deserializes_variables() {

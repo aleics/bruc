@@ -1,15 +1,15 @@
 #![feature(test)]
 extern crate test;
 
-use core::data::DataValue;
-use core::flow::data::{Chunks, Source};
-use core::flow::transform::TransformNode;
-use core::transform::filter::FilterPipe;
-use core::transform::group::{GroupOperator, GroupPipe};
-use core::transform::map::MapPipe;
-use core::transform::pipe::Pipe;
-use core::transform::Transform;
-use expression::data::DataItem;
+use bruc_core::data::DataValue;
+use bruc_core::flow::data::{Chunks, Source};
+use bruc_core::flow::transform::TransformNode;
+use bruc_core::transform::filter::FilterPipe;
+use bruc_core::transform::group::{GroupOperator, GroupPipe};
+use bruc_core::transform::map::MapPipe;
+use bruc_core::transform::pipe::Pipe;
+use bruc_core::transform::Transform;
+use bruc_expression::data::DataItem;
 use futures::StreamExt;
 use test::Bencher;
 

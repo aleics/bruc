@@ -1,5 +1,5 @@
 use crate::scale::linear::LinearScale;
-use expression::data::DataItem;
+use bruc_expression::data::DataItem;
 
 pub mod domain;
 pub mod linear;
