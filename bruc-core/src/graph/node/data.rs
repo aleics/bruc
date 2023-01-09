@@ -4,17 +4,17 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub struct SourceOperator {
+pub struct DataOperator {
   data: Series,
 }
 
-impl SourceOperator {
+impl DataOperator {
   pub fn new(data: Series) -> Self {
-    SourceOperator { data }
+    DataOperator { data }
   }
 }
 
-impl Evaluation for SourceOperator {
+impl Evaluation for DataOperator {
   fn evaluate_single(&self, _single: SinglePulse) -> Pulse {
     Pulse::single(self.data.clone())
   }

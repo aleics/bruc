@@ -3,13 +3,15 @@ use crate::{
   transform::{filter::FilterPipe, map::MapPipe},
 };
 
-use self::data::SourceOperator;
+use self::data::DataOperator;
 use self::transform::{FilterOperator, MapOperator};
 
 use super::{Evaluation, Pulse};
 
 pub mod data;
 pub mod transform;
+pub mod scale;
+pub mod render;
 
 #[derive(Debug)]
 pub struct Node {
@@ -34,14 +36,14 @@ impl Node {
 
 #[derive(Debug)]
 pub enum Operator {
-  Source(SourceOperator),
+  Data(DataOperator),
   Map(MapOperator),
   Filter(FilterOperator),
 }
 
 impl Operator {
-  pub fn source(data: Series) -> Self {
-    Operator::Source(SourceOperator::new(data))
+  pub fn data(data: Series) -> Self {
+    Operator::Data(DataOperator::new(data))
   }
 
   pub fn map(pipe: MapPipe) -> Self {
@@ -54,7 +56,7 @@ impl Operator {
 
   pub async fn evaluate(&self, pulse: Pulse) -> Pulse {
     match self {
-      Operator::Source(source) => source.evaluate(pulse).await,
+      Operator::Data(data) => data.evaluate(pulse).await,
       Operator::Map(map) => map.evaluate(pulse).await,
       Operator::Filter(filter) => filter.evaluate(pulse).await,
     }

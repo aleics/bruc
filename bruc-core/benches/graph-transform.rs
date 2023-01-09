@@ -15,7 +15,7 @@ fn bench_filter_pipe_1(b: &mut Bencher) {
 
   let data = vec![DataValue::from_pairs(vec![("a", DataItem::Number(1.0))])];
 
-  let source = graph.add_node(Operator::source(data));
+  let source = graph.add_node(Operator::data(data));
 
   graph.add(
     Operator::filter(FilterPipe::new("(a > 1) && (a < 4) && (a != 3)").unwrap()),
@@ -56,7 +56,7 @@ fn bench_filter_pipe_20(b: &mut Bencher) {
     DataValue::from_pairs(vec![("a", DataItem::Number(20.0))]),
   ];
 
-  let source = graph.add_node(Operator::source(data));
+  let source = graph.add_node(Operator::data(data));
 
   graph.add(
     Operator::filter(FilterPipe::new("(a > 1) && (a < 4) && (a != 3)").unwrap()),
@@ -76,7 +76,7 @@ fn bench_map_pipe_1(b: &mut Bencher) {
 
   let data = vec![DataValue::from_pairs(vec![("a", DataItem::Number(1.0))])];
 
-  let source = graph.add_node(Operator::source(data));
+  let source = graph.add_node(Operator::data(data));
 
   graph.add(
     Operator::map(MapPipe::new("(a + 1) / (a * 4) - (a + 2)", "b").unwrap()),
@@ -116,7 +116,7 @@ fn bench_map_pipe_20(b: &mut Bencher) {
     DataValue::from_pairs(vec![("a", DataItem::Number(19.0))]),
     DataValue::from_pairs(vec![("a", DataItem::Number(20.0))]),
   ];
-  let source = graph.add_node(Operator::source(data));
+  let source = graph.add_node(Operator::data(data));
 
   graph.add(
           Operator::map(MapPipe::new("(a + 1) / (a * 4) - (a + 2)", "b").unwrap()),

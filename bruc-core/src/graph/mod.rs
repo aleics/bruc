@@ -295,19 +295,19 @@ mod tests {
   async fn evaluates_in_topological_sort() {
     let mut graph = Graph::new();
 
-    let first_source = graph.add_node(Operator::source(vec![DataValue::from_pairs(vec![(
+    let first_data = graph.add_node(Operator::data(vec![DataValue::from_pairs(vec![(
       "a",
       2.0.into(),
     )])]));
 
-    let second_source = graph.add_node(Operator::source(vec![DataValue::from_pairs(vec![(
+    let second_data = graph.add_node(Operator::data(vec![DataValue::from_pairs(vec![(
       "a",
       1.0.into(),
     )])]));
 
     let map = graph.add(
       Operator::map(MapPipe::new("a + 3", "b").unwrap()),
-      vec![first_source, second_source],
+      vec![first_data, second_data],
     );
 
     let filter = graph.add(

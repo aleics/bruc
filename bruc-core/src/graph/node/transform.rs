@@ -14,8 +14,8 @@ impl MapOperator {
     MapOperator { pipe }
   }
 
-  fn apply(&self, values: &Series) -> Series {
-    let mut result = values.clone();
+  fn apply(&self, series: &Series) -> Series {
+    let mut result = series.clone();
 
     for value in &mut result {
       self.pipe.apply(value);
