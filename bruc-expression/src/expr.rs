@@ -17,10 +17,7 @@ pub enum Cons {
 impl fmt::Display for Cons {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self {
-      Cons::Binary(operator, (left, right)) => write!(
-        f,
-        "({operator} {left} {right})"
-      ),
+      Cons::Binary(operator, (left, right)) => write!(f, "({operator} {left} {right})"),
       Cons::Unary(operator, root) => write!(f, "({operator} {root})"),
     }
   }

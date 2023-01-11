@@ -8,7 +8,11 @@ pub struct GroupPipe {
 
 impl GroupPipe {
   pub fn new(by: &str, op: GroupOperator, output: &str) -> GroupPipe {
-    GroupPipe { by: by.to_string(), op, output: output.to_string() }
+    GroupPipe {
+      by: by.to_string(),
+      op,
+      output: output.to_string(),
+    }
   }
 }
 

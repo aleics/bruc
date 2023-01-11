@@ -42,7 +42,10 @@ pub enum DataSource {
 
 impl DataSource {
   pub fn field(field: &str, scale: Option<&str>) -> DataSource {
-    DataSource::FieldSource { field: field.to_string(), scale: scale.map(|value| value.to_string()) }
+    DataSource::FieldSource {
+      field: field.to_string(),
+      scale: scale.map(|value| value.to_string()),
+    }
   }
 
   pub fn value(item: DataItem) -> DataSource {
@@ -90,17 +93,11 @@ mod serde_tests {
   #[test]
   fn deserialize_data_source() {
     let data_source: DataSource = serde_json::from_str(r#"{ "field": "x" }"#).unwrap();
-    assert_eq!(
-      data_source,
-      DataSource::field("x", None)
-    );
+    assert_eq!(data_source, DataSource::field("x", None));
 
     let data_source: DataSource =
       serde_json::from_str(r#"{ "field": "x", "scale": "horizontal" }"#).unwrap();
-    assert_eq!(
-      data_source,
-      DataSource::field("x", Some("horizontal"))
-    );
+    assert_eq!(data_source, DataSource::field("x", Some("horizontal")));
 
     let data_source: DataSource = serde_json::from_str(r#"1"#).unwrap();
     assert_eq!(data_source, DataSource::ValueSource(1.0.into()));

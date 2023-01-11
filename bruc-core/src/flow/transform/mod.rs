@@ -36,7 +36,8 @@ where
   where
     S: Stream<Item = Option<DataValue>> + Unpin + 'static,
   {
-    transform.pipes
+    transform
+      .pipes
       .iter()
       .cloned()
       .fold(Box::new(source), |acc, pipe| {

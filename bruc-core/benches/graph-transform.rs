@@ -119,13 +119,13 @@ fn bench_map_pipe_20(b: &mut Bencher) {
   let source = graph.add_node(Operator::data(data));
 
   graph.add(
-          Operator::map(MapPipe::new("(a + 1) / (a * 4) - (a + 2)", "b").unwrap()),
+    Operator::map(MapPipe::new("(a + 1) / (a * 4) - (a + 2)", "b").unwrap()),
     vec![source],
   );
 
   b.iter(|| {
-      futures::executor::block_on(async {
-          graph.evaluate().await;
-      });
+    futures::executor::block_on(async {
+      graph.evaluate().await;
+    });
   });
 }

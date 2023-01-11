@@ -1,6 +1,6 @@
 use crate::{
   data::Series,
-  graph::{MultiPulse, Pulse, SinglePulse, Evaluation},
+  graph::{Evaluation, MultiPulse, Pulse, SinglePulse},
 };
 
 #[derive(Debug)]

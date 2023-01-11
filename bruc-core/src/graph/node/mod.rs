@@ -9,9 +9,9 @@ use self::transform::{FilterOperator, MapOperator};
 use super::{Evaluation, Pulse};
 
 pub mod data;
-pub mod transform;
-pub mod scale;
 pub mod render;
+pub mod scale;
+pub mod transform;
 
 #[derive(Debug)]
 pub struct Node {
