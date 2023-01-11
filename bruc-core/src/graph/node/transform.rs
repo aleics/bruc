@@ -86,6 +86,7 @@ impl Evaluation for FilterOperator {
   }
 }
 
+#[derive(Debug)]
 pub enum GroupOperator {
   Count(CountOperator),
 }
@@ -112,6 +113,7 @@ impl Evaluation for GroupOperator {
   }
 }
 
+#[derive(Debug)]
 pub struct CountOperator {
   by: String,
   output: String,

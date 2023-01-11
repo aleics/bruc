@@ -1,10 +1,10 @@
 use crate::{
   data::DataValue,
-  transform::{filter::FilterPipe, map::MapPipe},
+  transform::{filter::FilterPipe, group::GroupPipe, map::MapPipe, pipe::Pipe},
 };
 
-use self::data::DataOperator;
 use self::transform::{FilterOperator, MapOperator};
+use self::{data::DataOperator, transform::GroupOperator};
 
 use super::{Evaluation, Pulse};
 
@@ -39,11 +39,20 @@ pub enum Operator {
   Data(DataOperator),
   Map(MapOperator),
   Filter(FilterOperator),
+  Group(GroupOperator),
 }
 
 impl Operator {
   pub fn data(data: Vec<DataValue>) -> Self {
     Operator::Data(DataOperator::new(data))
+  }
+
+  pub fn transform(pipe: Pipe) -> Self {
+    match pipe {
+      Pipe::Map(map) => Operator::map(map),
+      Pipe::Filter(filter) => Operator::filter(filter),
+      Pipe::Group(group) => Operator::group(group),
+    }
   }
 
   pub fn map(pipe: MapPipe) -> Self {
@@ -54,11 +63,16 @@ impl Operator {
     Operator::Filter(FilterOperator::new(pipe))
   }
 
+  pub fn group(pipe: GroupPipe) -> Self {
+    Operator::Group(GroupOperator::new(pipe))
+  }
+
   pub async fn evaluate(&self, pulse: Pulse) -> Pulse {
     match self {
       Operator::Data(data) => data.evaluate(pulse).await,
       Operator::Map(map) => map.evaluate(pulse).await,
       Operator::Filter(filter) => filter.evaluate(pulse).await,
+      Operator::Group(group) => group.evaluate(pulse).await,
     }
   }
 }
