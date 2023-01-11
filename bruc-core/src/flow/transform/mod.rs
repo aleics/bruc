@@ -37,7 +37,6 @@ where
     S: Stream<Item = Option<DataValue>> + Unpin + 'static,
   {
     transform
-      .pipes
       .iter()
       .cloned()
       .fold(Box::new(source), |acc, pipe| {
@@ -95,11 +94,10 @@ mod tests {
   use crate::transform::group::{GroupOperator, GroupPipe};
   use crate::transform::map::MapPipe;
   use crate::transform::pipe::Pipe;
-  use crate::transform::Transform;
 
   #[test]
   fn chain_empty() {
-    let transform = Transform::new("table", "data", vec![]);
+    let transform = vec![];
 
     let data = vec![
       DataValue::from_pairs(vec![("a", 1.0.into())]),
@@ -129,14 +127,10 @@ mod tests {
 
   #[test]
   fn chain_maps() {
-    let transform = Transform::new(
-      "table",
-      "data",
-      vec![
-        Pipe::Map(MapPipe::new("a + 2", "b").unwrap()),
-        Pipe::Map(MapPipe::new("a + 4", "c").unwrap()),
-      ],
-    );
+    let transform = vec![
+      Pipe::Map(MapPipe::new("a + 2", "b").unwrap()),
+      Pipe::Map(MapPipe::new("a + 4", "c").unwrap()),
+    ];
 
     let data = vec![
       DataValue::from_pairs(vec![("a", 1.0.into())]),
@@ -182,14 +176,10 @@ mod tests {
 
   #[test]
   fn chain_filters() {
-    let transform = Transform::new(
-      "table",
-      "data",
-      vec![
-        Pipe::Filter(FilterPipe::new("a > 2").unwrap()),
-        Pipe::Filter(FilterPipe::new("a < 4").unwrap()),
-      ],
-    );
+    let transform = vec![
+      Pipe::Filter(FilterPipe::new("a > 2").unwrap()),
+      Pipe::Filter(FilterPipe::new("a < 4").unwrap()),
+    ];
 
     let data = vec![
       DataValue::from_pairs(vec![("a", 1.0.into())]),
@@ -210,18 +200,14 @@ mod tests {
 
   #[test]
   fn chain_groups() {
-    let transform = Transform::new(
-      "table",
-      "data",
-      vec![
-        Pipe::Group(GroupPipe::new("a", GroupOperator::Count, "a_count")),
-        Pipe::Group(GroupPipe::new(
-          "a_count",
-          GroupOperator::Count,
-          "count_a_count",
-        )),
-      ],
-    );
+    let transform = vec![
+      Pipe::Group(GroupPipe::new("a", GroupOperator::Count, "a_count")),
+      Pipe::Group(GroupPipe::new(
+        "a_count",
+        GroupOperator::Count,
+        "count_a_count",
+      )),
+    ];
 
     let data = vec![
       DataValue::from_pairs(vec![("a", 2.0.into())]),
@@ -251,14 +237,10 @@ mod tests {
 
   #[test]
   fn chain_filter_map() {
-    let transform = Transform::new(
-      "table",
-      "data",
-      vec![
-        Pipe::Filter(FilterPipe::new("a > 2").unwrap()),
-        Pipe::Map(MapPipe::new("a * 2", "b").unwrap()),
-      ],
-    );
+    let transform = vec![
+      Pipe::Filter(FilterPipe::new("a > 2").unwrap()),
+      Pipe::Map(MapPipe::new("a * 2", "b").unwrap()),
+    ];
 
     let data = vec![
       DataValue::from_pairs(vec![("a", 1.0.into())]),
@@ -285,14 +267,10 @@ mod tests {
 
   #[test]
   fn chain_filter_group() {
-    let transform = Transform::new(
-      "table",
-      "data",
-      vec![
-        Pipe::Filter(FilterPipe::new("a > 2").unwrap()),
-        Pipe::Group(GroupPipe::new("a", GroupOperator::Count, "a_count")),
-      ],
-    );
+    let transform = vec![
+      Pipe::Filter(FilterPipe::new("a > 2").unwrap()),
+      Pipe::Group(GroupPipe::new("a", GroupOperator::Count, "a_count")),
+    ];
 
     let data = vec![
       DataValue::from_pairs(vec![("a", 1.0.into())]),

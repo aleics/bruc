@@ -1,25 +1,26 @@
 use std::{collections::HashMap, fmt::Display};
 
+use crate::transform::pipe::Pipe;
 use bruc_expression::data::{DataItem, DataSource};
 
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
-pub struct Data {
-  #[cfg_attr(feature = "serde", serde(flatten))]
-  pub(crate) values: HashMap<String, Series>,
+pub struct DataEntry {
+  pub(crate) name: String,
+  pub(crate) values: Vec<DataValue>,
+  #[cfg_attr(feature = "serde", serde(default))]
+  pub(crate) transform: Vec<Pipe>,
 }
 
-impl Data {
-  pub fn from_pairs(pairs: Vec<(&str, Series)>) -> Data {
-    let mut values = HashMap::new();
-    for (key, var) in pairs {
-      values.insert(key.to_string(), var);
+impl DataEntry {
+  pub fn new(name: &str, values: Vec<DataValue>, transform: Vec<Pipe>) -> Self {
+    DataEntry {
+      name: name.to_string(),
+      values,
+      transform,
     }
-    Data { values }
   }
 }
-
-pub type Series = Vec<DataValue>;
 
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
@@ -85,7 +86,7 @@ impl Display for DataValue {
 #[cfg(feature = "serde")]
 #[cfg(test)]
 mod serde_tests {
-  use crate::data::{Data, DataValue};
+  use crate::data::{DataEntry, DataValue};
 
   #[test]
   fn deserialize_data_value() {
@@ -95,22 +96,24 @@ mod serde_tests {
 
   #[test]
   fn deserializes_data() {
-    let data: Data = serde_json::from_str(
-      r#"{
-        "my_data": [{ "a": 3.0, "b": true }]
-      }"#,
+    let data: Vec<DataEntry> = serde_json::from_str(
+      r#"[{
+        "name": "my_data",
+        "values": [{"a": 3.0, "b": true }]
+      }]"#,
     )
     .unwrap();
 
     assert_eq!(
       data,
-      Data::from_pairs(vec![(
+      vec![DataEntry::new(
         "my_data",
         vec![DataValue::from_pairs(vec![
           ("a", 3.0.into()),
           ("b", true.into())
-        ])]
-      )])
-    )
+        ])],
+        Vec::new()
+      )]
+    );
   }
 }

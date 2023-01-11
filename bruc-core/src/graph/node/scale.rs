@@ -1,7 +1,7 @@
 use bruc_expression::data::{DataItem, DataSource};
 
 use crate::{
-  data::Series,
+  data::DataValue,
   graph::{Evaluation, MultiPulse, Pulse, SinglePulse},
   scale::{linear::LinearScale, Scaler},
 };
@@ -19,8 +19,8 @@ impl LinearOperator {
     }
   }
 
-  pub fn apply(&self, series: &Series) -> Series {
-    let mut result = series.clone();
+  pub fn apply(&self, values: &Vec<DataValue>) -> Vec<DataValue> {
+    let mut result = values.clone();
 
     // Iterate over the current series
     for value in &mut result {

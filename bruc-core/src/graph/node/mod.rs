@@ -1,5 +1,5 @@
 use crate::{
-  data::Series,
+  data::DataValue,
   transform::{filter::FilterPipe, map::MapPipe},
 };
 
@@ -42,7 +42,7 @@ pub enum Operator {
 }
 
 impl Operator {
-  pub fn data(data: Series) -> Self {
+  pub fn data(data: Vec<DataValue>) -> Self {
     Operator::Data(DataOperator::new(data))
   }
 

@@ -3,7 +3,7 @@ use std::{collections::HashMap, ops::AddAssign};
 use bruc_expression::data::{DataItem, DataSource};
 
 use crate::{
-  data::{DataValue, Series},
+  data::DataValue,
   graph::{Evaluation, MultiPulse, Pulse, SinglePulse},
   transform::{
     filter::FilterPipe,
@@ -22,8 +22,8 @@ impl MapOperator {
     MapOperator { pipe }
   }
 
-  fn apply(&self, series: &Series) -> Series {
-    let mut result = series.clone();
+  fn apply(&self, values: &Vec<DataValue>) -> Vec<DataValue> {
+    let mut result = values.clone();
 
     for value in &mut result {
       self.pipe.apply(value);
@@ -58,7 +58,7 @@ impl FilterOperator {
     FilterOperator { pipe }
   }
 
-  fn apply(&self, values: &Series) -> Series {
+  fn apply(&self, values: &Vec<DataValue>) -> Vec<DataValue> {
     let mut result = Vec::with_capacity(values.len());
 
     for value in values {
@@ -122,10 +122,10 @@ impl CountOperator {
     CountOperator { by, output }
   }
 
-  fn apply(&self, series: &Series) -> Series {
+  fn apply(&self, values: &Vec<DataValue>) -> Vec<DataValue> {
     let mut counts: HashMap<DataItem, usize> = HashMap::new();
 
-    for value in series {
+    for value in values {
       if let Some(target) = value.get(&self.by) {
         match counts.get_mut(target) {
           Some(count) => count.add_assign(1),
@@ -136,7 +136,7 @@ impl CountOperator {
       }
     }
 
-    let mut result = Series::new();
+    let mut result = Vec::new();
 
     for (var, count) in counts {
       result.push(DataValue::from_pairs(vec![

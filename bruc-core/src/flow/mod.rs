@@ -11,19 +11,14 @@ mod tests {
   use crate::transform::filter::FilterPipe;
   use crate::transform::map::MapPipe;
   use crate::transform::pipe::Pipe;
-  use crate::transform::Transform;
   use futures::StreamExt;
 
   #[test]
   fn chains_source_transform() {
-    let transform = Transform::new(
-      "table",
-      "data",
-      vec![
-        Pipe::Filter(FilterPipe::new("x >= 2 && y < 5").unwrap()),
-        Pipe::Map(MapPipe::new("x + 2", "z").unwrap()),
-      ],
-    );
+    let transform = vec![
+      Pipe::Filter(FilterPipe::new("x >= 2 && y < 5").unwrap()),
+      Pipe::Map(MapPipe::new("x + 2", "z").unwrap()),
+    ];
     let data = vec![
       DataValue::from_pairs(vec![("x", 1.0.into()), ("y", 1.0.into())]),
       DataValue::from_pairs(vec![("x", 3.0.into()), ("y", 1.0.into())]),

@@ -1,15 +1,15 @@
 use crate::{
-  data::Series,
+  data::DataValue,
   graph::{Evaluation, MultiPulse, Pulse, SinglePulse},
 };
 
 #[derive(Debug)]
 pub struct DataOperator {
-  data: Series,
+  data: Vec<DataValue>,
 }
 
 impl DataOperator {
-  pub fn new(data: Series) -> Self {
+  pub fn new(data: Vec<DataValue>) -> Self {
     DataOperator { data }
   }
 }

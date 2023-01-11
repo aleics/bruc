@@ -1,4 +1,4 @@
-use crate::data::Series;
+use crate::data::DataValue;
 use crate::graph::node::{Node, Operator};
 use std::collections::{BTreeMap, HashSet, VecDeque};
 use std::iter::FromIterator;
@@ -239,7 +239,7 @@ impl Pulse {
     Pulse::Multi(MultiPulse::new(pulses))
   }
 
-  pub fn single(values: Series) -> Self {
+  pub fn single(values: Vec<DataValue>) -> Self {
     Pulse::Single(SinglePulse::new(values))
   }
 
@@ -262,11 +262,11 @@ impl Pulse {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct SinglePulse {
-  pub(crate) values: Series,
+  pub(crate) values: Vec<DataValue>,
 }
 
 impl SinglePulse {
-  pub fn new(values: Series) -> SinglePulse {
+  pub fn new(values: Vec<DataValue>) -> SinglePulse {
     SinglePulse { values }
   }
 }
