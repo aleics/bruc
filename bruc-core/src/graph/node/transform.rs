@@ -22,8 +22,8 @@ impl MapOperator {
     MapOperator { pipe }
   }
 
-  fn apply(&self, values: &Vec<DataValue>) -> Vec<DataValue> {
-    let mut result = values.clone();
+  fn apply(&self, values: &[DataValue]) -> Vec<DataValue> {
+    let mut result = values.to_vec();
 
     for value in &mut result {
       self.pipe.apply(value);
@@ -58,7 +58,7 @@ impl FilterOperator {
     FilterOperator { pipe }
   }
 
-  fn apply(&self, values: &Vec<DataValue>) -> Vec<DataValue> {
+  fn apply(&self, values: &[DataValue]) -> Vec<DataValue> {
     let mut result = Vec::with_capacity(values.len());
 
     for value in values {
@@ -124,7 +124,7 @@ impl CountOperator {
     CountOperator { by, output }
   }
 
-  fn apply(&self, values: &Vec<DataValue>) -> Vec<DataValue> {
+  fn apply(&self, values: &[DataValue]) -> Vec<DataValue> {
     let mut counts: HashMap<DataItem, usize> = HashMap::new();
 
     for value in values {

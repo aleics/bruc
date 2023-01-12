@@ -21,8 +21,8 @@ impl LinearOperator {
     }
   }
 
-  pub fn apply(&self, values: &Vec<DataValue>) -> Vec<DataValue> {
-    let mut result = values.clone();
+  pub fn apply(&self, values: &[DataValue]) -> Vec<DataValue> {
+    let mut result = values.to_vec();
 
     // Iterate over the current series
     for value in &mut result {
