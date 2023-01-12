@@ -1,3 +1,5 @@
+use crate::graph::node::mark::LineOperator;
+use crate::mark::line::LineMark;
 use crate::{
   data::DataValue,
   transform::{filter::FilterPipe, group::GroupPipe, map::MapPipe, pipe::Pipe},
@@ -9,7 +11,7 @@ use self::{data::DataOperator, transform::GroupOperator};
 use super::{Evaluation, Pulse};
 
 pub mod data;
-pub mod render;
+pub mod mark;
 pub mod scale;
 pub mod transform;
 
@@ -40,6 +42,7 @@ pub enum Operator {
   Map(MapOperator),
   Filter(FilterOperator),
   Group(GroupOperator),
+  Line(LineOperator),
 }
 
 impl Operator {
@@ -67,12 +70,17 @@ impl Operator {
     Operator::Group(GroupOperator::new(pipe))
   }
 
+  pub fn line(mark: LineMark) -> Self {
+    Operator::Line(LineOperator::new(mark))
+  }
+
   pub async fn evaluate(&self, pulse: Pulse) -> Pulse {
     match self {
       Operator::Data(data) => data.evaluate(pulse).await,
       Operator::Map(map) => map.evaluate(pulse).await,
       Operator::Filter(filter) => filter.evaluate(pulse).await,
       Operator::Group(group) => group.evaluate(pulse).await,
+      Operator::Line(line) => line.evaluate(pulse).await,
     }
   }
 }
