@@ -51,7 +51,7 @@ mod serde_tests {
   use crate::scale::domain::Domain;
   use crate::scale::linear::LinearScale;
   use crate::scale::range::Range;
-  use crate::scale::Scale;
+  use crate::scale::{Scale, ScaleKind};
   use crate::transform::filter::FilterPipe;
   use crate::transform::pipe::Pipe;
   use crate::Specification;
@@ -96,7 +96,7 @@ mod serde_tests {
         ],
         "marks": [
           {
-            "from": "valid",
+            "from": "primary",
             "type": "line",
             "on": {
               "update": {
@@ -120,13 +120,15 @@ mod serde_tests {
           ],
           vec![Pipe::Filter(FilterPipe::new("a > 2").unwrap())]
         )],
-        vec![Scale::Linear(LinearScale::new(
+        vec![Scale::new(
           "horizontal",
-          Domain::Literal(0.0, 100.0),
-          Range::Literal(0.0, 20.0),
-        ))],
+          ScaleKind::Linear(LinearScale::new(
+            Domain::Literal(0.0, 100.0),
+            Range::Literal(0.0, 20.0),
+          ))
+        )],
         vec![Mark::line(
-          "valid",
+          "primary",
           LineMark::new(LineMarkProperties::new(
             Some(DataSource::field("x", Some("horizontal"))),
             None,

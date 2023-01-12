@@ -9,13 +9,15 @@ use crate::{
 pub struct LinearOperator {
   scale: LinearScale,
   field: String,
+  output: String,
 }
 
 impl LinearOperator {
-  pub fn new(scale: LinearScale, field: &str) -> Self {
+  pub fn new(scale: LinearScale, field: &str, output: &str) -> Self {
     LinearOperator {
       scale,
       field: field.to_string(),
+      output: output.to_string(),
     }
   }
 
@@ -31,7 +33,7 @@ impl LinearOperator {
 
       if let Some(scale_item) = scale_result {
         // Add scale result to value with the scale's name
-        value.insert(&self.scale.name, DataItem::Number(scale_item));
+        value.insert(&self.output, DataItem::Number(scale_item));
       }
     }
 
@@ -73,13 +75,9 @@ mod tests {
       DataValue::from_pairs(vec![("x", 15.0.into()), ("y", 1.0.into())]),
     ];
 
-    let scale = LinearScale::new(
-      "horizontal",
-      Domain::Literal(0.0, 10.0),
-      Range::Literal(0.0, 1.0),
-    );
+    let scale = LinearScale::new(Domain::Literal(0.0, 10.0), Range::Literal(0.0, 1.0));
 
-    let operator = LinearOperator::new(scale, "x");
+    let operator = LinearOperator::new(scale, "x", "horizontal");
 
     let pulse = operator.evaluate(Pulse::single(series)).await;
 
@@ -121,13 +119,9 @@ mod tests {
       DataValue::from_pairs(vec![("x", 15.0.into()), ("y", 1.0.into())]),
     ]);
 
-    let scale = LinearScale::new(
-      "horizontal",
-      Domain::Literal(0.0, 10.0),
-      Range::Literal(0.0, 1.0),
-    );
+    let scale = LinearScale::new(Domain::Literal(0.0, 10.0), Range::Literal(0.0, 1.0));
 
-    let operator = LinearOperator::new(scale, "x");
+    let operator = LinearOperator::new(scale, "x", "horizontal");
 
     let pulse = operator
       .evaluate(Pulse::multi(vec![first_pulse, second_pulse]))
@@ -168,13 +162,9 @@ mod tests {
       DataValue::from_pairs(vec![("x", 2.0.into()), ("y", 1.0.into())]),
     ];
 
-    let scale = LinearScale::new(
-      "horizontal",
-      Domain::Literal(0.0, 10.0),
-      Range::Literal(0.0, 1.0),
-    );
+    let scale = LinearScale::new(Domain::Literal(0.0, 10.0), Range::Literal(0.0, 1.0));
 
-    let operator = LinearOperator::new(scale, "x");
+    let operator = LinearOperator::new(scale, "x", "horizontal");
 
     let pulse = operator.evaluate(Pulse::single(series)).await;
 

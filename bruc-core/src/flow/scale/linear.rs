@@ -77,11 +77,7 @@ mod tests {
       DataValue::from_pairs(vec![("x", 15.0.into()), ("y", 1.0.into())]),
     ];
 
-    let scale = LinearScale::new(
-      "horizontal",
-      Domain::Literal(0.0, 10.0),
-      Range::Literal(0.0, 1.0),
-    );
+    let scale = LinearScale::new(Domain::Literal(0.0, 10.0), Range::Literal(0.0, 1.0));
 
     let source = Source::new();
     let node = LinearNode::new(source.link(), scale, "x");
@@ -101,11 +97,7 @@ mod tests {
       DataValue::from_pairs(vec![("x", 2.0.into()), ("y", 1.0.into())]),
     ];
 
-    let scale = LinearScale::new(
-      "horizontal",
-      Domain::Literal(0.0, 10.0),
-      Range::Literal(0.0, 1.0),
-    );
+    let scale = LinearScale::new(Domain::Literal(0.0, 10.0), Range::Literal(0.0, 1.0));
 
     let source = Source::new();
     let node = LinearNode::new(source.link(), scale, "x");

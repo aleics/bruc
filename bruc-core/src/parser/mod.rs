@@ -40,6 +40,8 @@ impl Parser {
 #[cfg(test)]
 mod tests {
   use super::Parser;
+  use crate::scale::ScaleKind;
+  use crate::transform::map::MapPipe;
   use crate::{
     data::{DataEntry, DataValue},
     mark::{
@@ -47,10 +49,9 @@ mod tests {
       DataSource, Mark,
     },
     scale::{domain::Domain, linear::LinearScale, range::Range, Scale},
-    transform::{filter::FilterPipe, pipe::Pipe, Transform},
+    transform::{filter::FilterPipe, pipe::Pipe},
     Specification,
   };
-  use crate::transform::map::MapPipe;
 
   #[test]
   fn parses_simple() {
@@ -60,14 +61,16 @@ mod tests {
         vec![DataValue::from_pairs(vec![("a", 10.0.into())])],
         vec![
           Pipe::Map(MapPipe::new("a - 2", "b").unwrap()),
-          Pipe::Filter(FilterPipe::new("b > 2").unwrap())
+          Pipe::Filter(FilterPipe::new("b > 2").unwrap()),
         ],
       )],
-      scales: vec![Scale::Linear(LinearScale::new(
+      scales: vec![Scale::new(
         "horizontal",
-        Domain::Literal(0.0, 100.0),
-        Range::Literal(0.0, 20.0),
-      ))],
+        ScaleKind::Linear(LinearScale::new(
+          Domain::Literal(0.0, 100.0),
+          Range::Literal(0.0, 20.0),
+        )),
+      )],
       marks: vec![Mark::line(
         "valid",
         LineMark::new(LineMarkProperties::new(
