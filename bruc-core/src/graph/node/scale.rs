@@ -6,6 +6,7 @@ use crate::{
   scale::{linear::LinearScale, Scaler},
 };
 
+#[derive(Debug)]
 pub struct LinearOperator {
   scale: LinearScale,
   field: String,
@@ -42,6 +43,51 @@ impl LinearOperator {
 }
 
 impl Evaluation for LinearOperator {
+  fn evaluate_single(&self, single: SinglePulse) -> Pulse {
+    Pulse::single(self.apply(&single.values))
+  }
+
+  fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
+    let values = multi.pulses.iter().fold(Vec::new(), |mut acc, pulse| {
+      acc.extend(self.apply(&pulse.values));
+      acc
+    });
+
+    Pulse::single(values)
+  }
+}
+
+#[derive(Debug)]
+pub struct IdentityOperator {
+  field: String,
+  output: String,
+}
+
+impl IdentityOperator {
+  pub fn new(field: &str, output: &str) -> Self {
+    IdentityOperator {
+      field: field.to_string(),
+      output: output.to_string(),
+    }
+  }
+
+  pub fn apply(&self, values: &[DataValue]) -> Vec<DataValue> {
+    let mut result = values.to_vec();
+
+    // Iterate over the current series
+    for value in &mut result {
+      // Find field in data value
+      if let Some(item) = value.get(&self.field) {
+        // Add result to value with the output's name
+        value.insert(&self.output, *item);
+      }
+    }
+
+    result
+  }
+}
+
+impl Evaluation for IdentityOperator {
   fn evaluate_single(&self, single: SinglePulse) -> Pulse {
     Pulse::single(self.apply(&single.values))
   }

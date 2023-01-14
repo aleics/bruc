@@ -1,5 +1,7 @@
 use crate::graph::node::mark::LineOperator;
+use crate::graph::node::scale::{IdentityOperator, LinearOperator};
 use crate::mark::line::LineMark;
+use crate::scale::{Scale, ScaleKind};
 use crate::{
   data::DataValue,
   transform::{filter::FilterPipe, group::GroupPipe, map::MapPipe, pipe::Pipe},
@@ -43,6 +45,8 @@ pub enum Operator {
   Filter(FilterOperator),
   Group(GroupOperator),
   Line(LineOperator),
+  Linear(LinearOperator),
+  Identity(IdentityOperator),
 }
 
 impl Operator {
@@ -55,6 +59,12 @@ impl Operator {
       Pipe::Map(map) => Operator::map(map),
       Pipe::Filter(filter) => Operator::filter(filter),
       Pipe::Group(group) => Operator::group(group),
+    }
+  }
+
+  pub fn scale(scale: Scale, field: &str, output: &str) -> Self {
+    match scale.kind {
+      ScaleKind::Linear(linear) => Operator::Linear(LinearOperator::new(linear, field, output)),
     }
   }
 
@@ -74,6 +84,10 @@ impl Operator {
     Operator::Line(LineOperator::new(mark))
   }
 
+  pub fn identity(field: &str, output: &str) -> Self {
+    Operator::Identity(IdentityOperator::new(field, output))
+  }
+
   pub async fn evaluate(&self, pulse: Pulse) -> Pulse {
     match self {
       Operator::Data(data) => data.evaluate(pulse).await,
@@ -81,6 +95,8 @@ impl Operator {
       Operator::Filter(filter) => filter.evaluate(pulse).await,
       Operator::Group(group) => group.evaluate(pulse).await,
       Operator::Line(line) => line.evaluate(pulse).await,
+      Operator::Linear(linear) => linear.evaluate(pulse).await,
+      Operator::Identity(identity) => identity.evaluate(pulse).await,
     }
   }
 }
