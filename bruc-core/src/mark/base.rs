@@ -1,5 +1,10 @@
 use crate::mark::DataSource;
 
+pub(crate) const X_AXIS_FIELD_NAME: &str = "x";
+pub(crate) const Y_AXIS_FIELD_NAME: &str = "y";
+pub(crate) const WIDTH_FIELD_NAME: &str = "width";
+pub(crate) const HEIGHT_FIELD_NAME: &str = "height";
+
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 pub struct Phases<T> {

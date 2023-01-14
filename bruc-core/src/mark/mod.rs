@@ -1,8 +1,8 @@
 use crate::mark::line::LineMark;
 use bruc_expression::data::DataItem;
 
-mod base;
-pub mod line;
+pub(crate) mod base;
+pub(crate) mod line;
 
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
