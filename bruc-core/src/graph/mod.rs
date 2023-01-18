@@ -2,6 +2,7 @@ use crate::data::DataValue;
 use crate::graph::node::{Node, Operator};
 use std::collections::{BTreeMap, HashSet, VecDeque};
 use std::iter::FromIterator;
+use crate::scene::SceneItem;
 
 pub mod node;
 
@@ -239,7 +240,7 @@ impl Pulse {
     Pulse::Multi(MultiPulse::new(pulses))
   }
 
-  pub fn single(values: Vec<DataValue>) -> Self {
+  pub fn single(values: Vec<PulseValue>) -> Self {
     Pulse::Single(SinglePulse::new(values))
   }
 
@@ -262,13 +263,19 @@ impl Pulse {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct SinglePulse {
-  pub(crate) values: Vec<DataValue>,
+  pub(crate) values: Vec<PulseValue>,
 }
 
 impl SinglePulse {
-  pub fn new(values: Vec<DataValue>) -> SinglePulse {
+  pub fn new(values: Vec<PulseValue>) -> SinglePulse {
     SinglePulse { values }
   }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum PulseValue {
+  Data(DataValue),
+  Marks(SceneItem)
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -321,10 +328,10 @@ mod tests {
 
     assert_eq!(
       filter.pulse,
-      Pulse::single(vec![DataValue::from_pairs(vec![
+      Pulse::single(vec![PulseValue::Data(DataValue::from_pairs(vec![
         ("a", 2.0.into()),
         ("b", 5.0.into())
-      ])])
+      ]))])
     );
   }
 }

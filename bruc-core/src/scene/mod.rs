@@ -1,10 +1,10 @@
-struct Scenegraph {
+pub struct Scenegraph {
   items: Vec<SceneGroup>
 }
 
 impl Scenegraph {
   pub fn new() -> Self {
-    Scenegraph { items: Vec::new() }
+    Default::default()
   }
 
   pub fn add(&mut self, item: SceneGroup) {
@@ -12,7 +12,15 @@ impl Scenegraph {
   }
 }
 
-enum SceneItem {
+impl Default for Scenegraph {
+  fn default() -> Self {
+    Self::new()
+  }
+}
+
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum SceneItem {
   Group(Box<SceneGroup>),
   Line(Box<SceneLine>)
 }
@@ -27,13 +35,14 @@ impl SceneItem {
   }
 }
 
-struct SceneGroup {
+#[derive(Debug, Clone, PartialEq)]
+pub struct SceneGroup {
   items: Vec<SceneItem>
 }
 
 impl SceneGroup {
   pub fn new() -> Self {
-    SceneGroup { items: Vec::new() }
+    Default::default()
   }
 
   pub fn with_items(items: Vec<SceneItem>) -> Self {
@@ -41,7 +50,15 @@ impl SceneGroup {
   }
 }
 
-struct SceneLine {
+impl Default for SceneGroup {
+  fn default() -> Self {
+    Self::new()
+  }
+}
+
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct SceneLine {
   base: SceneItemBase,
   stroke: String,
   stroke_width: f32,
@@ -55,7 +72,8 @@ impl SceneLine {
   }
 }
 
-struct SceneItemBase {
+#[derive(Debug, Clone, PartialEq)]
+pub struct SceneItemBase {
   x: f32,
   y: f32,
 }
