@@ -11,6 +11,7 @@ pub mod graph;
 pub mod mark;
 pub mod parser;
 pub mod scale;
+pub mod scene;
 pub mod transform;
 
 #[derive(Debug, PartialEq)]
