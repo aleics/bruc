@@ -51,6 +51,14 @@ impl DataValue {
   pub fn insert(&mut self, key: &str, value: DataItem) {
     self.instance.insert(key.to_string(), value);
   }
+
+  pub fn pairs(&self) -> Vec<(&str, DataItem)> {
+    self
+      .instance
+      .iter()
+      .map(|(key, value)| (key.as_str(), *value))
+      .collect()
+  }
 }
 
 impl DataSource for DataValue {

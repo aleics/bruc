@@ -1,7 +1,9 @@
+use crate::data::DataValue;
 use crate::graph::{Evaluation, MultiPulse, Pulse, PulseValue, SinglePulse};
 use crate::mark::base::{X_AXIS_FIELD_NAME, Y_AXIS_FIELD_NAME};
 use crate::mark::line::LineMark;
 use crate::scene::{SceneItem, SceneLine};
+use bruc_expression::data::DataItem;
 
 #[derive(Debug, PartialEq)]
 pub struct LineOperator {
@@ -11,6 +13,39 @@ pub struct LineOperator {
 impl LineOperator {
   pub fn new(mark: LineMark) -> Self {
     LineOperator { mark }
+  }
+
+  fn encode(&self, multi: MultiPulse) -> SinglePulse {
+    let mut pulse_pairs: Vec<Vec<(&str, DataItem)>> = Vec::new();
+
+    for i in 0..multi.pulses.len() {
+      let single = multi.pulses.get(i).unwrap();
+
+      let data_values: Vec<Vec<(&str, DataItem)>> = single
+        .values
+        .iter()
+        .flat_map(|value| value.get_data())
+        .map(|data| data.pairs())
+        .collect();
+
+      if pulse_pairs.is_empty() {
+        pulse_pairs = data_values;
+      } else {
+        for j in 0..data_values.len() {
+          if let Some(pairs) = pulse_pairs.get_mut(j) {
+            let data_value = data_values.get(j).unwrap();
+            pairs.extend(data_value);
+          }
+        }
+      }
+    }
+
+    let values = pulse_pairs
+      .into_iter()
+      .map(|pairs| PulseValue::Data(DataValue::from_pairs(pairs)))
+      .collect();
+
+    SinglePulse::new(values)
   }
 
   pub fn apply(&self, values: &[PulseValue]) -> Vec<PulseValue> {
@@ -24,7 +59,7 @@ impl LineOperator {
           .and_then(|item| item.get_number())
           .copied()
           .unwrap_or(0.0);
-        
+
         let y = data_value
           .instance
           .get(Y_AXIS_FIELD_NAME)
@@ -50,12 +85,7 @@ impl Evaluation for LineOperator {
   }
 
   fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
-    let values = multi.pulses.iter().fold(Vec::new(), |mut acc, pulse| {
-      acc.extend(self.apply(&pulse.values));
-      acc
-    });
-
-    Pulse::single(values)
+    self.evaluate_single(self.encode(multi))
   }
 }
 
@@ -63,38 +93,36 @@ impl Evaluation for LineOperator {
 mod tests {
   use crate::data::DataValue;
   use crate::graph::node::mark::LineOperator;
-  use crate::graph::{Evaluation, Pulse, PulseValue};
+  use crate::graph::{Evaluation, Pulse, PulseValue, SinglePulse};
   use crate::mark::line::{Interpolate, LineMark, LineMarkProperties};
   use crate::scene::{SceneItem, SceneLine};
 
   #[tokio::test]
   async fn computes_line() {
-    let series = vec![
-      PulseValue::Data(DataValue::from_pairs(vec![
-        ("x", (2.0).into()),
-        ("y", 1.0.into()),
-        ("width", 100.0.into()),
-        ("height", 50.0.into()),
-      ])),
-      PulseValue::Data(DataValue::from_pairs(vec![
-        ("x", 5.0.into()),
-        ("y", 1.0.into()),
-        ("width", 100.0.into()),
-        ("height", 50.0.into()),
-      ])),
-      PulseValue::Data(DataValue::from_pairs(vec![
-        ("x", 10.0.into()),
-        ("y", 1.0.into()),
-        ("width", 100.0.into()),
-        ("height", 50.0.into()),
-      ])),
-      PulseValue::Data(DataValue::from_pairs(vec![
-        ("x", 15.0.into()),
-        ("y", 1.0.into()),
-        ("width", 100.0.into()),
-        ("height", 50.0.into()),
-      ])),
-    ];
+    let x_pulse = SinglePulse::new(vec![
+      PulseValue::Data(DataValue::from_pairs(vec![("x", 2.0.into())])),
+      PulseValue::Data(DataValue::from_pairs(vec![("x", 5.0.into())])),
+      PulseValue::Data(DataValue::from_pairs(vec![("x", 10.0.into())])),
+      PulseValue::Data(DataValue::from_pairs(vec![("x", 15.0.into())])),
+    ]);
+    let y_pulse = SinglePulse::new(vec![
+      PulseValue::Data(DataValue::from_pairs(vec![("y", 1.0.into())])),
+      PulseValue::Data(DataValue::from_pairs(vec![("y", 1.0.into())])),
+      PulseValue::Data(DataValue::from_pairs(vec![("y", 1.0.into())])),
+      PulseValue::Data(DataValue::from_pairs(vec![("y", 1.0.into())])),
+    ]);
+    let width_pulse = SinglePulse::new(vec![
+      PulseValue::Data(DataValue::from_pairs(vec![("width", 100.0.into())])),
+      PulseValue::Data(DataValue::from_pairs(vec![("width", 100.0.into())])),
+      PulseValue::Data(DataValue::from_pairs(vec![("width", 100.0.into())])),
+      PulseValue::Data(DataValue::from_pairs(vec![("width", 100.0.into())])),
+    ]);
+    let height_pulse = SinglePulse::new(vec![
+      PulseValue::Data(DataValue::from_pairs(vec![("height", 100.0.into())])),
+      PulseValue::Data(DataValue::from_pairs(vec![("height", 100.0.into())])),
+      PulseValue::Data(DataValue::from_pairs(vec![("height", 100.0.into())])),
+      PulseValue::Data(DataValue::from_pairs(vec![("height", 100.0.into())])),
+    ]);
 
     let operator = LineOperator::new(LineMark::new(LineMarkProperties::new(
       None,
@@ -104,7 +132,14 @@ mod tests {
       Interpolate::Linear,
     )));
 
-    let pulse = operator.evaluate(Pulse::single(series)).await;
+    let pulse = operator
+      .evaluate(Pulse::multi(vec![
+        x_pulse,
+        y_pulse,
+        width_pulse,
+        height_pulse,
+      ]))
+      .await;
 
     assert_eq!(
       pulse,

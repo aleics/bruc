@@ -278,6 +278,24 @@ pub enum PulseValue {
   Marks(SceneItem),
 }
 
+impl PulseValue {
+  fn get_data(&self) -> Option<&DataValue> {
+    if let PulseValue::Data(data) = &self {
+      Some(data)
+    } else {
+      None
+    }
+  }
+
+  fn get_marks(&self) -> Option<&SceneItem> {
+    if let PulseValue::Marks(scene) = &self {
+      Some(scene)
+    } else {
+      None
+    }
+  }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct MultiPulse {
   pub(crate) pulses: Vec<SinglePulse>,

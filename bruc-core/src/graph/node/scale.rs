@@ -35,6 +35,7 @@ impl LinearOperator {
 
         if let Some(scale_item) = scale_result {
           // Add scale result to value with the scale's name
+          data_value.instance.clear();
           data_value.insert(&self.output, DataItem::Number(scale_item));
         }
       }
@@ -121,52 +122,36 @@ mod tests {
   async fn applies_linear_single_pulse() {
     let series = vec![
       PulseValue::Data(DataValue::from_pairs(vec![
-        ("x", (-2.0).into()),
-        ("y", 1.0.into()),
+        ("a", (-2.0).into()),
+        ("b", 1.0.into()),
       ])),
       PulseValue::Data(DataValue::from_pairs(vec![
-        ("x", 5.0.into()),
-        ("y", 1.0.into()),
+        ("a", 5.0.into()),
+        ("b", 1.0.into()),
       ])),
       PulseValue::Data(DataValue::from_pairs(vec![
-        ("x", 10.0.into()),
-        ("y", 1.0.into()),
+        ("a", 10.0.into()),
+        ("b", 1.0.into()),
       ])),
       PulseValue::Data(DataValue::from_pairs(vec![
-        ("x", 15.0.into()),
-        ("y", 1.0.into()),
+        ("a", 15.0.into()),
+        ("b", 1.0.into()),
       ])),
     ];
 
     let scale = LinearScale::new(Domain::Literal(0.0, 10.0), Range::Literal(0.0, 1.0));
 
-    let operator = LinearOperator::new(scale, "x", "horizontal");
+    let operator = LinearOperator::new(scale, "a", "x");
 
     let pulse = operator.evaluate(Pulse::single(series)).await;
 
     assert_eq!(
       pulse,
       Pulse::single(vec![
-        PulseValue::Data(DataValue::from_pairs(vec![
-          ("x", (-2.0).into()),
-          ("y", 1.0.into()),
-          ("horizontal", 0.0.into())
-        ])),
-        PulseValue::Data(DataValue::from_pairs(vec![
-          ("x", 5.0.into()),
-          ("y", 1.0.into()),
-          ("horizontal", 0.5.into())
-        ])),
-        PulseValue::Data(DataValue::from_pairs(vec![
-          ("x", 10.0.into()),
-          ("y", 1.0.into()),
-          ("horizontal", 1.0.into())
-        ])),
-        PulseValue::Data(DataValue::from_pairs(vec![
-          ("x", 15.0.into()),
-          ("y", 1.0.into()),
-          ("horizontal", 1.0.into())
-        ])),
+        PulseValue::Data(DataValue::from_pairs(vec![("x", 0.0.into())])),
+        PulseValue::Data(DataValue::from_pairs(vec![("x", 0.5.into())])),
+        PulseValue::Data(DataValue::from_pairs(vec![("x", 1.0.into())])),
+        PulseValue::Data(DataValue::from_pairs(vec![("x", 1.0.into())])),
       ])
     );
   }
@@ -175,28 +160,28 @@ mod tests {
   async fn applies_linear_multi_pulse() {
     let first_pulse = SinglePulse::new(vec![
       PulseValue::Data(DataValue::from_pairs(vec![
-        ("x", (-2.0).into()),
-        ("y", 1.0.into()),
+        ("a", (-2.0).into()),
+        ("b", 1.0.into()),
       ])),
       PulseValue::Data(DataValue::from_pairs(vec![
-        ("x", 5.0.into()),
-        ("y", 1.0.into()),
+        ("a", 5.0.into()),
+        ("b", 1.0.into()),
       ])),
     ]);
     let second_pulse = SinglePulse::new(vec![
       PulseValue::Data(DataValue::from_pairs(vec![
-        ("x", 10.0.into()),
-        ("y", 1.0.into()),
+        ("a", 10.0.into()),
+        ("b", 1.0.into()),
       ])),
       PulseValue::Data(DataValue::from_pairs(vec![
-        ("x", 15.0.into()),
-        ("y", 1.0.into()),
+        ("a", 15.0.into()),
+        ("b", 1.0.into()),
       ])),
     ]);
 
     let scale = LinearScale::new(Domain::Literal(0.0, 10.0), Range::Literal(0.0, 1.0));
 
-    let operator = LinearOperator::new(scale, "x", "horizontal");
+    let operator = LinearOperator::new(scale, "a", "x");
 
     let pulse = operator
       .evaluate(Pulse::multi(vec![first_pulse, second_pulse]))
@@ -205,26 +190,10 @@ mod tests {
     assert_eq!(
       pulse,
       Pulse::single(vec![
-        PulseValue::Data(DataValue::from_pairs(vec![
-          ("x", (-2.0).into()),
-          ("y", 1.0.into()),
-          ("horizontal", 0.0.into())
-        ])),
-        PulseValue::Data(DataValue::from_pairs(vec![
-          ("x", 5.0.into()),
-          ("y", 1.0.into()),
-          ("horizontal", 0.5.into())
-        ])),
-        PulseValue::Data(DataValue::from_pairs(vec![
-          ("x", 10.0.into()),
-          ("y", 1.0.into()),
-          ("horizontal", 1.0.into())
-        ])),
-        PulseValue::Data(DataValue::from_pairs(vec![
-          ("x", 15.0.into()),
-          ("y", 1.0.into()),
-          ("horizontal", 1.0.into())
-        ])),
+        PulseValue::Data(DataValue::from_pairs(vec![("x", 0.0.into())])),
+        PulseValue::Data(DataValue::from_pairs(vec![("x", 0.5.into())])),
+        PulseValue::Data(DataValue::from_pairs(vec![("x", 1.0.into())])),
+        PulseValue::Data(DataValue::from_pairs(vec![("x", 1.0.into())])),
       ])
     );
   }
@@ -233,22 +202,22 @@ mod tests {
   async fn ignores_boolean_linear() {
     let series = vec![
       PulseValue::Data(DataValue::from_pairs(vec![
-        ("x", true.into()),
-        ("y", 1.0.into()),
+        ("a", true.into()),
+        ("b", 1.0.into()),
       ])),
       PulseValue::Data(DataValue::from_pairs(vec![
-        ("x", false.into()),
-        ("y", 1.0.into()),
+        ("a", false.into()),
+        ("b", 1.0.into()),
       ])),
       PulseValue::Data(DataValue::from_pairs(vec![
-        ("x", 2.0.into()),
-        ("y", 1.0.into()),
+        ("a", 2.0.into()),
+        ("b", 1.0.into()),
       ])),
     ];
 
     let scale = LinearScale::new(Domain::Literal(0.0, 10.0), Range::Literal(0.0, 1.0));
 
-    let operator = LinearOperator::new(scale, "x", "horizontal");
+    let operator = LinearOperator::new(scale, "a", "x");
 
     let pulse = operator.evaluate(Pulse::single(series)).await;
 
@@ -256,18 +225,14 @@ mod tests {
       pulse,
       Pulse::single(vec![
         PulseValue::Data(DataValue::from_pairs(vec![
-          ("x", true.into()),
-          ("y", 1.0.into())
+          ("a", true.into()),
+          ("b", 1.0.into())
         ])),
         PulseValue::Data(DataValue::from_pairs(vec![
-          ("x", false.into()),
-          ("y", 1.0.into())
+          ("a", false.into()),
+          ("b", 1.0.into())
         ])),
-        PulseValue::Data(DataValue::from_pairs(vec![
-          ("x", 2.0.into()),
-          ("y", 1.0.into()),
-          ("horizontal", 0.2.into())
-        ])),
+        PulseValue::Data(DataValue::from_pairs(vec![("x", 0.2.into())])),
       ])
     );
   }

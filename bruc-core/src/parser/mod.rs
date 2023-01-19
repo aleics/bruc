@@ -97,6 +97,7 @@ impl Parser {
       .x
       .as_ref()
       .map(|x| self.parse_scale(x, X_AXIS_FIELD_NAME, scales, data_node, graph));
+
     let y_scale_node = mark
       .on
       .update
@@ -105,6 +106,7 @@ impl Parser {
       .y
       .as_ref()
       .map(|y| self.parse_scale(y, Y_AXIS_FIELD_NAME, scales, data_node, graph));
+
     let width_scale_node = mark
       .on
       .update
@@ -113,6 +115,7 @@ impl Parser {
       .width
       .as_ref()
       .map(|width| self.parse_scale(width, WIDTH_FIELD_NAME, scales, data_node, graph));
+
     let height_scale_node = mark
       .on
       .update
@@ -185,29 +188,41 @@ mod tests {
     Specification,
   };
 
-  #[test]
-  fn parses_simple() {
+  #[tokio::test]
+  async fn parses_simple() {
     let spec: Specification = Specification {
       data: vec![DataEntry::new(
         "primary",
-        vec![DataValue::from_pairs(vec![("a", 10.0.into())])],
+        vec![
+          DataValue::from_pairs(vec![("a", 10.0.into())]),
+          DataValue::from_pairs(vec![("a", 5.0.into())]),
+        ],
         vec![
           Pipe::Map(MapPipe::new("a - 2", "b").unwrap()),
           Pipe::Filter(FilterPipe::new("b > 2").unwrap()),
         ],
       )],
-      scales: vec![Scale::new(
-        "horizontal",
-        ScaleKind::Linear(LinearScale::new(
-          Domain::Literal(0.0, 100.0),
-          Range::Literal(0.0, 20.0),
-        )),
-      )],
+      scales: vec![
+        Scale::new(
+          "horizontal",
+          ScaleKind::Linear(LinearScale::new(
+            Domain::Literal(0.0, 100.0),
+            Range::Literal(0.0, 20.0),
+          )),
+        ),
+        Scale::new(
+          "vertical",
+          ScaleKind::Linear(LinearScale::new(
+            Domain::Literal(0.0, 100.0),
+            Range::Literal(0.0, 10.0),
+          )),
+        ),
+      ],
       marks: vec![Mark::line(
         "primary",
         LineMark::new(LineMarkProperties::new(
           Some(DataSource::field("a", Some("horizontal"))),
-          None,
+          Some(DataSource::field("b", Some("vertical"))),
           None,
           None,
           Interpolate::Linear,
