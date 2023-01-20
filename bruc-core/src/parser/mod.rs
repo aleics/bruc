@@ -14,7 +14,7 @@ use crate::{
   Specification,
 };
 
-struct Parser;
+pub(crate) struct Parser;
 
 impl Parser {
   pub fn parse(&self, specification: Specification) -> Graph {
