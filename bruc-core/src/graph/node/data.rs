@@ -1,8 +1,8 @@
+use crate::graph::PulseValue;
 use crate::{
   data::DataValue,
   graph::{Evaluation, MultiPulse, Pulse, SinglePulse},
 };
-use crate::graph::PulseValue;
 
 #[derive(Debug)]
 pub struct DataOperator {
@@ -15,10 +15,7 @@ impl DataOperator {
   }
 
   fn apply(&self) -> Vec<PulseValue> {
-    self.data.iter()
-      .cloned()
-      .map(PulseValue::Data)
-      .collect()
+    self.data.iter().cloned().map(PulseValue::Data).collect()
   }
 }
 

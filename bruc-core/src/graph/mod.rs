@@ -1,8 +1,8 @@
 use crate::data::DataValue;
 use crate::graph::node::{Node, Operator};
+use crate::scene::SceneItem;
 use std::collections::{BTreeMap, HashSet, VecDeque};
 use std::iter::FromIterator;
-use crate::scene::SceneItem;
 
 pub mod node;
 
@@ -275,7 +275,7 @@ impl SinglePulse {
 #[derive(Debug, Clone, PartialEq)]
 pub enum PulseValue {
   Data(DataValue),
-  Marks(SceneItem)
+  Marks(SceneItem),
 }
 
 #[derive(Debug, Clone, PartialEq)]

@@ -21,7 +21,7 @@ impl Parser {
     let mut graph = Graph::new();
 
     let data_nodes = self.parse_data(specification.data, &mut graph);
-    let mark_nodes = self.parse_marks(
+    self.parse_marks(
       specification.marks,
       specification.scales,
       data_nodes,
@@ -206,7 +206,7 @@ mod tests {
       marks: vec![Mark::line(
         "primary",
         LineMark::new(LineMarkProperties::new(
-          Some(DataSource::field("x", Some("horizontal"))),
+          Some(DataSource::field("a", Some("horizontal"))),
           None,
           None,
           None,

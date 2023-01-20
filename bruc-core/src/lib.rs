@@ -101,7 +101,7 @@ mod serde_tests {
             "type": "line",
             "on": {
               "update": {
-                "x": { "field": "x", "scale": "horizontal" }
+                "x": { "field": "a", "scale": "horizontal" }
               }
             }
           }
@@ -131,7 +131,7 @@ mod serde_tests {
         vec![Mark::line(
           "primary",
           LineMark::new(LineMarkProperties::new(
-            Some(DataSource::field("x", Some("horizontal"))),
+            Some(DataSource::field("a", Some("horizontal"))),
             None,
             None,
             None,

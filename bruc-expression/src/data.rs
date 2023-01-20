@@ -14,6 +14,24 @@ pub enum DataItem {
   Number(f32),
 }
 
+impl DataItem {
+  pub fn get_number(&self) -> Option<&f32> {
+    if let DataItem::Number(value) = &self {
+      Some(value)
+    } else {
+      None
+    }
+  }
+
+  pub fn get_bool(&self) -> Option<&bool> {
+    if let DataItem::Bool(value) = &self {
+      Some(value)
+    } else {
+      None
+    }
+  }
+}
+
 impl Display for DataItem {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self {

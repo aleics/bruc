@@ -1,11 +1,10 @@
 use bruc_expression::data::{DataItem, DataSource};
 
+use crate::graph::PulseValue;
 use crate::{
-  data::DataValue,
   graph::{Evaluation, MultiPulse, Pulse, SinglePulse},
   scale::{linear::LinearScale, Scaler},
 };
-use crate::graph::PulseValue;
 
 #[derive(Debug)]
 pub struct LinearOperator {
@@ -109,22 +108,34 @@ impl Evaluation for IdentityOperator {
 
 #[cfg(test)]
 mod tests {
+  use crate::graph::PulseValue;
   use crate::{
     data::DataValue,
     graph::{Evaluation, Pulse, SinglePulse},
     scale::{domain::Domain, linear::LinearScale, range::Range},
   };
-  use crate::graph::PulseValue;
 
   use super::LinearOperator;
 
   #[tokio::test]
   async fn applies_linear_single_pulse() {
     let series = vec![
-      PulseValue::Data(DataValue::from_pairs(vec![("x", (-2.0).into()), ("y", 1.0.into())])),
-      PulseValue::Data(DataValue::from_pairs(vec![("x", 5.0.into()), ("y", 1.0.into())])),
-      PulseValue::Data(DataValue::from_pairs(vec![("x", 10.0.into()), ("y", 1.0.into())])),
-      PulseValue::Data(DataValue::from_pairs(vec![("x", 15.0.into()), ("y", 1.0.into())])),
+      PulseValue::Data(DataValue::from_pairs(vec![
+        ("x", (-2.0).into()),
+        ("y", 1.0.into()),
+      ])),
+      PulseValue::Data(DataValue::from_pairs(vec![
+        ("x", 5.0.into()),
+        ("y", 1.0.into()),
+      ])),
+      PulseValue::Data(DataValue::from_pairs(vec![
+        ("x", 10.0.into()),
+        ("y", 1.0.into()),
+      ])),
+      PulseValue::Data(DataValue::from_pairs(vec![
+        ("x", 15.0.into()),
+        ("y", 1.0.into()),
+      ])),
     ];
 
     let scale = LinearScale::new(Domain::Literal(0.0, 10.0), Range::Literal(0.0, 1.0));
@@ -163,12 +174,24 @@ mod tests {
   #[tokio::test]
   async fn applies_linear_multi_pulse() {
     let first_pulse = SinglePulse::new(vec![
-      PulseValue::Data(DataValue::from_pairs(vec![("x", (-2.0).into()), ("y", 1.0.into())])),
-      PulseValue::Data(DataValue::from_pairs(vec![("x", 5.0.into()), ("y", 1.0.into())])),
+      PulseValue::Data(DataValue::from_pairs(vec![
+        ("x", (-2.0).into()),
+        ("y", 1.0.into()),
+      ])),
+      PulseValue::Data(DataValue::from_pairs(vec![
+        ("x", 5.0.into()),
+        ("y", 1.0.into()),
+      ])),
     ]);
     let second_pulse = SinglePulse::new(vec![
-      PulseValue::Data(DataValue::from_pairs(vec![("x", 10.0.into()), ("y", 1.0.into())])),
-      PulseValue::Data(DataValue::from_pairs(vec![("x", 15.0.into()), ("y", 1.0.into())])),
+      PulseValue::Data(DataValue::from_pairs(vec![
+        ("x", 10.0.into()),
+        ("y", 1.0.into()),
+      ])),
+      PulseValue::Data(DataValue::from_pairs(vec![
+        ("x", 15.0.into()),
+        ("y", 1.0.into()),
+      ])),
     ]);
 
     let scale = LinearScale::new(Domain::Literal(0.0, 10.0), Range::Literal(0.0, 1.0));
@@ -209,9 +232,18 @@ mod tests {
   #[tokio::test]
   async fn ignores_boolean_linear() {
     let series = vec![
-      PulseValue::Data(DataValue::from_pairs(vec![("x", true.into()), ("y", 1.0.into())])),
-      PulseValue::Data(DataValue::from_pairs(vec![("x", false.into()), ("y", 1.0.into())])),
-      PulseValue::Data(DataValue::from_pairs(vec![("x", 2.0.into()), ("y", 1.0.into())])),
+      PulseValue::Data(DataValue::from_pairs(vec![
+        ("x", true.into()),
+        ("y", 1.0.into()),
+      ])),
+      PulseValue::Data(DataValue::from_pairs(vec![
+        ("x", false.into()),
+        ("y", 1.0.into()),
+      ])),
+      PulseValue::Data(DataValue::from_pairs(vec![
+        ("x", 2.0.into()),
+        ("y", 1.0.into()),
+      ])),
     ];
 
     let scale = LinearScale::new(Domain::Literal(0.0, 10.0), Range::Literal(0.0, 1.0));
@@ -223,8 +255,14 @@ mod tests {
     assert_eq!(
       pulse,
       Pulse::single(vec![
-        PulseValue::Data(DataValue::from_pairs(vec![("x", true.into()), ("y", 1.0.into())])),
-        PulseValue::Data(DataValue::from_pairs(vec![("x", false.into()), ("y", 1.0.into())])),
+        PulseValue::Data(DataValue::from_pairs(vec![
+          ("x", true.into()),
+          ("y", 1.0.into())
+        ])),
+        PulseValue::Data(DataValue::from_pairs(vec![
+          ("x", false.into()),
+          ("y", 1.0.into())
+        ])),
         PulseValue::Data(DataValue::from_pairs(vec![
           ("x", 2.0.into()),
           ("y", 1.0.into()),
