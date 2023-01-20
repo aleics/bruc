@@ -4,7 +4,7 @@ use crate::{
   graph::{Evaluation, MultiPulse, Pulse, SinglePulse},
 };
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct DataOperator {
   data: Vec<DataValue>,
 }

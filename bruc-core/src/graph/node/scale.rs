@@ -6,7 +6,7 @@ use crate::{
   scale::{linear::LinearScale, Scaler},
 };
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct LinearOperator {
   scale: LinearScale,
   field: String,
@@ -60,7 +60,7 @@ impl Evaluation for LinearOperator {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct IdentityOperator {
   field: String,
   output: String,

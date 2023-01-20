@@ -13,7 +13,7 @@ use crate::{
   },
 };
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct MapOperator {
   pipe: MapPipe,
 }
@@ -51,7 +51,7 @@ impl Evaluation for MapOperator {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct FilterOperator {
   pipe: FilterPipe,
 }
@@ -91,7 +91,7 @@ impl Evaluation for FilterOperator {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum GroupOperator {
   Count(CountOperator),
 }
@@ -118,7 +118,7 @@ impl Evaluation for GroupOperator {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct CountOperator {
   by: String,
   output: String,

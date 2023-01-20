@@ -175,6 +175,8 @@ impl Parser {
 #[cfg(test)]
 mod tests {
   use super::Parser;
+  use crate::graph::node::{Node, Operator};
+  use crate::graph::Edge;
   use crate::scale::ScaleKind;
   use crate::transform::map::MapPipe;
   use crate::{
@@ -187,9 +189,11 @@ mod tests {
     transform::{filter::FilterPipe, pipe::Pipe},
     Specification,
   };
+  use std::collections::{BTreeMap, HashSet};
 
-  #[tokio::test]
-  async fn parses_simple() {
+  #[test]
+  fn parses_simple() {
+    // given
     let spec: Specification = Specification {
       data: vec![DataEntry::new(
         "primary",
@@ -229,9 +233,95 @@ mod tests {
         )),
       )],
     };
+    let parser = Parser;
 
-    let parser = Parser {};
-
+    // when
     let graph = parser.parse(spec);
+
+    // then
+    assert_eq!(
+      graph.nodes,
+      vec![
+        Node::init(
+          0,
+          Operator::data(vec![
+            DataValue::from_pairs(vec![("a", 10.0.into())]),
+            DataValue::from_pairs(vec![("a", 5.0.into())]),
+          ])
+        ),
+        Node::init(1, Operator::map(MapPipe::new("a - 2", "b").unwrap())),
+        Node::init(2, Operator::filter(FilterPipe::new("b > 2").unwrap())),
+        Node::init(
+          3,
+          Operator::linear(
+            LinearScale::new(Domain::Literal(0.0, 100.0), Range::Literal(0.0, 20.0),),
+            "a",
+            "x"
+          )
+        ),
+        Node::init(
+          4,
+          Operator::linear(
+            LinearScale::new(Domain::Literal(0.0, 100.0), Range::Literal(0.0, 10.0),),
+            "b",
+            "y"
+          )
+        ),
+        Node::init(
+          5,
+          Operator::line(LineMark::new(LineMarkProperties::new(
+            Some(DataSource::field("a", Some("horizontal"))),
+            Some(DataSource::field("b", Some("vertical"))),
+            None,
+            None,
+            Interpolate::Linear,
+          )))
+        )
+      ]
+    );
+    assert_eq!(
+      graph.edges,
+      vec![
+        Edge::new(0, 1),
+        Edge::new(1, 2),
+        Edge::new(2, 3),
+        Edge::new(2, 4),
+        Edge::new(3, 5),
+        Edge::new(4, 5),
+      ]
+    );
+    assert_eq!(
+      graph.targets,
+      BTreeMap::from([
+        (0, HashSet::from([1])),
+        (1, HashSet::from([2])),
+        (2, HashSet::from([3, 4])),
+        (3, HashSet::from([5])),
+        (4, HashSet::from([5]))
+      ])
+    );
+    assert_eq!(
+      graph.sources,
+      BTreeMap::from([
+        (1, HashSet::from([0])),
+        (2, HashSet::from([1])),
+        (3, HashSet::from([2])),
+        (4, HashSet::from([2])),
+        (5, HashSet::from([3, 4]))
+      ])
+    );
+    assert_eq!(
+      graph.degrees,
+      BTreeMap::from([(0, 0), (1, 1), (2, 1), (3, 1), (4, 1), (5, 2)])
+    );
+    assert_eq!(
+      graph.nodes_in_degree,
+      BTreeMap::from([
+        (0, HashSet::from([0])),
+        (1, HashSet::from([1, 2, 3, 4])),
+        (2, HashSet::from([5]))
+      ])
+    );
+    assert_eq!(graph.order, vec![0, 1, 2, 3, 4]);
   }
 }

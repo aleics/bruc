@@ -8,30 +8,30 @@ pub mod node;
 
 /// `graph-pulse` is a library to build graphs that can be evaluated in topological order,
 /// where a Pulse instance is being used to collect the data being passed between nodes.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq)]
 pub struct Graph {
   /// List of nodes of the graph.
-  nodes: Vec<Node>,
+  pub(crate) nodes: Vec<Node>,
 
   /// List of edges of the graph
-  edges: Vec<Edge>,
+  pub(crate) edges: Vec<Edge>,
 
   /// Map associating the node index in the graph and their target nodes.
-  targets: BTreeMap<usize, HashSet<usize>>,
+  pub(crate) targets: BTreeMap<usize, HashSet<usize>>,
 
   /// Map associating the node index in the graph and their source nodes.
-  sources: BTreeMap<usize, HashSet<usize>>,
+  pub(crate) sources: BTreeMap<usize, HashSet<usize>>,
 
   /// Node's degree distribution, defining the degree of a node as the amount of incoming
   /// edges connected to a certain node. Key is the node index in the graph. Value is
   /// the degree count of the node.
-  degrees: BTreeMap<usize, usize>,
+  pub(crate) degrees: BTreeMap<usize, usize>,
 
   /// Map associating a node degree with the respective node indices in the graph.
-  nodes_in_degree: BTreeMap<usize, HashSet<usize>>,
+  pub(crate) nodes_in_degree: BTreeMap<usize, HashSet<usize>>,
 
   /// The topological order of the graph nodes.
-  order: Vec<usize>,
+  pub(crate) order: Vec<usize>,
 }
 
 impl Graph {
@@ -41,6 +41,16 @@ impl Graph {
 
   pub fn get_node(&self, id: usize) -> Option<&Node> {
     self.nodes.iter().find(|node| node.id == id)
+  }
+
+  /// Return the output nodes indices in the graph.
+  pub fn outputs(&self) -> Vec<usize> {
+    self
+      .sources
+      .keys()
+      .filter(|node| !self.targets.contains_key(node))
+      .copied()
+      .collect()
   }
 
   /// Add node with connections to existing source nodes
@@ -73,7 +83,7 @@ impl Graph {
   pub fn add_node(&mut self, operator: Operator) -> usize {
     let id = self.nodes.len();
 
-    self.nodes.push(Node::new(id, operator));
+    self.nodes.push(Node::init(id, operator));
     self.degrees.insert(id, 0);
     self.nodes_in_degree.insert(0, HashSet::from_iter([id]));
 
@@ -188,8 +198,7 @@ impl Graph {
     node.execute(pulse).await;
   }
 
-  /// Find the pulse instance of a given node index by finding the source node's current
-  /// pulse.
+  /// Find the pulse instance of a given node index by finding the source node's current pulse.
   fn get_pulse(&self, index: &usize) -> Option<Pulse> {
     let source_indices = self.sources.get(index)?;
 
@@ -217,7 +226,7 @@ trait Evaluation {
   fn evaluate_multi(&self, multi: MultiPulse) -> Pulse;
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Edge {
   from: usize,
   to: usize,

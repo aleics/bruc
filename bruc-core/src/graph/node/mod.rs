@@ -1,6 +1,7 @@
 use crate::graph::node::mark::LineOperator;
 use crate::graph::node::scale::{IdentityOperator, LinearOperator};
 use crate::mark::line::LineMark;
+use crate::scale::linear::LinearScale;
 use crate::scale::{Scale, ScaleKind};
 use crate::{
   data::DataValue,
@@ -17,7 +18,7 @@ pub mod mark;
 pub mod scale;
 pub mod transform;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Node {
   pub(crate) id: usize,
   pub(crate) operator: Operator,
@@ -25,7 +26,15 @@ pub struct Node {
 }
 
 impl Node {
-  pub fn new(id: usize, operator: Operator) -> Self {
+  pub fn new(id: usize, operator: Operator, pulse: Pulse) -> Self {
+    Node {
+      id,
+      operator,
+      pulse,
+    }
+  }
+
+  pub fn init(id: usize, operator: Operator) -> Self {
     Node {
       id,
       operator,
@@ -38,7 +47,7 @@ impl Node {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Operator {
   Data(DataOperator),
   Map(MapOperator),
@@ -64,7 +73,7 @@ impl Operator {
 
   pub fn scale(scale: Scale, field: &str, output: &str) -> Self {
     match scale.kind {
-      ScaleKind::Linear(linear) => Operator::Linear(LinearOperator::new(linear, field, output)),
+      ScaleKind::Linear(linear) => Operator::linear(linear, field, output),
     }
   }
 
@@ -86,6 +95,10 @@ impl Operator {
 
   pub fn identity(field: &str, output: &str) -> Self {
     Operator::Identity(IdentityOperator::new(field, output))
+  }
+
+  pub fn linear(scale: LinearScale, field: &str, output: &str) -> Self {
+    Operator::Linear(LinearOperator::new(scale, field, output))
   }
 
   pub async fn evaluate(&self, pulse: Pulse) -> Pulse {
