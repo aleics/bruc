@@ -14,7 +14,7 @@ impl Domain {
 #[cfg(test)]
 #[cfg(feature = "serde")]
 mod serde_tests {
-  use crate::scale::domain::Domain;
+  use crate::spec::scale::domain::Domain;
 
   #[test]
   fn deserialize_domain_literal() {

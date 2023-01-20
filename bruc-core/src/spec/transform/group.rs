@@ -35,7 +35,7 @@ impl GroupOperator {
 #[cfg(feature = "serde")]
 #[cfg(test)]
 mod serde_tests {
-  use crate::transform::group::{GroupOperator, GroupPipe};
+  use crate::spec::transform::group::{GroupOperator, GroupPipe};
 
   #[test]
   fn deserialize_group() {

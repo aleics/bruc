@@ -1,4 +1,4 @@
-use crate::mark::line::LineMark;
+use crate::spec::mark::line::LineMark;
 use bruc_expression::data::DataItem;
 
 pub(crate) mod base;
@@ -56,8 +56,8 @@ impl DataSource {
 #[cfg(test)]
 #[cfg(feature = "serde")]
 mod serde_tests {
-  use crate::mark::line::{Interpolate, LineMark, LineMarkProperties};
-  use crate::mark::{DataSource, Mark};
+  use crate::spec::mark::line::{Interpolate, LineMark, LineMarkProperties};
+  use crate::spec::mark::{DataSource, Mark};
 
   #[test]
   fn deserialize_mark() {

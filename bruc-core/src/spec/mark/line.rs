@@ -1,5 +1,5 @@
-use crate::mark::base::{BaseMarkProperties, Phases};
-use crate::mark::DataSource;
+use crate::spec::mark::base::{BaseMarkProperties, Phases};
+use crate::spec::mark::DataSource;
 
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
@@ -56,8 +56,8 @@ impl Default for Interpolate {
 #[cfg(test)]
 #[cfg(feature = "serde")]
 mod serde_tests {
-  use crate::mark::line::{Interpolate, LineMark, LineMarkProperties};
-  use crate::mark::DataSource;
+  use crate::spec::mark::line::{Interpolate, LineMark, LineMarkProperties};
+  use crate::spec::mark::DataSource;
 
   #[test]
   fn deserialize_line_mark() {

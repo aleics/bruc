@@ -1,6 +1,6 @@
 use crate::data::DataValue;
-use crate::scale::linear::LinearScale;
-use crate::scale::Scaler;
+use crate::spec::scale::linear::LinearScale;
+use crate::spec::scale::Scaler;
 use bruc_expression::data::DataSource;
 use futures::task::{Context, Poll};
 use futures::Stream;
@@ -63,9 +63,9 @@ mod tests {
   use crate::data::DataValue;
   use crate::flow::data::{Chunks, Source};
   use crate::flow::scale::linear::LinearNode;
-  use crate::scale::domain::Domain;
-  use crate::scale::linear::LinearScale;
-  use crate::scale::range::Range;
+  use crate::spec::scale::domain::Domain;
+  use crate::spec::scale::linear::LinearScale;
+  use crate::spec::scale::range::Range;
   use futures::StreamExt;
 
   #[test]

@@ -1,6 +1,6 @@
-use crate::scale::domain::Domain;
-use crate::scale::range::Range;
-use crate::scale::Scaler;
+use crate::spec::scale::domain::Domain;
+use crate::spec::scale::range::Range;
+use crate::spec::scale::Scaler;
 use bruc_expression::data::DataItem;
 
 #[derive(Debug, PartialEq, Clone)]
@@ -47,10 +47,10 @@ fn interpolate(x: f32, (min, max): (f32, f32)) -> f32 {
 
 #[cfg(test)]
 mod tests {
-  use crate::scale::domain::Domain;
-  use crate::scale::linear::LinearScale;
-  use crate::scale::range::Range;
-  use crate::scale::Scaler;
+  use crate::spec::scale::domain::Domain;
+  use crate::spec::scale::linear::LinearScale;
+  use crate::spec::scale::range::Range;
+  use crate::spec::scale::Scaler;
 
   #[test]
   fn applies() {
@@ -73,9 +73,9 @@ mod tests {
 #[cfg(test)]
 #[cfg(feature = "serde")]
 mod serde_tests {
-  use crate::scale::domain::Domain;
-  use crate::scale::linear::LinearScale;
-  use crate::scale::range::Range;
+  use crate::spec::scale::domain::Domain;
+  use crate::spec::scale::linear::LinearScale;
+  use crate::spec::scale::range::Range;
 
   #[test]
   fn deserialize_linear_scale() {

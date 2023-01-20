@@ -2,15 +2,15 @@ use std::collections::HashMap;
 use std::iter::FromIterator;
 
 use crate::data::DataValue;
-use crate::mark::base::{
+use crate::spec::mark::base::{
   HEIGHT_FIELD_NAME, WIDTH_FIELD_NAME, X_AXIS_FIELD_NAME, Y_AXIS_FIELD_NAME,
 };
-use crate::mark::line::LineMark;
-use crate::mark::{DataSource, Mark, MarkKind};
-use crate::scale::Scale;
+use crate::spec::mark::line::LineMark;
+use crate::spec::mark::{DataSource, Mark, MarkKind};
+use crate::spec::scale::Scale;
 use crate::{
-  data::DataEntry,
   graph::{node::Operator, Graph},
+  spec::data::DataEntry,
   Specification,
 };
 
@@ -177,16 +177,17 @@ mod tests {
   use super::Parser;
   use crate::graph::node::{Node, Operator};
   use crate::graph::Edge;
-  use crate::scale::ScaleKind;
-  use crate::transform::map::MapPipe;
+  use crate::spec::scale::ScaleKind;
+  use crate::spec::transform::map::MapPipe;
   use crate::{
-    data::{DataEntry, DataValue},
-    mark::{
+    data::DataValue,
+    spec::data::DataEntry,
+    spec::mark::{
       line::{Interpolate, LineMark, LineMarkProperties},
       DataSource, Mark,
     },
-    scale::{domain::Domain, linear::LinearScale, range::Range, Scale},
-    transform::{filter::FilterPipe, pipe::Pipe},
+    spec::scale::{domain::Domain, linear::LinearScale, range::Range, Scale},
+    spec::transform::{filter::FilterPipe, pipe::Pipe},
     Specification,
   };
   use std::collections::{BTreeMap, HashSet};

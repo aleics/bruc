@@ -14,7 +14,7 @@ impl Range {
 #[cfg(test)]
 #[cfg(feature = "serde")]
 mod serde_tests {
-  use crate::scale::range::Range;
+  use crate::spec::scale::range::Range;
 
   #[test]
   fn deserialize_range_literal() {

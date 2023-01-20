@@ -3,8 +3,8 @@ use crate::flow::data::DataNode;
 use crate::flow::transform::filter::FilterNode;
 use crate::flow::transform::group::GroupNode;
 use crate::flow::transform::map::MapNode;
-use crate::transform::pipe::Pipe;
-use crate::transform::Transform;
+use crate::spec::transform::pipe::Pipe;
+use crate::spec::transform::Transform;
 use futures::task::{Context, Poll};
 use futures::{Stream, StreamExt};
 use std::pin::Pin;
@@ -90,10 +90,10 @@ mod tests {
   use crate::data::DataValue;
   use crate::flow::data::{Chunks, Source};
   use crate::flow::transform::TransformNode;
-  use crate::transform::filter::FilterPipe;
-  use crate::transform::group::{GroupOperator, GroupPipe};
-  use crate::transform::map::MapPipe;
-  use crate::transform::pipe::Pipe;
+  use crate::spec::transform::filter::FilterPipe;
+  use crate::spec::transform::group::{GroupOperator, GroupPipe};
+  use crate::spec::transform::map::MapPipe;
+  use crate::spec::transform::pipe::Pipe;
 
   #[test]
   fn chain_empty() {

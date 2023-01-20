@@ -1,5 +1,5 @@
 use crate::data::DataValue;
-use crate::transform::group::{GroupOperator, GroupPipe};
+use crate::spec::transform::group::{GroupOperator, GroupPipe};
 use bruc_expression::data::{DataItem, DataSource};
 use futures::task::{Context, Poll};
 use futures::{Stream, StreamExt};
@@ -159,7 +159,7 @@ mod tests {
   use crate::data::DataValue;
   use crate::flow::data::{Chunks, Source};
   use crate::flow::transform::group::GroupNode;
-  use crate::transform::group::{GroupOperator, GroupPipe};
+  use crate::spec::transform::group::{GroupOperator, GroupPipe};
 
   #[test]
   fn finds_repetition() {

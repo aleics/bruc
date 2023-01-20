@@ -1,4 +1,4 @@
-use crate::mark::DataSource;
+use crate::spec::mark::DataSource;
 
 pub(crate) const X_AXIS_FIELD_NAME: &str = "x";
 pub(crate) const Y_AXIS_FIELD_NAME: &str = "y";
@@ -54,8 +54,8 @@ impl BaseMarkProperties {
 #[cfg(test)]
 #[cfg(feature = "serde")]
 mod serde_tests {
-  use crate::mark::base::{BaseMarkProperties, Phase};
-  use crate::mark::DataSource;
+  use crate::spec::mark::base::{BaseMarkProperties, Phase};
+  use crate::spec::mark::DataSource;
 
   #[test]
   fn deserialize_update_phase() {

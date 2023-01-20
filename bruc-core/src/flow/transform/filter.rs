@@ -1,5 +1,5 @@
 use crate::data::DataValue;
-use crate::transform::filter::FilterPipe;
+use crate::spec::transform::filter::FilterPipe;
 use futures::task::{Context, Poll};
 use futures::Stream;
 use std::pin::Pin;
@@ -65,7 +65,7 @@ mod tests {
   use crate::data::DataValue;
   use crate::flow::data::{Chunks, Source};
   use crate::flow::transform::filter::FilterNode;
-  use crate::transform::filter::FilterPipe;
+  use crate::spec::transform::filter::FilterPipe;
 
   #[test]
   fn applies() {

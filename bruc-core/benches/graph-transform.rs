@@ -5,23 +5,22 @@ use bruc_core::data::DataValue;
 use bruc_core::graph::node::Operator;
 use bruc_core::graph::{Graph, Pulse, PulseValue};
 use bruc_core::transform::filter::FilterPipe;
+use bruc_core::transform::group::{GroupOperator, GroupPipe};
 use bruc_core::transform::map::MapPipe;
 use bruc_expression::data::DataItem;
 use test::Bencher;
-use bruc_core::transform::group::{GroupOperator, GroupPipe};
 
 #[bench]
 fn bench_filter_pipe_1(b: &mut Bencher) {
-  let pulse = Pulse::single(vec![
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(1.0))])),
-  ]);
+  let pulse = Pulse::single(vec![PulseValue::Data(DataValue::from_pairs(vec![(
+    "a",
+    DataItem::Number(1.0),
+  )]))]);
 
   let operator = Operator::filter(FilterPipe::new("(a > 1) && (a < 4) && (a != 3)").unwrap());
 
   b.iter(|| {
-    futures::executor::block_on(async {
-      operator.evaluate(pulse.clone()).await
-    });
+    futures::executor::block_on(async { operator.evaluate(pulse.clone()).await });
   });
 }
 
@@ -53,24 +52,21 @@ fn bench_filter_pipe_20(b: &mut Bencher) {
   let operator = Operator::filter(FilterPipe::new("(a > 1) && (a < 4) && (a != 3)").unwrap());
 
   b.iter(|| {
-    futures::executor::block_on(async {
-      operator.evaluate(pulse.clone()).await
-    });
+    futures::executor::block_on(async { operator.evaluate(pulse.clone()).await });
   });
 }
 
 #[bench]
 fn bench_map_pipe_1(b: &mut Bencher) {
-  let pulse = Pulse::single(vec![
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(1.0))]))
-  ]);
+  let pulse = Pulse::single(vec![PulseValue::Data(DataValue::from_pairs(vec![(
+    "a",
+    DataItem::Number(1.0),
+  )]))]);
 
   let operator = Operator::map(MapPipe::new("(a + 1) / (a * 4) - (a + 2)", "b").unwrap());
 
   b.iter(|| {
-    futures::executor::block_on(async {
-      operator.evaluate(pulse.clone()).await
-    });
+    futures::executor::block_on(async { operator.evaluate(pulse.clone()).await });
   });
 }
 
@@ -102,9 +98,7 @@ fn bench_map_pipe_20(b: &mut Bencher) {
   let operator = Operator::map(MapPipe::new("(a + 1) / (a * 4) - (a + 2)", "b").unwrap());
 
   b.iter(|| {
-    futures::executor::block_on(async {
-      operator.evaluate(pulse.clone()).await
-    });
+    futures::executor::block_on(async { operator.evaluate(pulse.clone()).await });
   });
 }
 
@@ -112,14 +106,13 @@ fn bench_map_pipe_20(b: &mut Bencher) {
 fn bench_group_pipe_1(b: &mut Bencher) {
   let operator = Operator::group(GroupPipe::new("a", GroupOperator::Count, "count"));
 
-  let pulse = Pulse::single(vec![
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(1.0))]))
-  ]);
+  let pulse = Pulse::single(vec![PulseValue::Data(DataValue::from_pairs(vec![(
+    "a",
+    DataItem::Number(1.0),
+  )]))]);
 
   b.iter(|| {
-    futures::executor::block_on(async {
-      operator.evaluate(pulse.clone()).await
-    });
+    futures::executor::block_on(async { operator.evaluate(pulse.clone()).await });
   });
 }
 
@@ -151,9 +144,7 @@ fn bench_group_pipe_20(b: &mut Bencher) {
   ]);
 
   b.iter(|| {
-    futures::executor::block_on(async {
-      operator.evaluate(pulse.clone()).await
-    });
+    futures::executor::block_on(async { operator.evaluate(pulse.clone()).await });
   });
 }
 
@@ -192,45 +183,44 @@ fn bench_10_pipes_2_10_vars_maps(b: &mut Bencher) {
 
   let next = graph.add(
     Operator::map(MapPipe::new("(a + 1)", "k").unwrap()),
-    vec![source]
+    vec![source],
   );
   let next = graph.add(
     Operator::map(MapPipe::new("(b + 2)", "l").unwrap()),
-    vec![next]
+    vec![next],
   );
   let next = graph.add(
     Operator::map(MapPipe::new("(c + 3)", "m").unwrap()),
-    vec![next]
+    vec![next],
   );
   let next = graph.add(
     Operator::map(MapPipe::new("(d + 4)", "n").unwrap()),
-    vec![next]
+    vec![next],
   );
   let next = graph.add(
     Operator::map(MapPipe::new("(e + 5)", "o").unwrap()),
-    vec![next]
+    vec![next],
   );
   let next = graph.add(
     Operator::map(MapPipe::new("(f + 6)", "p").unwrap()),
-    vec![next]
+    vec![next],
   );
   let next = graph.add(
     Operator::map(MapPipe::new("(g + 7)", "q").unwrap()),
-    vec![next]
+    vec![next],
   );
   let next = graph.add(
     Operator::map(MapPipe::new("(h + 8)", "r").unwrap()),
-    vec![next]
+    vec![next],
   );
   let next = graph.add(
     Operator::map(MapPipe::new("(i + 9)", "s").unwrap()),
-    vec![next]
+    vec![next],
   );
   graph.add(
     Operator::map(MapPipe::new("(j + 10)", "t").unwrap()),
-    vec![next]
+    vec![next],
   );
-
 
   b.iter(|| {
     futures::executor::block_on(async {

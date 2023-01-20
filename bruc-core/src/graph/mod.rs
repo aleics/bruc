@@ -320,7 +320,7 @@ impl MultiPulse {
 mod tests {
   use crate::{
     data::DataValue,
-    transform::{filter::FilterPipe, map::MapPipe},
+    spec::transform::{filter::FilterPipe, map::MapPipe},
   };
 
   use super::*;

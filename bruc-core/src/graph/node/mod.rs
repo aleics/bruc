@@ -1,11 +1,11 @@
 use crate::graph::node::mark::LineOperator;
 use crate::graph::node::scale::{IdentityOperator, LinearOperator};
-use crate::mark::line::LineMark;
-use crate::scale::linear::LinearScale;
-use crate::scale::{Scale, ScaleKind};
+use crate::spec::mark::line::LineMark;
+use crate::spec::scale::linear::LinearScale;
+use crate::spec::scale::{Scale, ScaleKind};
 use crate::{
   data::DataValue,
-  transform::{filter::FilterPipe, group::GroupPipe, map::MapPipe, pipe::Pipe},
+  spec::transform::{filter::FilterPipe, group::GroupPipe, map::MapPipe, pipe::Pipe},
 };
 
 use self::transform::{FilterOperator, MapOperator};

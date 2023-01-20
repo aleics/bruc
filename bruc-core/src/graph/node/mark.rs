@@ -1,8 +1,8 @@
 use crate::data::DataValue;
 use crate::graph::{Evaluation, MultiPulse, Pulse, PulseValue, SinglePulse};
-use crate::mark::base::{X_AXIS_FIELD_NAME, Y_AXIS_FIELD_NAME};
-use crate::mark::line::LineMark;
 use crate::scene::{SceneItem, SceneLine};
+use crate::spec::mark::base::{X_AXIS_FIELD_NAME, Y_AXIS_FIELD_NAME};
+use crate::spec::mark::line::LineMark;
 use bruc_expression::data::DataItem;
 
 #[derive(Debug, PartialEq)]
@@ -94,8 +94,8 @@ mod tests {
   use crate::data::DataValue;
   use crate::graph::node::mark::LineOperator;
   use crate::graph::{Evaluation, Pulse, PulseValue, SinglePulse};
-  use crate::mark::line::{Interpolate, LineMark, LineMarkProperties};
   use crate::scene::{SceneItem, SceneLine};
+  use crate::spec::mark::line::{Interpolate, LineMark, LineMarkProperties};
 
   #[tokio::test]
   async fn computes_line() {

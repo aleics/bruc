@@ -1,8 +1,8 @@
 use crate::data::DataValue;
-use crate::transform::error::Error;
-use crate::transform::filter::FilterPipe;
-use crate::transform::group::GroupPipe;
-use crate::transform::map::MapPipe;
+use crate::spec::transform::error::Error;
+use crate::spec::transform::filter::FilterPipe;
+use crate::spec::transform::group::GroupPipe;
+use crate::spec::transform::map::MapPipe;
 
 #[derive(PartialEq, Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
@@ -23,7 +23,7 @@ pub trait Predicate {
 #[cfg(feature = "serde")]
 #[cfg(test)]
 mod serde_tests {
-  use crate::transform::pipe::Pipe;
+  use crate::spec::transform::pipe::Pipe;
 
   #[test]
   fn deserializes_pipes() {

@@ -8,9 +8,9 @@ mod tests {
   use crate::data::DataValue;
   use crate::flow::data::{Chunks, Source};
   use crate::flow::transform::TransformNode;
-  use crate::transform::filter::FilterPipe;
-  use crate::transform::map::MapPipe;
-  use crate::transform::pipe::Pipe;
+  use crate::spec::transform::filter::FilterPipe;
+  use crate::spec::transform::map::MapPipe;
+  use crate::spec::transform::pipe::Pipe;
   use futures::StreamExt;
 
   #[test]

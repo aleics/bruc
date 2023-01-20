@@ -2,8 +2,8 @@ use bruc_expression::expr::{Expression, Interpretable};
 use bruc_expression::PredicateParser;
 
 use crate::data::DataValue;
-use crate::transform::error::Error;
-use crate::transform::pipe::Predicate;
+use crate::spec::transform::error::Error;
+use crate::spec::transform::pipe::Predicate;
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct FilterPipe {
@@ -48,7 +48,7 @@ impl Predicate for FilterPredicate {
 
 #[cfg(feature = "serde")]
 pub mod serde {
-  use crate::transform::filter::FilterPipe;
+  use crate::spec::transform::filter::FilterPipe;
   use serde::de::{MapAccess, Visitor};
   use serde::{de, Deserialize, Deserializer};
   use std::fmt;
@@ -87,7 +87,7 @@ pub mod serde {
 #[cfg(feature = "serde")]
 #[cfg(test)]
 mod serde_tests {
-  use crate::transform::filter::{FilterPipe, FilterPredicate};
+  use crate::spec::transform::filter::{FilterPipe, FilterPredicate};
 
   #[test]
   fn deserialize_filter() {

@@ -1,4 +1,4 @@
-use crate::transform::pipe::Pipe;
+use crate::spec::transform::pipe::Pipe;
 
 pub mod error;
 pub mod filter;

@@ -3,7 +3,7 @@ use bruc_expression::data::{DataItem, DataSource};
 use crate::graph::PulseValue;
 use crate::{
   graph::{Evaluation, MultiPulse, Pulse, SinglePulse},
-  scale::{linear::LinearScale, Scaler},
+  spec::scale::{linear::LinearScale, Scaler},
 };
 
 #[derive(Debug, PartialEq)]
@@ -113,7 +113,7 @@ mod tests {
   use crate::{
     data::DataValue,
     graph::{Evaluation, Pulse, SinglePulse},
-    scale::{domain::Domain, linear::LinearScale, range::Range},
+    spec::scale::{domain::Domain, linear::LinearScale, range::Range},
   };
 
   use super::LinearOperator;

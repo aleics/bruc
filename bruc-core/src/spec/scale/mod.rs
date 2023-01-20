@@ -1,4 +1,4 @@
-use crate::scale::linear::LinearScale;
+use crate::spec::scale::linear::LinearScale;
 use bruc_expression::data::DataItem;
 
 pub mod domain;
@@ -39,10 +39,10 @@ pub trait Scaler {
 #[cfg(test)]
 #[cfg(feature = "serde")]
 mod serde_tests {
-  use crate::scale::domain::Domain;
-  use crate::scale::linear::LinearScale;
-  use crate::scale::range::Range;
-  use crate::scale::{Scale, ScaleKind};
+  use crate::spec::scale::domain::Domain;
+  use crate::spec::scale::linear::LinearScale;
+  use crate::spec::scale::range::Range;
+  use crate::spec::scale::{Scale, ScaleKind};
 
   #[test]
   fn deserialize_scale_linear() {

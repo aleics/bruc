@@ -6,7 +6,7 @@ use crate::graph::PulseValue;
 use crate::{
   data::DataValue,
   graph::{Evaluation, MultiPulse, Pulse, SinglePulse},
-  transform::{
+  spec::transform::{
     filter::FilterPipe,
     group::{GroupOperator as GroupOperatorSpec, GroupPipe},
     map::MapPipe,
@@ -176,14 +176,14 @@ impl Evaluation for CountOperator {
 #[cfg(test)]
 mod tests {
   use crate::graph::PulseValue;
-  use crate::transform::group::GroupOperator as GroupOperatorSpec;
+  use crate::spec::transform::group::GroupOperator as GroupOperatorSpec;
   use crate::{
     data::DataValue,
     graph::{
       node::transform::{FilterOperator, GroupOperator, MapOperator},
       Evaluation, Pulse, SinglePulse,
     },
-    transform::{filter::FilterPipe, group::GroupPipe, map::MapPipe},
+    spec::transform::{filter::FilterPipe, group::GroupPipe, map::MapPipe},
   };
 
   #[tokio::test]

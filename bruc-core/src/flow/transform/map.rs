@@ -1,5 +1,5 @@
 use crate::data::DataValue;
-use crate::transform::map::MapPipe;
+use crate::spec::transform::map::MapPipe;
 use futures::task::{Context, Poll};
 use futures::Stream;
 use std::pin::Pin;
@@ -58,7 +58,7 @@ mod tests {
   use crate::data::DataValue;
   use crate::flow::data::{Chunks, Source};
   use crate::flow::transform::map::MapNode;
-  use crate::transform::map::MapPipe;
+  use crate::spec::transform::map::MapPipe;
 
   #[test]
   fn applies() {
