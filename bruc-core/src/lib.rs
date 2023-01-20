@@ -1,6 +1,7 @@
 #![feature(async_fn_in_trait)]
 
 use crate::parser::Parser;
+use crate::render::Renderer;
 use crate::scene::Scenegraph;
 use crate::spec::Specification;
 
@@ -25,5 +26,9 @@ impl View {
       .await;
 
     View::new(scene)
+  }
+
+  fn render<R: Renderer>(self, renderer: R) -> String {
+    renderer.render(self.scene)
   }
 }
