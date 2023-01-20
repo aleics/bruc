@@ -1,20 +1,14 @@
+use crate::graph::node::Node;
+use crate::graph::Pulse;
+
+#[derive(Debug, PartialEq)]
 pub struct Scenegraph {
-  items: Vec<SceneGroup>,
+  item: SceneGroup,
 }
 
 impl Scenegraph {
-  pub fn new() -> Self {
-    Default::default()
-  }
-
-  pub fn add(&mut self, item: SceneGroup) {
-    self.items.push(item)
-  }
-}
-
-impl Default for Scenegraph {
-  fn default() -> Self {
-    Self::new()
+  pub fn new(item: SceneGroup) -> Self {
+    Scenegraph { item }
   }
 }
 
@@ -25,12 +19,25 @@ pub enum SceneItem {
 }
 
 impl SceneItem {
-  pub fn group(group: SceneGroup) -> Self {
-    SceneItem::Group(Box::new(group))
+  pub fn group(items: Vec<SceneItem>) -> Self {
+    SceneItem::Group(Box::new(SceneGroup::with_items(items)))
   }
 
   pub fn line(line: SceneLine) -> Self {
     SceneItem::Line(Box::new(line))
+  }
+
+  pub fn build(node: &Node) -> Option<Self> {
+    if let Pulse::Single(single) = &node.pulse {
+      let items = single.values.iter()
+        .flat_map(|value| value.get_marks())
+        .cloned()
+        .collect();
+
+      Some(SceneItem::group(items))
+    } else {
+      None
+    }
   }
 }
 

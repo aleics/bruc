@@ -1,6 +1,6 @@
 use crate::data::DataValue;
 use crate::graph::node::{Node, Operator};
-use crate::scene::SceneItem;
+use crate::scene::{Scenegraph, SceneGroup, SceneItem};
 use std::collections::{BTreeMap, HashSet, VecDeque};
 use std::iter::FromIterator;
 
@@ -41,16 +41,6 @@ impl Graph {
 
   pub fn get_node(&self, id: usize) -> Option<&Node> {
     self.nodes.iter().find(|node| node.id == id)
-  }
-
-  /// Return the output nodes indices in the graph.
-  pub fn outputs(&self) -> Vec<usize> {
-    self
-      .sources
-      .keys()
-      .filter(|node| !self.targets.contains_key(node))
-      .copied()
-      .collect()
   }
 
   /// Add node with connections to existing source nodes
@@ -153,9 +143,32 @@ impl Graph {
       .unwrap_or(HashSet::new())
   }
 
+  /// Return the output nodes indices in the graph.
+  fn outputs(&self) -> Vec<&Node> {
+    self
+      .sources
+      .keys()
+      .filter(|node| !self.targets.contains_key(node))
+      .flat_map(|node| self.get_node(*node))
+      .collect()
+  }
+
+  /// Builds the `Scenegraph` instance by evaluating the full tree once, and building the scene
+  /// items out of the pulse value of the outputs.
+  pub async fn build(&mut self) -> Scenegraph {
+    let outputs = self.evaluate().await;
+
+    let items = outputs.into_iter()
+      .flat_map(|node| SceneItem::build(node))
+      .collect();
+
+    Scenegraph::new(SceneGroup::with_items(items))
+  }
+
   /// Evaluates the current graph iterating through all the edges of the graph in topological
-  /// order, and keeps track of the values by using `Pulse` instances.
-  pub async fn evaluate(&mut self) {
+  /// order, and keeps track of the values by using `Pulse` instances. Once the evaluation
+  /// has completed, it returns the indices of the output nodes.
+  async fn evaluate(&mut self) -> Vec<&Node> {
     // Start evaluating the graph from the root nodes
     let mut queue = VecDeque::from_iter(self.get_nodes_in_degree(0));
 
@@ -167,6 +180,8 @@ impl Graph {
         queue.extend(targets.iter());
       }
     }
+
+    self.outputs()
   }
 
   async fn evaluate_tree(&mut self, node_id: usize) {
@@ -288,7 +303,7 @@ pub enum PulseValue {
 }
 
 impl PulseValue {
-  fn get_data(&self) -> Option<&DataValue> {
+  pub(crate) fn get_data(&self) -> Option<&DataValue> {
     if let PulseValue::Data(data) = &self {
       Some(data)
     } else {
@@ -296,7 +311,7 @@ impl PulseValue {
     }
   }
 
-  fn get_marks(&self) -> Option<&SceneItem> {
+  pub(crate) fn get_marks(&self) -> Option<&SceneItem> {
     if let PulseValue::Marks(scene) = &self {
       Some(scene)
     } else {
@@ -349,12 +364,11 @@ mod tests {
       vec![map],
     );
 
-    graph.evaluate().await;
+    let outputs = graph.evaluate().await;
 
-    let filter = graph.get_node(filter).unwrap();
-
+    assert_eq!(outputs.len(), 1);
     assert_eq!(
-      filter.pulse,
+      outputs[0].pulse,
       Pulse::single(vec![PulseValue::Data(DataValue::from_pairs(vec![
         ("a", 2.0.into()),
         ("b", 5.0.into())
