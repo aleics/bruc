@@ -6,8 +6,8 @@ use crate::render::Renderer;
 use crate::scene::Scenegraph;
 use crate::spec::Specification;
 
-mod data;
-mod graph;
+pub mod data;
+pub mod graph;
 mod parser;
 mod render;
 mod scene;
@@ -19,13 +19,12 @@ pub struct View {
 }
 
 impl View {
-  pub fn new(scene: Scenegraph) -> View { View { scene } }
+  pub fn new(scene: Scenegraph) -> View {
+    View { scene }
+  }
 
   pub async fn build(spec: Specification) -> View {
-    let scene = Parser
-      .parse(spec)
-      .build()
-      .await;
+    let scene = Parser.parse(spec).build().await;
 
     View::new(scene)
   }
@@ -39,7 +38,7 @@ impl View {
 mod tests {
   use crate::data::DataValue;
   use crate::render::DebugRenderer;
-  use crate::scene::{Scenegraph, SceneGroup, SceneItem, SceneLine};
+  use crate::scene::{SceneGroup, SceneItem, SceneLine, Scenegraph};
   use crate::spec::data::DataEntry;
   use crate::spec::mark::line::{Interpolate, LineMark, LineMarkProperties};
   use crate::spec::mark::{DataSource, Mark};
@@ -47,10 +46,10 @@ mod tests {
   use crate::spec::scale::linear::LinearScale;
   use crate::spec::scale::range::Range;
   use crate::spec::scale::{Scale, ScaleKind};
-  use crate::spec::Specification;
   use crate::spec::transform::filter::FilterPipe;
   use crate::spec::transform::map::MapPipe;
   use crate::spec::transform::pipe::Pipe;
+  use crate::spec::Specification;
   use crate::View;
 
   fn specification() -> Specification {
@@ -103,11 +102,13 @@ mod tests {
     // then
     assert_eq!(
       view,
-      View::new(
-        Scenegraph::new(SceneGroup::with_items(vec![
-          SceneItem::group(vec![SceneItem::line(SceneLine::new(vec![(1.0, 0.7), (2.6, 1.5)], "black", 1.0))])
-        ]))
-      )
+      View::new(Scenegraph::new(SceneGroup::with_items(vec![
+        SceneItem::group(vec![SceneItem::line(SceneLine::new(
+          vec![(1.0, 0.7), (2.6, 1.5)],
+          "black",
+          1.0
+        ))])
+      ])))
     );
   }
 

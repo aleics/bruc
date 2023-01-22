@@ -4,16 +4,20 @@ use crate::{
   graph::{Evaluation, MultiPulse, Pulse, SinglePulse},
 };
 
+/// `DataOperator` represents an operator of the graph, which has a list of `DataValue` as source.
 #[derive(Debug, PartialEq)]
 pub struct DataOperator {
   data: Vec<DataValue>,
 }
 
 impl DataOperator {
-  pub fn new(data: Vec<DataValue>) -> Self {
+  /// Create a new `DataOperator` instance with a list of values.
+  pub(crate) fn new(data: Vec<DataValue>) -> Self {
     DataOperator { data }
   }
 
+  /// Apply the operator's logic by propagating the internal list of data values into a `Pulse`
+  /// instance.
   fn apply(&self) -> Vec<PulseValue> {
     self.data.iter().cloned().map(PulseValue::Data).collect()
   }

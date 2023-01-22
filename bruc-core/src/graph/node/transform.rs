@@ -13,16 +13,19 @@ use crate::{
   },
 };
 
+/// `MapOperator` represents an operator of the graph, which maps data values by a given map pipe.
 #[derive(Debug, PartialEq)]
 pub struct MapOperator {
   pipe: MapPipe,
 }
 
 impl MapOperator {
-  pub fn new(pipe: MapPipe) -> Self {
+  /// Create a new `MapOperator` instance with a certain map pipe.
+  pub(crate) fn new(pipe: MapPipe) -> Self {
     MapOperator { pipe }
   }
 
+  /// Apply the operator's logic by executing the `MapPipe` to the incoming pulse values.
   fn apply(&self, values: &[PulseValue]) -> Vec<PulseValue> {
     let mut result = values.to_vec();
 
@@ -51,16 +54,20 @@ impl Evaluation for MapOperator {
   }
 }
 
+/// `FilterOperator` represents an operator of the graph, which filters out certain data values from
+/// the incoming pulse data by applying a certain `FilterPipe`.
 #[derive(Debug, PartialEq)]
 pub struct FilterOperator {
   pipe: FilterPipe,
 }
 
 impl FilterOperator {
-  pub fn new(pipe: FilterPipe) -> Self {
+  /// Create a new `FilterOperator` instance with a certain filter pipe.
+  pub(crate) fn new(pipe: FilterPipe) -> Self {
     FilterOperator { pipe }
   }
 
+  /// Apply the operator's logic by executing the `FilterPipe` to the incoming pulse values.
   fn apply(&self, values: &[PulseValue]) -> Vec<PulseValue> {
     let mut result = Vec::with_capacity(values.len());
 
@@ -91,13 +98,16 @@ impl Evaluation for FilterOperator {
   }
 }
 
+/// `GroupOperator` represents an operator of the graph, which applies a certain grouping logic to
+/// incoming pulse values.
 #[derive(Debug, PartialEq)]
 pub enum GroupOperator {
   Count(CountOperator),
 }
 
 impl GroupOperator {
-  pub fn new(pipe: GroupPipe) -> Self {
+  /// Create a new `GroupOperator` logic defined by a certain `GroupPipe`.
+  pub(crate) fn new(pipe: GroupPipe) -> Self {
     match pipe.op {
       GroupOperatorSpec::Count => GroupOperator::Count(CountOperator::new(pipe.by, pipe.output)),
     }
@@ -118,6 +128,8 @@ impl Evaluation for GroupOperator {
   }
 }
 
+/// `CountOperator` represents a type of `GroupOperator`, which groups the incoming pulse data in
+/// groups by counting the presence of a certain field's value in the incoming pulse values.
 #[derive(Debug, PartialEq)]
 pub struct CountOperator {
   by: String,
@@ -125,10 +137,14 @@ pub struct CountOperator {
 }
 
 impl CountOperator {
+  /// Create a new `CountOperator` instance for a certain `by` field reference and `output` field
+  /// name.
   fn new(by: String, output: String) -> Self {
     CountOperator { by, output }
   }
 
+  /// Apply the operator's logic by grouping the pulse data values in groups depending on the
+  /// `by` field value.
   fn apply(&self, values: &[PulseValue]) -> Vec<PulseValue> {
     let mut counts: HashMap<DataItem, usize> = HashMap::new();
 
@@ -385,8 +401,14 @@ mod tests {
   #[tokio::test]
   async fn applies_group_single_pulse() {
     let series = vec![
-      PulseValue::Data(DataValue::from_pairs(vec![("a", 2.0.into())])),
-      PulseValue::Data(DataValue::from_pairs(vec![("a", 2.0.into())])),
+      PulseValue::Data(DataValue::from_pairs(vec![
+        ("a", 1.0.into()),
+        ("b", 2.0.into()),
+      ])),
+      PulseValue::Data(DataValue::from_pairs(vec![
+        ("a", 1.0.into()),
+        ("b", 2.0.into()),
+      ])),
     ];
 
     let operator = GroupOperator::new(GroupPipe::new("a", GroupOperatorSpec::Count, "count"));
@@ -396,7 +418,7 @@ mod tests {
     assert_eq!(
       result,
       Pulse::single(vec![PulseValue::Data(DataValue::from_pairs(vec![
-        ("a", 2.0.into()),
+        ("a", 1.0.into()),
         ("count", 2.0.into())
       ]))])
     );

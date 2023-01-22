@@ -243,41 +243,29 @@ mod tests {
     assert_eq!(
       graph.nodes,
       vec![
-        Node::init(
-          0,
-          Operator::data(vec![
-            DataValue::from_pairs(vec![("a", 10.0.into())]),
-            DataValue::from_pairs(vec![("a", 5.0.into())]),
-          ])
-        ),
-        Node::init(1, Operator::map(MapPipe::new("a - 2", "b").unwrap())),
-        Node::init(2, Operator::filter(FilterPipe::new("b > 2").unwrap())),
-        Node::init(
-          3,
-          Operator::linear(
-            LinearScale::new(Domain::Literal(0.0, 100.0), Range::Literal(0.0, 20.0),),
-            "a",
-            "x"
-          )
-        ),
-        Node::init(
-          4,
-          Operator::linear(
-            LinearScale::new(Domain::Literal(0.0, 100.0), Range::Literal(0.0, 10.0),),
-            "b",
-            "y"
-          )
-        ),
-        Node::init(
-          5,
-          Operator::line(LineMark::new(LineMarkProperties::new(
-            Some(DataSource::field("a", Some("horizontal"))),
-            Some(DataSource::field("b", Some("vertical"))),
-            None,
-            None,
-            Interpolate::Linear,
-          )))
-        )
+        Node::init(Operator::data(vec![
+          DataValue::from_pairs(vec![("a", 10.0.into())]),
+          DataValue::from_pairs(vec![("a", 5.0.into())]),
+        ])),
+        Node::init(Operator::map(MapPipe::new("a - 2", "b").unwrap())),
+        Node::init(Operator::filter(FilterPipe::new("b > 2").unwrap())),
+        Node::init(Operator::linear(
+          LinearScale::new(Domain::Literal(0.0, 100.0), Range::Literal(0.0, 20.0),),
+          "a",
+          "x"
+        )),
+        Node::init(Operator::linear(
+          LinearScale::new(Domain::Literal(0.0, 100.0), Range::Literal(0.0, 10.0),),
+          "b",
+          "y"
+        )),
+        Node::init(Operator::line(LineMark::new(LineMarkProperties::new(
+          Some(DataSource::field("a", Some("horizontal"))),
+          Some(DataSource::field("b", Some("vertical"))),
+          None,
+          None,
+          Interpolate::Linear,
+        ))))
       ]
     );
     assert_eq!(

@@ -13,40 +13,35 @@ use self::{data::DataOperator, transform::GroupOperator};
 
 use super::{Evaluation, Pulse};
 
-pub mod data;
-pub mod mark;
-pub mod scale;
-pub mod transform;
+pub(crate) mod data;
+pub(crate) mod mark;
+pub(crate) mod scale;
+pub(crate) mod transform;
 
+/// `Node` represents a node in the `Graph` with a certain operator and a `Pulse` instance.
 #[derive(Debug, PartialEq)]
 pub struct Node {
-  pub(crate) id: usize,
   pub(crate) operator: Operator,
   pub(crate) pulse: Pulse,
 }
 
 impl Node {
-  pub fn new(id: usize, operator: Operator, pulse: Pulse) -> Self {
+  /// Initialize a new `Node` instance with a certain `Operator`. The associated pulse includes no
+  /// data.
+  pub(crate) fn init(operator: Operator) -> Self {
     Node {
-      id,
-      operator,
-      pulse,
-    }
-  }
-
-  pub fn init(id: usize, operator: Operator) -> Self {
-    Node {
-      id,
       operator,
       pulse: Pulse::init(),
     }
   }
 
-  pub async fn execute(&mut self, pulse: Pulse) {
+  /// Evaluate a `Pulse` instance passed to the node from its source. The resulting pulse is stored.
+  pub(crate) async fn execute(&mut self, pulse: Pulse) {
     self.pulse = self.operator.evaluate(pulse).await;
   }
 }
 
+/// `Operator` collects all possible operators that can be used in a graph `Node`.
 #[derive(Debug, PartialEq)]
 pub enum Operator {
   Data(DataOperator),
@@ -59,11 +54,13 @@ pub enum Operator {
 }
 
 impl Operator {
+  /// Create a new data `Operator` instance.
   pub fn data(data: Vec<DataValue>) -> Self {
     Operator::Data(DataOperator::new(data))
   }
 
-  pub fn transform(pipe: Pipe) -> Self {
+  /// Create a new `Operator` instance, given a transform `Pipe` definition.
+  pub(crate) fn transform(pipe: Pipe) -> Self {
     match pipe {
       Pipe::Map(map) => Operator::map(map),
       Pipe::Filter(filter) => Operator::filter(filter),
@@ -71,36 +68,46 @@ impl Operator {
     }
   }
 
-  pub fn scale(scale: Scale, field: &str, output: &str) -> Self {
+  /// Create a new map `Operator` instance.
+  pub fn map(pipe: MapPipe) -> Self {
+    Operator::Map(MapOperator::new(pipe))
+  }
+
+  /// Create a new filter `Operator` instance.
+  pub fn filter(pipe: FilterPipe) -> Self {
+    Operator::Filter(FilterOperator::new(pipe))
+  }
+
+  /// Create a new group `Operator` instance.
+  pub fn group(pipe: GroupPipe) -> Self {
+    Operator::Group(GroupOperator::new(pipe))
+  }
+
+  /// Create a new scale `Operator` instance, for a given `Scale`, data `field` reference and an
+  /// `output` field name.
+  pub(crate) fn scale(scale: Scale, field: &str, output: &str) -> Self {
     match scale.kind {
       ScaleKind::Linear(linear) => Operator::linear(linear, field, output),
     }
   }
 
-  pub fn map(pipe: MapPipe) -> Self {
-    Operator::Map(MapOperator::new(pipe))
-  }
-
-  pub fn filter(pipe: FilterPipe) -> Self {
-    Operator::Filter(FilterOperator::new(pipe))
-  }
-
-  pub fn group(pipe: GroupPipe) -> Self {
-    Operator::Group(GroupOperator::new(pipe))
-  }
-
-  pub fn line(mark: LineMark) -> Self {
+  /// Create a new line `Operator` instance.
+  pub(crate) fn line(mark: LineMark) -> Self {
     Operator::Line(LineOperator::new(mark))
   }
 
-  pub fn identity(field: &str, output: &str) -> Self {
+  /// Create a new identity `Operator` instance.
+  pub(crate) fn identity(field: &str, output: &str) -> Self {
     Operator::Identity(IdentityOperator::new(field, output))
   }
 
-  pub fn linear(scale: LinearScale, field: &str, output: &str) -> Self {
+  /// Create a new linear scale `Operator` instance, with a given `field` reference and an `output`
+  /// field name.
+  pub(crate) fn linear(scale: LinearScale, field: &str, output: &str) -> Self {
     Operator::Linear(LinearOperator::new(scale, field, output))
   }
 
+  /// Evaluate the operator for a certain `Pulse`.
   pub async fn evaluate(&self, pulse: Pulse) -> Pulse {
     match self {
       Operator::Data(data) => data.evaluate(pulse).await,

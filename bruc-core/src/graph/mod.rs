@@ -1,13 +1,14 @@
 use crate::data::DataValue;
 use crate::graph::node::{Node, Operator};
-use crate::scene::{Scenegraph, SceneGroup, SceneItem};
+use crate::scene::{SceneGroup, SceneItem, Scenegraph};
 use std::collections::{BTreeMap, HashSet, VecDeque};
 use std::iter::FromIterator;
 
 pub mod node;
 
-/// `graph-pulse` is a library to build graphs that can be evaluated in topological order,
-/// where a Pulse instance is being used to collect the data being passed between nodes.
+/// `Graph` represent a distribution of nodes connected with each other. Nodes are sorted
+/// in topological order. The graph can be evaluated by passing data from the roots into the leaves,
+/// where a `Pulse` instance is being used to collect the data being passed between nodes.
 #[derive(Debug, Default, PartialEq)]
 pub struct Graph {
   /// List of nodes of the graph.
@@ -35,12 +36,9 @@ pub struct Graph {
 }
 
 impl Graph {
+  /// Create a new `Graph` instance with no nodes.
   pub fn new() -> Self {
     Default::default()
-  }
-
-  pub fn get_node(&self, id: usize) -> Option<&Node> {
-    self.nodes.iter().find(|node| node.id == id)
   }
 
   /// Add node with connections to existing source nodes
@@ -58,13 +56,13 @@ impl Graph {
 
   /// Add single node without any connections
   pub fn add_node(&mut self, operator: Operator) -> usize {
-    let id = self.nodes.len();
+    let index = self.nodes.len();
 
-    self.nodes.push(Node::init(id, operator));
-    self.degrees.insert(id, 0);
-    self.nodes_in_degree.insert(0, HashSet::from_iter([id]));
+    self.nodes.push(Node::init(operator));
+    self.degrees.insert(index, 0);
+    self.nodes_in_degree.insert(0, HashSet::from_iter([index]));
 
-    id
+    index
   }
 
   // Add edge between to nodes existent in the graph
@@ -89,6 +87,7 @@ impl Graph {
     self.edges.push(Edge::new(from, to));
   }
 
+  /// Sort the graph in topological order and return the order list of the nodes.
   fn sort_order(&self) -> Vec<usize> {
     // Copy the current graph's node degree distribution
     let mut current_degrees = self.degrees.clone();
@@ -122,6 +121,7 @@ impl Graph {
     order
   }
 
+  /// Get node indices that have a certain degree.
   fn get_nodes_in_degree(&self, degree: usize) -> HashSet<usize> {
     self
       .nodes_in_degree
@@ -130,13 +130,13 @@ impl Graph {
       .unwrap_or(HashSet::new())
   }
 
-  /// Return the output nodes indices in the graph.
-  fn outputs(&self) -> Vec<&Node> {
+  /// Return the leave nodes in the graph.
+  fn leaves(&self) -> Vec<&Node> {
     self
       .sources
       .keys()
       .filter(|node| !self.targets.contains_key(node))
-      .flat_map(|node| self.get_node(*node))
+      .flat_map(|node| self.nodes.get(*node))
       .collect()
   }
 
@@ -145,17 +145,15 @@ impl Graph {
   pub async fn build(&mut self) -> Scenegraph {
     let outputs = self.evaluate().await;
 
-    let items = outputs.into_iter()
-      .flat_map(SceneItem::build)
-      .collect();
+    let items = outputs.into_iter().flat_map(SceneItem::build).collect();
 
     Scenegraph::new(SceneGroup::with_items(items))
   }
 
   /// Evaluates the current graph iterating through all the edges of the graph in topological
   /// order, and keeps track of the values by using `Pulse` instances. Once the evaluation
-  /// has completed, it returns the indices of the output nodes.
-  async fn evaluate(&mut self) -> Vec<&Node> {
+  /// has completed, it returns the leave nodes.
+  pub async fn evaluate(&mut self) -> Vec<&Node> {
     // Start evaluating the graph from the root nodes
     let mut queue = VecDeque::from_iter(self.get_nodes_in_degree(0));
 
@@ -168,31 +166,10 @@ impl Graph {
       }
     }
 
-    self.outputs()
+    self.leaves()
   }
 
-  #[allow(unused)]
-  async fn evaluate_tree(&mut self, node_id: usize) {
-    let mut queue = VecDeque::new();
-
-    let node_index = self
-      .nodes
-      .iter()
-      .position(|node| node.id == node_id)
-      .unwrap();
-
-    queue.push_back(node_index);
-
-    while let Some(index) = queue.pop_front() {
-      self.evaluate_node(index).await;
-
-      // Append the targets to the queue
-      if let Some(targets) = self.targets.get(&index) {
-        queue.extend(targets.iter());
-      }
-    }
-  }
-
+  /// Evaluate a single node of a given index in the graph.
   async fn evaluate_node(&mut self, index: usize) {
     let pulse = self.get_pulse(&index).unwrap_or(Pulse::init());
 
@@ -216,7 +193,11 @@ impl Graph {
   }
 }
 
+/// `Evaluation` represents the ability to evaluate a certain `Pulse` instance, by returning a new
+/// one. All nodes in the `Graph` are required to be evaluated, so that changes in the input nodes
+/// are propagated through the graph.
 trait Evaluation {
+  /// Evaluates a `Pulse` instance.
   async fn evaluate(&self, pulse: Pulse) -> Pulse {
     match pulse {
       Pulse::Single(single) => self.evaluate_single(single),
@@ -224,43 +205,57 @@ trait Evaluation {
     }
   }
 
+  /// Evaluates a single `Pulse` instance
   fn evaluate_single(&self, single: SinglePulse) -> Pulse;
 
+  /// Evaluates a multi `Pulse` instance.
   fn evaluate_multi(&self, multi: MultiPulse) -> Pulse;
 }
 
+/// `Edge` represents an edge between two nodes in the graph
 #[derive(Debug, PartialEq)]
-pub struct Edge {
-  from: usize,
-  to: usize,
+pub(crate) struct Edge {
+  pub(crate) from: usize,
+  pub(crate) to: usize,
 }
 
 impl Edge {
-  pub fn new(from: usize, to: usize) -> Self {
+  /// Create a new `Edge`
+  pub(crate) fn new(from: usize, to: usize) -> Self {
     Edge { from, to }
   }
 }
 
+/// `Pulse` represents the current state of a node in the graph for a certain evaluation.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Pulse {
+  /// A single `Pulse` represents a single state.
   Single(SinglePulse),
+
+  /// A multi `Pulse` represents multiple instances of a `Pulse` collected together.
+  /// Multi pulses occur while evaluating nodes that have multiple source nodes connected to.
   Multi(MultiPulse),
 }
 
 impl Pulse {
-  pub fn multi(pulses: Vec<SinglePulse>) -> Self {
+  /// Create a new multi `Pulse` given a collection of single pulses
+  pub(crate) fn multi(pulses: Vec<SinglePulse>) -> Self {
     Pulse::Multi(MultiPulse::new(pulses))
   }
 
+  /// Create a new single `Pulse` with certain values.
   pub fn single(values: Vec<PulseValue>) -> Self {
     Pulse::Single(SinglePulse::new(values))
   }
 
-  pub fn init() -> Self {
+  /// Initialize an empty single `Pulse` instance.
+  pub(crate) fn init() -> Self {
     Pulse::Single(SinglePulse::new(Vec::new()))
   }
 
-  pub fn merge(pulses: Vec<Pulse>) -> Self {
+  /// Merge a collection of pulses together so that a multi `Pulse` instance is returned merging
+  /// all internal single pulses together
+  pub(crate) fn merge(pulses: Vec<Pulse>) -> Self {
     let value = pulses
       .into_iter()
       .flat_map(|pulse| match pulse {
@@ -273,24 +268,45 @@ impl Pulse {
   }
 }
 
+/// `SinglePulse` represents a type of `Pulse` with a single state instance, represented by a list
+/// of values.
 #[derive(Debug, Clone, PartialEq)]
 pub struct SinglePulse {
   pub(crate) values: Vec<PulseValue>,
 }
 
 impl SinglePulse {
-  pub fn new(values: Vec<PulseValue>) -> SinglePulse {
+  /// Create a new `SinglePulse` instance.
+  pub(crate) fn new(values: Vec<PulseValue>) -> SinglePulse {
     SinglePulse { values }
   }
 }
 
+/// `MultiPulse` represents a type of `Pulse` with a number of `SinglePulse` instances.
+#[derive(Debug, Clone, PartialEq)]
+pub struct MultiPulse {
+  pub(crate) pulses: Vec<SinglePulse>,
+}
+
+impl MultiPulse {
+  /// Create a new `MultiPulse` instance.
+  pub fn new(pulses: Vec<SinglePulse>) -> Self {
+    MultiPulse { pulses }
+  }
+}
+
+/// `PulseValue` describes the type of values that are expected to be propagated through the graph
+/// during evaluation.
 #[derive(Debug, Clone, PartialEq)]
 pub enum PulseValue {
+  /// `DataValue` pulse value.
   Data(DataValue),
+  /// `SceneItem` pulse value.
   Marks(SceneItem),
 }
 
 impl PulseValue {
+  /// Get the pulse value as `DataValue`
   pub(crate) fn get_data(&self) -> Option<&DataValue> {
     if let PulseValue::Data(data) = &self {
       Some(data)
@@ -299,6 +315,7 @@ impl PulseValue {
     }
   }
 
+  /// Get the pulse value as `SceneItem`
   pub(crate) fn get_marks(&self) -> Option<&SceneItem> {
     if let PulseValue::Marks(scene) = &self {
       Some(scene)
@@ -308,29 +325,18 @@ impl PulseValue {
   }
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct MultiPulse {
-  pub(crate) pulses: Vec<SinglePulse>,
-}
-
-impl MultiPulse {
-  pub fn new(pulses: Vec<SinglePulse>) -> Self {
-    MultiPulse { pulses }
-  }
-}
-
 #[cfg(test)]
 mod tests {
+  use crate::scene::SceneLine;
+  use crate::spec::mark::line::{Interpolate, LineMark, LineMarkProperties};
+  use crate::spec::mark::DataSource;
+  use crate::spec::scale::domain::Domain;
+  use crate::spec::scale::linear::LinearScale;
+  use crate::spec::scale::range::Range;
   use crate::{
     data::DataValue,
     spec::transform::{filter::FilterPipe, map::MapPipe},
   };
-  use crate::scene::SceneLine;
-  use crate::spec::mark::DataSource;
-  use crate::spec::mark::line::{Interpolate, LineMark, LineMarkProperties};
-  use crate::spec::scale::domain::Domain;
-  use crate::spec::scale::linear::LinearScale;
-  use crate::spec::scale::range::Range;
 
   use super::*;
 
@@ -339,12 +345,13 @@ mod tests {
 
     let first_data = graph.add_node(Operator::data(vec![
       DataValue::from_pairs(vec![("a", 5.0.into())]),
-      DataValue::from_pairs(vec![("a", 13.0.into())])
+      DataValue::from_pairs(vec![("a", 13.0.into())]),
     ]));
 
-    let second_data = graph.add_node(Operator::data(vec![
-      DataValue::from_pairs(vec![("a", 2.0.into())])
-    ]));
+    let second_data = graph.add_node(Operator::data(vec![DataValue::from_pairs(vec![(
+      "a",
+      2.0.into(),
+    )])]));
 
     let map = graph.add(
       Operator::map(MapPipe::new("a + 2", "b").unwrap()),
@@ -358,20 +365,20 @@ mod tests {
 
     let x_scale = graph.add(
       Operator::linear(
-        LinearScale::new(Domain::Literal(0.0, 100.0), Range::Literal(0.0, 20.0), ),
+        LinearScale::new(Domain::Literal(0.0, 100.0), Range::Literal(0.0, 20.0)),
         "a",
-        "x"
+        "x",
       ),
-      vec![filter]
+      vec![filter],
     );
 
     let y_scale = graph.add(
       Operator::linear(
-        LinearScale::new(Domain::Literal(0.0, 100.0), Range::Literal(0.0, 10.0), ),
+        LinearScale::new(Domain::Literal(0.0, 100.0), Range::Literal(0.0, 10.0)),
         "b",
-        "y"
+        "y",
       ),
-      vec![filter]
+      vec![filter],
     );
 
     graph.add(
@@ -382,7 +389,7 @@ mod tests {
         None,
         Interpolate::Linear,
       ))),
-      vec![x_scale, y_scale]
+      vec![x_scale, y_scale],
     );
 
     graph
@@ -397,9 +404,11 @@ mod tests {
     assert_eq!(outputs.len(), 1);
     assert_eq!(
       outputs[0].pulse,
-      Pulse::single(vec![PulseValue::Marks(
-        SceneItem::line(SceneLine::new(vec![(1.0, 0.7), (2.6, 1.5)], "black", 1.0))
-      )])
+      Pulse::single(vec![PulseValue::Marks(SceneItem::line(SceneLine::new(
+        vec![(1.0, 0.7), (2.6, 1.5)],
+        "black",
+        1.0
+      )))])
     );
   }
 
@@ -411,9 +420,9 @@ mod tests {
 
     assert_eq!(
       scenegraph,
-      Scenegraph::new(SceneGroup::with_items(vec![
-        SceneItem::group(vec![SceneItem::line(SceneLine::new(vec![(1.0, 0.7), (2.6, 1.5)], "black", 1.0))])
-      ]))
+      Scenegraph::new(SceneGroup::with_items(vec![SceneItem::group(vec![
+        SceneItem::line(SceneLine::new(vec![(1.0, 0.7), (2.6, 1.5)], "black", 1.0))
+      ])]))
     );
   }
 }

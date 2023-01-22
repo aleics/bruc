@@ -6,6 +6,8 @@ use crate::{
   spec::scale::{linear::LinearScale, Scaler},
 };
 
+/// `LinearOperator` represents an operator of the graph, which linearly scales data values from a
+/// certain `field` reference, and creates a new field in the defined `output` field.
 #[derive(Debug, PartialEq)]
 pub struct LinearOperator {
   scale: LinearScale,
@@ -14,7 +16,8 @@ pub struct LinearOperator {
 }
 
 impl LinearOperator {
-  pub fn new(scale: LinearScale, field: &str, output: &str) -> Self {
+  /// Create a new `LinearOperator` instance.
+  pub(crate) fn new(scale: LinearScale, field: &str, output: &str) -> Self {
     LinearOperator {
       scale,
       field: field.to_string(),
@@ -22,7 +25,9 @@ impl LinearOperator {
     }
   }
 
-  pub fn apply(&self, values: &[PulseValue]) -> Vec<PulseValue> {
+  /// Apply the operator's logic by linearly scaling the referenced `field` and creating a new
+  /// `output` field.
+  fn apply(&self, values: &[PulseValue]) -> Vec<PulseValue> {
     let mut result = values.to_vec();
 
     // Iterate over the current series
@@ -60,6 +65,8 @@ impl Evaluation for LinearOperator {
   }
 }
 
+/// `IdentityOperator` represents an operator of the graph, which copies a certain `field` reference
+/// into an `output` field.
 #[derive(Debug, PartialEq)]
 pub struct IdentityOperator {
   field: String,
@@ -67,14 +74,16 @@ pub struct IdentityOperator {
 }
 
 impl IdentityOperator {
-  pub fn new(field: &str, output: &str) -> Self {
+  /// Create a new `IdentityOperator` instance.
+  pub(crate) fn new(field: &str, output: &str) -> Self {
     IdentityOperator {
       field: field.to_string(),
       output: output.to_string(),
     }
   }
 
-  pub fn apply(&self, values: &[PulseValue]) -> Vec<PulseValue> {
+  /// Apply the operator's logic by copying the `field` value into a new `output` field.
+  fn apply(&self, values: &[PulseValue]) -> Vec<PulseValue> {
     let mut result = values.to_vec();
 
     // Iterate over the current series

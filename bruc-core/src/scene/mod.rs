@@ -27,9 +27,11 @@ impl SceneItem {
     SceneItem::Line(Box::new(line))
   }
 
-  pub fn build(node: &Node) -> Option<Self> {
+  pub(crate) fn build(node: &Node) -> Option<Self> {
     if let Pulse::Single(single) = &node.pulse {
-      let items = single.values.iter()
+      let items = single
+        .values
+        .iter()
         .flat_map(|value| value.get_marks())
         .cloned()
         .collect();
