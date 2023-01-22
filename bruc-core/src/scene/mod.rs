@@ -70,10 +70,10 @@ pub struct SceneLine {
 }
 
 impl SceneLine {
-  pub fn new(points: Vec<(f32, f32)>, stroke: String, stroke_width: f32) -> Self {
+  pub fn new(points: Vec<(f32, f32)>, stroke: &str, stroke_width: f32) -> Self {
     SceneLine {
       points,
-      stroke,
+      stroke: stroke.to_string(),
       stroke_width,
     }
   }

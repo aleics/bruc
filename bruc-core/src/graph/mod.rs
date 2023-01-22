@@ -337,25 +337,29 @@ mod tests {
     data::DataValue,
     spec::transform::{filter::FilterPipe, map::MapPipe},
   };
+  use crate::scene::SceneLine;
+  use crate::spec::mark::DataSource;
+  use crate::spec::mark::line::{Interpolate, LineMark, LineMarkProperties};
+  use crate::spec::scale::domain::Domain;
+  use crate::spec::scale::linear::LinearScale;
+  use crate::spec::scale::range::Range;
 
   use super::*;
 
-  #[tokio::test]
-  async fn evaluates_in_topological_sort() {
+  fn graph() -> Graph {
     let mut graph = Graph::new();
 
-    let first_data = graph.add_node(Operator::data(vec![DataValue::from_pairs(vec![(
-      "a",
-      2.0.into(),
-    )])]));
+    let first_data = graph.add_node(Operator::data(vec![
+      DataValue::from_pairs(vec![("a", 5.0.into())]),
+      DataValue::from_pairs(vec![("a", 13.0.into())])
+    ]));
 
-    let second_data = graph.add_node(Operator::data(vec![DataValue::from_pairs(vec![(
-      "a",
-      1.0.into(),
-    )])]));
+    let second_data = graph.add_node(Operator::data(vec![
+      DataValue::from_pairs(vec![("a", 2.0.into())])
+    ]));
 
     let map = graph.add(
-      Operator::map(MapPipe::new("a + 3", "b").unwrap()),
+      Operator::map(MapPipe::new("a + 2", "b").unwrap()),
       vec![first_data, second_data],
     );
 
@@ -364,15 +368,64 @@ mod tests {
       vec![map],
     );
 
+    let x_scale = graph.add(
+      Operator::linear(
+        LinearScale::new(Domain::Literal(0.0, 100.0), Range::Literal(0.0, 20.0), ),
+        "a",
+        "x"
+      ),
+      vec![filter]
+    );
+
+    let y_scale = graph.add(
+      Operator::linear(
+        LinearScale::new(Domain::Literal(0.0, 100.0), Range::Literal(0.0, 10.0), ),
+        "b",
+        "y"
+      ),
+      vec![filter]
+    );
+
+    graph.add(
+      Operator::line(LineMark::new(LineMarkProperties::new(
+        Some(DataSource::field("a", Some("horizontal"))),
+        Some(DataSource::field("b", Some("vertical"))),
+        None,
+        None,
+        Interpolate::Linear,
+      ))),
+      vec![x_scale, y_scale]
+    );
+
+    graph
+  }
+
+  #[tokio::test]
+  async fn evaluates_in_topological_sort() {
+    let mut graph = graph();
+
     let outputs = graph.evaluate().await;
 
     assert_eq!(outputs.len(), 1);
     assert_eq!(
       outputs[0].pulse,
-      Pulse::single(vec![PulseValue::Data(DataValue::from_pairs(vec![
-        ("a", 2.0.into()),
-        ("b", 5.0.into())
-      ]))])
+      Pulse::single(vec![PulseValue::Marks(
+        SceneItem::line(SceneLine::new(vec![(1.0, 0.7), (2.6, 1.5)], "black", 1.0))
+      )])
+    );
+  }
+
+  #[tokio::test]
+  async fn builds_scenegraph() {
+    let mut graph = graph();
+
+    let scenegraph = graph.build().await;
+
+    assert_eq!(
+      scenegraph,
+      Scenegraph::new(SceneGroup::with_items(vec![
+        SceneItem::group(vec![SceneItem::line(SceneLine::new(vec![(1.0, 0.7), (2.6, 1.5)], "black", 1.0))])
+      ]))
     );
   }
 }

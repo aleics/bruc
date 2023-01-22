@@ -73,7 +73,7 @@ impl LineOperator {
 
     vec![PulseValue::Marks(SceneItem::line(SceneLine::new(
       points,
-      "black".to_string(),
+      "black",
       1.0,
     )))]
   }
@@ -145,7 +145,7 @@ mod tests {
       pulse,
       Pulse::single(vec![PulseValue::Marks(SceneItem::line(SceneLine::new(
         vec![(2.0, 1.0), (5.0, 1.0), (10.0, 1.0), (15.0, 1.0)],
-        "black".to_string(),
+        "black",
         1.0
       )))])
     );
