@@ -4,9 +4,9 @@ extern crate test;
 use bruc_core::data::DataValue;
 use bruc_core::graph::node::Operator;
 use bruc_core::graph::{Graph, Pulse, PulseValue};
-use bruc_core::transform::filter::FilterPipe;
-use bruc_core::transform::group::{GroupOperator, GroupPipe};
-use bruc_core::transform::map::MapPipe;
+use bruc_core::spec::transform::filter::FilterPipe;
+use bruc_core::spec::transform::group::{GroupOperator, GroupPipe};
+use bruc_core::spec::transform::map::MapPipe;
 use bruc_expression::data::DataItem;
 use test::Bencher;
 
@@ -20,7 +20,7 @@ fn bench_filter_pipe_1(b: &mut Bencher) {
   let operator = Operator::filter(FilterPipe::new("(a > 1) && (a < 4) && (a != 3)").unwrap());
 
   b.iter(|| {
-    futures::executor::block_on(async { operator.evaluate(pulse.clone()).await });
+    futures::executor::block_on(operator.evaluate(pulse.clone()));
   });
 }
 
@@ -66,7 +66,7 @@ fn bench_map_pipe_1(b: &mut Bencher) {
   let operator = Operator::map(MapPipe::new("(a + 1) / (a * 4) - (a + 2)", "b").unwrap());
 
   b.iter(|| {
-    futures::executor::block_on(async { operator.evaluate(pulse.clone()).await });
+    futures::executor::block_on(operator.evaluate(pulse.clone()));
   });
 }
 
@@ -112,7 +112,7 @@ fn bench_group_pipe_1(b: &mut Bencher) {
   )]))]);
 
   b.iter(|| {
-    futures::executor::block_on(async { operator.evaluate(pulse.clone()).await });
+    futures::executor::block_on(operator.evaluate(pulse.clone()));
   });
 }
 
@@ -144,7 +144,7 @@ fn bench_group_pipe_20(b: &mut Bencher) {
   ]);
 
   b.iter(|| {
-    futures::executor::block_on(async { operator.evaluate(pulse.clone()).await });
+    futures::executor::block_on(operator.evaluate(pulse.clone()));
   });
 }
 
@@ -223,8 +223,6 @@ fn bench_10_pipes_2_10_vars_maps(b: &mut Bencher) {
   );
 
   b.iter(|| {
-    futures::executor::block_on(async {
-      graph.evaluate().await;
-    });
+    futures::executor::block_on(graph.evaluate());
   });
 }
