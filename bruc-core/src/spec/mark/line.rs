@@ -40,17 +40,12 @@ impl LineMarkProperties {
   }
 }
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub enum Interpolate {
+  #[default]
   Linear,
-}
-
-impl Default for Interpolate {
-  fn default() -> Self {
-    Interpolate::Linear
-  }
 }
 
 #[cfg(test)]

@@ -56,19 +56,6 @@ impl Graph {
     id
   }
 
-  // Add root node with connections to existing target nodes
-  pub fn add_root(&mut self, operator: Operator, targets: Vec<usize>) -> usize {
-    let id = self.add_node(operator);
-
-    targets
-      .into_iter()
-      .for_each(|target| self.add_edge(id, target));
-
-    self.order = self.sort_order();
-
-    id
-  }
-
   /// Add single node without any connections
   pub fn add_node(&mut self, operator: Operator) -> usize {
     let id = self.nodes.len();
@@ -159,7 +146,7 @@ impl Graph {
     let outputs = self.evaluate().await;
 
     let items = outputs.into_iter()
-      .flat_map(|node| SceneItem::build(node))
+      .flat_map(SceneItem::build)
       .collect();
 
     Scenegraph::new(SceneGroup::with_items(items))
@@ -184,6 +171,7 @@ impl Graph {
     self.outputs()
   }
 
+  #[allow(unused)]
   async fn evaluate_tree(&mut self, node_id: usize) {
     let mut queue = VecDeque::new();
 

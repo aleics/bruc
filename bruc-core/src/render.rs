@@ -8,6 +8,6 @@ pub struct DebugRenderer;
 
 impl Renderer for DebugRenderer {
   fn render(&self, scene: Scenegraph) -> String {
-    format!("{:?}", scene)
+    format!("{scene:?}")
   }
 }
