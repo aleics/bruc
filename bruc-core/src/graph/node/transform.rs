@@ -74,7 +74,7 @@ impl FilterOperator {
     for value in values {
       if let PulseValue::Data(data_value) = value {
         if self.pipe.apply(data_value) {
-          result.push(value.clone())
+          result.push(value.clone());
         }
       }
     }
@@ -167,7 +167,7 @@ impl CountOperator {
       result.push(PulseValue::Data(DataValue::from_pairs(vec![
         (&self.by, var),
         (&self.output, DataItem::Number(count as f32)),
-      ])))
+      ])));
     }
 
     result

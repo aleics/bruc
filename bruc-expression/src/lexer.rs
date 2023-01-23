@@ -25,7 +25,7 @@ impl<'a> Lexer<'a> {
   }
 
   #[inline]
-  fn symbol_from_word(&self, word: &str) -> Symbol {
+  fn symbol_from_word(word: &str) -> Symbol {
     match word {
       TRUE => Symbol::Boolean(true),
       FALSE => Symbol::Boolean(false),
@@ -42,17 +42,17 @@ impl<'a> Lexer<'a> {
       GREATER => self.eat_ge(),
       LESS => self.eat_le(),
       EQUAL => self.eat_eq(),
-      SUM => Some(self.eat_sum()),
-      SUB => Some(self.eat_sub()),
-      MUL => Some(self.eat_mul()),
-      DIV => Some(self.eat_div()),
+      SUM => Some(Lexer::eat_sum()),
+      SUB => Some(Lexer::eat_sub()),
+      MUL => Some(Lexer::eat_mul()),
+      DIV => Some(Lexer::eat_div()),
       OPEN => Some(Symbol::Open),
       CLOSE => Some(Symbol::Close),
       _ => None,
     }
   }
 
-  fn symbol_from_number(&self, number: f32) -> Symbol {
+  fn symbol_from_number(number: f32) -> Symbol {
     Symbol::Number(number)
   }
 
@@ -128,19 +128,19 @@ impl<'a> Lexer<'a> {
     }
   }
 
-  fn eat_sum(&mut self) -> Symbol {
+  fn eat_sum() -> Symbol {
     Symbol::Operator(Operator::Sum)
   }
 
-  fn eat_sub(&mut self) -> Symbol {
+  fn eat_sub() -> Symbol {
     Symbol::Operator(Operator::Sub)
   }
 
-  fn eat_mul(&mut self) -> Symbol {
+  fn eat_mul() -> Symbol {
     Symbol::Operator(Operator::Mul)
   }
 
-  fn eat_div(&mut self) -> Symbol {
+  fn eat_div() -> Symbol {
     Symbol::Operator(Operator::Div)
   }
 }
@@ -154,10 +154,10 @@ impl<'a> Iterator for Lexer<'a> {
 
     match token.kind() {
       TokenKind::Character(character) => self.symbol_from_character(*character),
-      TokenKind::Word => slice
-        .parse()
-        .map(|number| Some(self.symbol_from_number(number)))
-        .unwrap_or_else(|_| Some(self.symbol_from_word(slice))),
+      TokenKind::Word => slice.parse().map_or_else(
+        |_| Some(Lexer::symbol_from_word(slice)),
+        |number| Some(Lexer::symbol_from_number(number)),
+      ),
     }
   }
 }

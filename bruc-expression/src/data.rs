@@ -44,7 +44,7 @@ impl Display for DataItem {
 impl Hash for DataItem {
   fn hash<H: Hasher>(&self, state: &mut H) {
     match self {
-      DataItem::Bool(value) => state.write_i8(*value as i8),
+      DataItem::Bool(value) => state.write_i8(i8::from(*value)),
       DataItem::Number(value) => state.write(&value.to_be_bytes()),
     };
     state.finish();

@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::iter::FromIterator;
 
 use crate::data::DataValue;
 use crate::spec::mark::base::{
@@ -26,8 +25,8 @@ impl Parser {
     let data_nodes = self.parse_data(specification.data, &mut graph);
     self.parse_marks(
       specification.marks,
-      specification.scales,
-      data_nodes,
+      &specification.scales,
+      &data_nodes,
       &mut graph,
     );
 
@@ -38,13 +37,13 @@ impl Parser {
   /// Return the leave indices of the nodes in the graph, identified by the data specification name.
   fn parse_data(&self, data: Vec<DataEntry>, graph: &mut Graph) -> HashMap<String, usize> {
     data.into_iter().fold(HashMap::new(), |mut acc, entry| {
-      let (identifier, node) = self.parse_data_entry(entry, graph);
+      let (identifier, node) = Parser::parse_data_entry(entry, graph);
       acc.insert(identifier, node);
       acc
     })
   }
 
-  fn parse_data_entry(&self, entry: DataEntry, graph: &mut Graph) -> (String, usize) {
+  fn parse_data_entry(entry: DataEntry, graph: &mut Graph) -> (String, usize) {
     let data_node = graph.add_node(Operator::data(entry.values));
 
     let node = entry.transform.into_iter().fold(data_node, |acc, pipe| {
@@ -59,16 +58,15 @@ impl Parser {
   fn parse_marks(
     &self,
     marks: Vec<Mark>,
-    scales: Vec<Scale>,
-    data_nodes: HashMap<String, usize>,
+    scales: &[Scale],
+    data_nodes: &HashMap<String, usize>,
     graph: &mut Graph,
   ) -> Vec<usize> {
     // Create a map of scales for easy access of the scales when parsing each mark.
-    let scales_map = HashMap::<String, Scale>::from_iter(
-      scales
-        .iter()
-        .map(|scale| (scale.name.clone(), scale.clone())),
-    );
+    let scales_map = scales
+      .iter()
+      .map(|scale| (scale.name.clone(), scale.clone()))
+      .collect::<HashMap<String, Scale>>();
 
     let mut nodes = Vec::with_capacity(marks.len());
     for mark in marks {
@@ -108,7 +106,7 @@ impl Parser {
       .base
       .x
       .as_ref()
-      .map(|x| self.parse_scale(x, X_AXIS_FIELD_NAME, scales, data_node, graph));
+      .map(|x| Parser::parse_scale(x, X_AXIS_FIELD_NAME, scales, data_node, graph));
 
     // Parse scale node for the "y" field
     let y_scale_node = mark
@@ -118,7 +116,7 @@ impl Parser {
       .base
       .y
       .as_ref()
-      .map(|y| self.parse_scale(y, Y_AXIS_FIELD_NAME, scales, data_node, graph));
+      .map(|y| Parser::parse_scale(y, Y_AXIS_FIELD_NAME, scales, data_node, graph));
 
     // Parse scale node for the "width" field
     let width_scale_node = mark
@@ -128,7 +126,7 @@ impl Parser {
       .base
       .width
       .as_ref()
-      .map(|width| self.parse_scale(width, WIDTH_FIELD_NAME, scales, data_node, graph));
+      .map(|width| Parser::parse_scale(width, WIDTH_FIELD_NAME, scales, data_node, graph));
 
     // Parse scale node for the "height" field
     let height_scale_node = mark
@@ -138,7 +136,7 @@ impl Parser {
       .base
       .height
       .as_ref()
-      .map(|height| self.parse_scale(height, HEIGHT_FIELD_NAME, scales, data_node, graph));
+      .map(|height| Parser::parse_scale(height, HEIGHT_FIELD_NAME, scales, data_node, graph));
 
     let node = graph.add_node(Operator::line(mark));
 
@@ -161,7 +159,6 @@ impl Parser {
   /// Parse a scale for a certain mark's data source by creating a new scale node in the graph
   /// and connecting it to the incoming data node.
   fn parse_scale(
-    &self,
     data_source: &DataSource,
     output: &str,
     scales: &HashMap<String, Scale>,

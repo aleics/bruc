@@ -38,7 +38,7 @@ pub struct Graph {
 impl Graph {
   /// Create a new `Graph` instance with no nodes.
   pub fn new() -> Self {
-    Default::default()
+    Graph::default()
   }
 
   /// Add node with connections to existing source nodes
@@ -93,11 +93,10 @@ impl Graph {
     let mut current_degrees = self.degrees.clone();
 
     // Start sorting the graph from the root nodes (no incoming edge).
-    let mut queue = VecDeque::from_iter(
-      current_degrees
-        .iter()
-        .filter_map(|(node, degree)| (*degree == 0).then_some(*node)),
-    );
+    let mut queue = current_degrees
+      .iter()
+      .filter_map(|(node, degree)| (*degree == 0).then_some(*node))
+      .collect::<VecDeque<_>>();
 
     let mut order = Vec::new();
 
@@ -136,7 +135,7 @@ impl Graph {
       .sources
       .keys()
       .filter(|node| !self.targets.contains_key(node))
-      .flat_map(|node| self.nodes.get(*node))
+      .filter_map(|node| self.nodes.get(*node))
       .collect()
   }
 
@@ -145,7 +144,7 @@ impl Graph {
   pub async fn build(&mut self) -> Scenegraph {
     let outputs = self.evaluate().await;
 
-    let items = outputs.into_iter().flat_map(SceneItem::build).collect();
+    let items = outputs.into_iter().filter_map(SceneItem::build).collect();
 
     Scenegraph::new(SceneGroup::with_items(items))
   }
@@ -171,7 +170,7 @@ impl Graph {
 
   /// Evaluate a single node of a given index in the graph.
   async fn evaluate_node(&mut self, index: usize) {
-    let pulse = self.get_pulse(&index).unwrap_or(Pulse::init());
+    let pulse = self.get_pulse(index).unwrap_or(Pulse::init());
 
     // Run the pulse against the node
     let node = self.nodes.get_mut(index).unwrap();
@@ -179,13 +178,13 @@ impl Graph {
   }
 
   /// Find the pulse instance of a given node index by finding the source node's current pulse.
-  fn get_pulse(&self, index: &usize) -> Option<Pulse> {
-    let source_indices = self.sources.get(index)?;
+  fn get_pulse(&self, index: usize) -> Option<Pulse> {
+    let source_indices = self.sources.get(&index)?;
 
     // Collect the pulses from all the source nodes and merge them together into a multi-pulse
     let source_pulses: Vec<Pulse> = source_indices
       .iter()
-      .flat_map(|source_index| self.nodes.get(*source_index))
+      .filter_map(|source_index| self.nodes.get(*source_index))
       .map(|node| node.pulse.clone())
       .collect();
 

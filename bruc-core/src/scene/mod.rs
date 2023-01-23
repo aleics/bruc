@@ -1,5 +1,5 @@
 use crate::graph::node::Node;
-use crate::graph::Pulse;
+use crate::graph::{Pulse, PulseValue};
 
 #[derive(Debug, PartialEq)]
 pub struct Scenegraph {
@@ -32,7 +32,7 @@ impl SceneItem {
       let items = single
         .values
         .iter()
-        .flat_map(|value| value.get_marks())
+        .filter_map(PulseValue::get_marks)
         .cloned()
         .collect();
 
@@ -50,7 +50,7 @@ pub struct SceneGroup {
 
 impl SceneGroup {
   pub fn new() -> Self {
-    Default::default()
+    SceneGroup::default()
   }
 
   pub fn with_items(items: Vec<SceneItem>) -> Self {

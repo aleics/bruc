@@ -25,7 +25,7 @@ fn infix_binding_power(operator: Operator) -> Result<(u8, u8)> {
     | Operator::LessOrEqual => Ok((5, 6)),
     Operator::Sum | Operator::Sub => Ok((7, 8)),
     Operator::Mul | Operator::Div => Ok((9, 10)),
-    _ => Err(Error::Parse(ParseError::BindingPowerMissing)),
+    Operator::Not => Err(Error::Parse(ParseError::BindingPowerMissing)),
   }
 }
 
@@ -49,21 +49,22 @@ impl<'a> Parser<'a> {
     let mut left = self.factor()?;
 
     loop {
-      let infix: Option<(Operator, u8)> = self
-        .lexer
-        .peek()
-        .and_then(|symbol| symbol.operator())
-        .and_then(|operator| {
-          if let Ok((left_bp, right_bp)) = infix_binding_power(operator) {
-            if left_bp < min_binding_power {
-              None
+      let infix: Option<(Operator, u8)> =
+        self
+          .lexer
+          .peek()
+          .and_then(Symbol::operator)
+          .and_then(|operator| {
+            if let Ok((left_bp, right_bp)) = infix_binding_power(operator) {
+              if left_bp < min_binding_power {
+                None
+              } else {
+                Some((operator, right_bp))
+              }
             } else {
-              Some((operator, right_bp))
+              None
             }
-          } else {
-            None
-          }
-        });
+          });
 
       if let Some((operator, bp)) = infix {
         self.lexer.next();
@@ -99,7 +100,7 @@ impl<'a> Parser<'a> {
 
         Ok(Expression::from(Cons::Unary(operator, root)))
       }
-      _ => Err(Error::Parse(ParseError::InvalidExpression)),
+      Symbol::Close => Err(Error::Parse(ParseError::InvalidExpression)),
     }
   }
 }

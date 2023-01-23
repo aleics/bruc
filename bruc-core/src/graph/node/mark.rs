@@ -20,7 +20,7 @@ impl LineOperator {
 
   /// Encode the incoming multi pulse into a single pulse, by collecting all the needed data
   /// into a new single pulse.
-  fn encode(&self, multi: MultiPulse) -> SinglePulse {
+  fn encode(multi: &MultiPulse) -> SinglePulse {
     let mut pulse_pairs: Vec<Vec<(&str, DataItem)>> = Vec::new();
 
     // Iterate through all the multi pulse instances and fold all the data values into
@@ -32,8 +32,8 @@ impl LineOperator {
       let data_values: Vec<Vec<(&str, DataItem)>> = single
         .values
         .iter()
-        .flat_map(|value| value.get_data())
-        .map(|data| data.pairs())
+        .filter_map(|value| value.get_data())
+        .map(DataValue::pairs)
         .collect();
 
       // Store the data values in the collected pulse values
@@ -59,7 +59,7 @@ impl LineOperator {
 
   /// Apply the operator's logic by generating line marks from the incoming already encoded pulse.
   /// values.
-  fn apply(&self, values: &[PulseValue]) -> Vec<PulseValue> {
+  fn apply(values: &[PulseValue]) -> Vec<PulseValue> {
     let mut points = Vec::new();
 
     for value in values {
@@ -68,7 +68,7 @@ impl LineOperator {
         let x = data_value
           .instance
           .get(X_AXIS_FIELD_NAME)
-          .and_then(|item| item.get_number())
+          .and_then(DataItem::get_number)
           .copied()
           .unwrap_or(0.0);
 
@@ -92,11 +92,11 @@ impl LineOperator {
 
 impl Evaluation for LineOperator {
   fn evaluate_single(&self, single: SinglePulse) -> Pulse {
-    Pulse::single(self.apply(&single.values))
+    Pulse::single(LineOperator::apply(&single.values))
   }
 
   fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
-    self.evaluate_single(self.encode(multi))
+    self.evaluate_single(LineOperator::encode(&multi))
   }
 }
 

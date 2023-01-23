@@ -39,10 +39,7 @@ impl Predicate for FilterPredicate {
   type Value = bool;
 
   fn interpret(&self, vars: &DataValue) -> Result<Self::Value, Error> {
-    self
-      .expression
-      .interpret(vars)
-      .map_err(|error| error.into())
+    self.expression.interpret(vars).map_err(Into::into)
   }
 }
 

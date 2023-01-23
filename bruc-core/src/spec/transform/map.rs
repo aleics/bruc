@@ -43,10 +43,7 @@ impl Predicate for MapPredicate {
   type Value = f32;
 
   fn interpret(&self, vars: &DataValue) -> Result<Self::Value, Error> {
-    self
-      .expression
-      .interpret(vars)
-      .map_err(|error| error.into())
+    self.expression.interpret(vars).map_err(Into::into)
   }
 }
 
