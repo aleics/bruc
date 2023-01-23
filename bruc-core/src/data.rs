@@ -39,6 +39,10 @@ impl DataValue {
       .map(|(key, value)| (key.as_str(), *value))
       .collect()
   }
+
+  pub fn get_number(&self, field: &str) -> Option<&f32> {
+    self.instance.get(field).and_then(|item| item.get_number())
+  }
 }
 
 impl DataSource for DataValue {

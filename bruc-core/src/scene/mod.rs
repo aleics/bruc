@@ -3,12 +3,12 @@ use crate::graph::{Pulse, PulseValue};
 
 #[derive(Debug, PartialEq)]
 pub struct Scenegraph {
-  item: SceneGroup,
+  pub(crate) root: SceneGroup,
 }
 
 impl Scenegraph {
-  pub fn new(item: SceneGroup) -> Self {
-    Scenegraph { item }
+  pub fn new(root: SceneGroup) -> Self {
+    Scenegraph { root }
   }
 }
 
@@ -23,8 +23,8 @@ impl SceneItem {
     SceneItem::Group(Box::new(SceneGroup::with_items(items)))
   }
 
-  pub fn line(line: SceneLine) -> Self {
-    SceneItem::Line(Box::new(line))
+  pub fn line(begin: (f32, f32), end: (f32, f32), stroke: &str, stroke_width: f32) -> Self {
+    SceneItem::Line(Box::new(SceneLine::new(begin, end, stroke, stroke_width)))
   }
 
   pub(crate) fn build(node: &Node) -> Option<Self> {
@@ -45,7 +45,7 @@ impl SceneItem {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct SceneGroup {
-  items: Vec<SceneItem>,
+  pub(crate) items: Vec<SceneItem>,
 }
 
 impl SceneGroup {
@@ -66,15 +66,17 @@ impl Default for SceneGroup {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct SceneLine {
-  stroke: String,
-  stroke_width: f32,
-  points: Vec<(f32, f32)>,
+  pub(crate) stroke: String,
+  pub(crate) stroke_width: f32,
+  pub(crate) begin: (f32, f32),
+  pub(crate) end: (f32, f32),
 }
 
 impl SceneLine {
-  pub fn new(points: Vec<(f32, f32)>, stroke: &str, stroke_width: f32) -> Self {
+  pub fn new(begin: (f32, f32), end: (f32, f32), stroke: &str, stroke_width: f32) -> Self {
     SceneLine {
-      points,
+      begin,
+      end,
       stroke: stroke.to_string(),
       stroke_width,
     }

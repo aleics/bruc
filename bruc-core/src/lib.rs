@@ -9,7 +9,7 @@ use crate::spec::Specification;
 pub mod data;
 pub mod graph;
 mod parser;
-mod render;
+pub mod render;
 mod scene;
 pub mod spec;
 
@@ -30,7 +30,7 @@ impl View {
   }
 
   pub fn render<R: Renderer>(self, renderer: R) -> String {
-    renderer.render(self.scene)
+    renderer.render(&self.scene)
   }
 }
 
@@ -38,7 +38,7 @@ impl View {
 mod tests {
   use crate::data::DataValue;
   use crate::render::DebugRenderer;
-  use crate::scene::{SceneGroup, SceneItem, SceneLine, Scenegraph};
+  use crate::scene::{SceneGroup, SceneItem, Scenegraph};
   use crate::spec::data::DataEntry;
   use crate::spec::mark::line::{Interpolate, LineMark, LineMarkProperties};
   use crate::spec::mark::{DataSource, Mark};
@@ -103,11 +103,7 @@ mod tests {
     assert_eq!(
       view,
       View::new(Scenegraph::new(SceneGroup::with_items(vec![
-        SceneItem::group(vec![SceneItem::line(SceneLine::new(
-          vec![(1.0, 0.7), (2.6, 1.5)],
-          "black",
-          1.0
-        ))])
+        SceneItem::group(vec![SceneItem::line((1.0, 0.7), (2.6, 1.5), "black", 1.0)])
       ])))
     );
   }
@@ -123,7 +119,7 @@ mod tests {
     // then
     assert_eq!(
       result,
-      "Scenegraph { item: SceneGroup { items: [Group(SceneGroup { items: [Line(SceneLine { stroke: \"black\", stroke_width: 1.0, points: [(1.0, 0.7), (2.6, 1.5)] })] })] } }"
+      "Scenegraph { root: SceneGroup { items: [Group(SceneGroup { items: [Line(SceneLine { stroke: \"black\", stroke_width: 1.0, begin: (1.0, 0.7), end: (2.6, 1.5) })] })] } }"
     )
   }
 }

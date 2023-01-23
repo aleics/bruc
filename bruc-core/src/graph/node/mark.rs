@@ -1,6 +1,6 @@
 use crate::data::DataValue;
 use crate::graph::{Evaluation, MultiPulse, Pulse, PulseValue, SinglePulse};
-use crate::scene::{SceneItem, SceneLine};
+use crate::scene::SceneItem;
 use crate::spec::mark::base::{X_AXIS_FIELD_NAME, Y_AXIS_FIELD_NAME};
 use crate::spec::mark::line::LineMark;
 use bruc_expression::data::DataItem;
@@ -60,33 +60,48 @@ impl LineOperator {
   /// Apply the operator's logic by generating line marks from the incoming already encoded pulse.
   /// values.
   fn apply(values: &[PulseValue]) -> Vec<PulseValue> {
-    let mut points = Vec::new();
+    let mut lines = Vec::new();
 
-    for value in values {
-      if let PulseValue::Data(data_value) = value {
-        // Read "x" field
-        let x = data_value
-          .instance
-          .get(X_AXIS_FIELD_NAME)
-          .and_then(DataItem::get_number)
-          .copied()
-          .unwrap_or(0.0);
+    // Iterate in chunks of 2 consisting of the begin and end of the line
+    for i in 0..(values.len() - 1) {
+      let begin = values.get(i).and_then(LineOperator::read_point);
+      let end = values.get(i + 1).and_then(LineOperator::read_point);
 
-        // Read "y" field
-        let y = data_value
-          .instance
-          .get(Y_AXIS_FIELD_NAME)
-          .and_then(|item| item.get_number())
-          .copied()
-          .unwrap_or(0.0);
-
-        points.push((x, y));
-      }
+      match (begin, end) {
+        (Some(begin), Some(end)) => {
+          let line = PulseValue::Marks(SceneItem::line(begin, end, "black", 1.0));
+          lines.push(line)
+        }
+        (Some(begin), None) => {
+          let line = PulseValue::Marks(SceneItem::line(begin, begin, "black", 1.0));
+          lines.push(line)
+        }
+        _ => {}
+      };
     }
 
-    vec![PulseValue::Marks(SceneItem::line(SceneLine::new(
-      points, "black", 1.0,
-    )))]
+    lines
+  }
+
+  /// Read a point out of a data pulse value
+  fn read_point(value: &PulseValue) -> Option<(f32, f32)> {
+    if let PulseValue::Data(data_value) = value {
+      // Read "x" field
+      let x = data_value
+        .get_number(X_AXIS_FIELD_NAME)
+        .copied()
+        .unwrap_or(0.0);
+
+      // Read "y" field
+      let y = data_value
+        .get_number(Y_AXIS_FIELD_NAME)
+        .copied()
+        .unwrap_or(0.0);
+
+      return Some((x, y));
+    }
+
+    None
   }
 }
 
@@ -105,7 +120,7 @@ mod tests {
   use crate::data::DataValue;
   use crate::graph::node::mark::LineOperator;
   use crate::graph::{Evaluation, Pulse, PulseValue, SinglePulse};
-  use crate::scene::{SceneItem, SceneLine};
+  use crate::scene::SceneItem;
   use crate::spec::mark::line::{Interpolate, LineMark, LineMarkProperties};
 
   #[tokio::test]
@@ -154,11 +169,11 @@ mod tests {
 
     assert_eq!(
       pulse,
-      Pulse::single(vec![PulseValue::Marks(SceneItem::line(SceneLine::new(
-        vec![(2.0, 1.0), (5.0, 1.0), (10.0, 1.0), (15.0, 1.0)],
-        "black",
-        1.0
-      )))])
+      Pulse::single(vec![
+        PulseValue::Marks(SceneItem::line((2.0, 1.0), (5.0, 1.0), "black", 1.0)),
+        PulseValue::Marks(SceneItem::line((5.0, 1.0), (10.0, 1.0), "black", 1.0)),
+        PulseValue::Marks(SceneItem::line((10.0, 1.0), (15.0, 1.0), "black", 1.0))
+      ])
     );
   }
 }

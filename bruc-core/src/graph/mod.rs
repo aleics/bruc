@@ -326,7 +326,6 @@ impl PulseValue {
 
 #[cfg(test)]
 mod tests {
-  use crate::scene::SceneLine;
   use crate::spec::mark::line::{Interpolate, LineMark, LineMarkProperties};
   use crate::spec::mark::DataSource;
   use crate::spec::scale::domain::Domain;
@@ -403,11 +402,12 @@ mod tests {
     assert_eq!(outputs.len(), 1);
     assert_eq!(
       outputs[0].pulse,
-      Pulse::single(vec![PulseValue::Marks(SceneItem::line(SceneLine::new(
-        vec![(1.0, 0.7), (2.6, 1.5)],
+      Pulse::single(vec![PulseValue::Marks(SceneItem::line(
+        (1.0, 0.7),
+        (2.6, 1.5),
         "black",
         1.0
-      )))])
+      ))])
     );
   }
 
@@ -420,7 +420,7 @@ mod tests {
     assert_eq!(
       scenegraph,
       Scenegraph::new(SceneGroup::with_items(vec![SceneItem::group(vec![
-        SceneItem::line(SceneLine::new(vec![(1.0, 0.7), (2.6, 1.5)], "black", 1.0))
+        SceneItem::line((1.0, 0.7), (2.6, 1.5), "black", 1.0)
       ])]))
     );
   }
