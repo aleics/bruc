@@ -1,9 +1,7 @@
-use crate::data::DataValue;
 use crate::graph::{Evaluation, MultiPulse, Pulse, PulseValue, SinglePulse};
 use crate::scene::SceneItem;
 use crate::spec::mark::base::{X_AXIS_FIELD_NAME, Y_AXIS_FIELD_NAME};
 use crate::spec::mark::line::LineMark;
-use bruc_expression::data::DataItem;
 
 /// `LineOperator` represents an operator of the graph, which generates a `LineMark` instance from
 /// the incoming `Pulse` instance.
@@ -16,45 +14,6 @@ impl LineOperator {
   /// Create a new `LineOperator` instance with a certain line mark.
   pub fn new(mark: LineMark) -> Self {
     LineOperator { mark }
-  }
-
-  /// Encode the incoming multi pulse into a single pulse, by collecting all the needed data
-  /// into a new single pulse.
-  fn encode(multi: &MultiPulse) -> SinglePulse {
-    let mut pulse_pairs: Vec<Vec<(&str, DataItem)>> = Vec::new();
-
-    // Iterate through all the multi pulse instances and fold all the data values into
-    // a new pulse value
-    for i in 0..multi.pulses.len() {
-      let single = multi.pulses.get(i).unwrap();
-
-      // Extract all data values in pairs
-      let data_values: Vec<Vec<(&str, DataItem)>> = single
-        .values
-        .iter()
-        .filter_map(|value| value.get_data())
-        .map(DataValue::pairs)
-        .collect();
-
-      // Store the data values in the collected pulse values
-      if pulse_pairs.is_empty() {
-        pulse_pairs = data_values;
-      } else {
-        for j in 0..data_values.len() {
-          if let Some(pairs) = pulse_pairs.get_mut(j) {
-            pairs.extend(data_values.get(j).unwrap());
-          }
-        }
-      }
-    }
-
-    // Create pulse values from the collected pairs
-    let values = pulse_pairs
-      .into_iter()
-      .map(|pairs| PulseValue::Data(DataValue::from_pairs(pairs)))
-      .collect();
-
-    SinglePulse::new(values)
   }
 
   /// Apply the operator's logic by generating line marks from the incoming already encoded pulse.
@@ -111,7 +70,7 @@ impl Evaluation for LineOperator {
   }
 
   fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
-    self.evaluate_single(LineOperator::encode(&multi))
+    self.evaluate_single(multi.aggregate())
   }
 }
 

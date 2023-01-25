@@ -1,8 +1,9 @@
+use std::collections::{BTreeMap, HashSet, VecDeque};
+use std::iter::FromIterator;
+
 use crate::data::DataValue;
 use crate::graph::node::{Node, Operator};
 use crate::scene::{SceneGroup, SceneItem, Scenegraph};
-use std::collections::{BTreeMap, HashSet, VecDeque};
-use std::iter::FromIterator;
 
 pub mod node;
 
@@ -252,10 +253,11 @@ impl Pulse {
     Pulse::Single(SinglePulse::new(Vec::new()))
   }
 
-  /// Merge a collection of pulses together so that a multi `Pulse` instance is returned merging
-  /// all internal single pulses together
+  /// Merge a collection of pulses together so that if more than one `SinglePulse` is found,
+  /// a `MultiPulse` is created collecting all single pulses. Otherwise, a `SinglePulse` is
+  /// returned.
   pub(crate) fn merge(pulses: Vec<Pulse>) -> Self {
-    let value = pulses
+    let mut single_pulses: Vec<SinglePulse> = pulses
       .into_iter()
       .flat_map(|pulse| match pulse {
         Pulse::Multi(multi) => multi.pulses,
@@ -263,7 +265,14 @@ impl Pulse {
       })
       .collect();
 
-    Pulse::multi(value)
+    if single_pulses.is_empty() {
+      Pulse::single(Vec::new())
+    } else if single_pulses.len() == 1 {
+      let single_pulse = single_pulses.pop().unwrap();
+      Pulse::single(single_pulse.values)
+    } else {
+      Pulse::multi(single_pulses)
+    }
   }
 }
 
@@ -291,6 +300,43 @@ impl MultiPulse {
   /// Create a new `MultiPulse` instance.
   pub fn new(pulses: Vec<SinglePulse>) -> Self {
     MultiPulse { pulses }
+  }
+
+  /// Aggregate the incoming multi pulse into a single pulse, by collecting all the needed data
+  /// into a new single pulse.
+  pub fn aggregate(&self) -> SinglePulse {
+    let mut pulse_pairs = Vec::new();
+
+    // Iterate through all the multi pulse instances and fold all the data values into
+    // a new pulse value
+    for single in &self.pulses {
+      // Extract all data values in pairs
+      let data_values = single
+        .values
+        .iter()
+        .filter_map(|value| value.get_data())
+        .map(DataValue::pairs)
+        .collect();
+
+      // Store the data values in the collected pulse values
+      if pulse_pairs.is_empty() {
+        pulse_pairs = data_values;
+      } else {
+        for j in 0..data_values.len() {
+          if let Some(pairs) = pulse_pairs.get_mut(j) {
+            pairs.extend(data_values.get(j).unwrap());
+          }
+        }
+      }
+    }
+
+    // Create pulse values from the collected pairs
+    let values = pulse_pairs
+      .into_iter()
+      .map(|pairs| PulseValue::Data(DataValue::from_pairs(pairs)))
+      .collect();
+
+    SinglePulse::new(values)
   }
 }
 
