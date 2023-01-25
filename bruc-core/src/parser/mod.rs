@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::data::DataValue;
 use crate::spec::mark::base::{
-  HEIGHT_FIELD_NAME, WIDTH_FIELD_NAME, X_AXIS_FIELD_NAME, Y_AXIS_FIELD_NAME,
+  BaseMarkProperties, HEIGHT_FIELD_NAME, WIDTH_FIELD_NAME, X_AXIS_FIELD_NAME, Y_AXIS_FIELD_NAME,
 };
 use crate::spec::mark::line::LineMark;
 use crate::spec::mark::{DataSource, Mark, MarkKind};
@@ -25,7 +25,7 @@ impl Parser {
     let data_nodes = self.parse_data(specification.data, &mut graph);
     self.parse_marks(
       specification.marks,
-      &specification.scales,
+      specification.scales,
       &data_nodes,
       &mut graph,
     );
@@ -58,14 +58,14 @@ impl Parser {
   fn parse_marks(
     &self,
     marks: Vec<Mark>,
-    scales: &[Scale],
+    scales: Vec<Scale>,
     data_nodes: &HashMap<String, usize>,
     graph: &mut Graph,
   ) -> Vec<usize> {
     // Create a map of scales for easy access of the scales when parsing each mark.
     let scales_map = scales
-      .iter()
-      .map(|scale| (scale.name.clone(), scale.clone()))
+      .into_iter()
+      .map(|scale| (scale.name.clone(), scale))
       .collect::<HashMap<String, Scale>>();
 
     let mut nodes = Vec::with_capacity(marks.len());
@@ -98,62 +98,64 @@ impl Parser {
     data_node: usize,
     graph: &mut Graph,
   ) -> usize {
-    // Parse scale node for the "x" field
-    let x_scale_node = mark
-      .on
-      .update
-      .props
-      .base
-      .x
-      .as_ref()
-      .map(|x| Parser::parse_scale(x, X_AXIS_FIELD_NAME, scales, data_node, graph));
-
-    // Parse scale node for the "y" field
-    let y_scale_node = mark
-      .on
-      .update
-      .props
-      .base
-      .y
-      .as_ref()
-      .map(|y| Parser::parse_scale(y, Y_AXIS_FIELD_NAME, scales, data_node, graph));
-
-    // Parse scale node for the "width" field
-    let width_scale_node = mark
-      .on
-      .update
-      .props
-      .base
-      .width
-      .as_ref()
-      .map(|width| Parser::parse_scale(width, WIDTH_FIELD_NAME, scales, data_node, graph));
-
-    // Parse scale node for the "height" field
-    let height_scale_node = mark
-      .on
-      .update
-      .props
-      .base
-      .height
-      .as_ref()
-      .map(|height| Parser::parse_scale(height, HEIGHT_FIELD_NAME, scales, data_node, graph));
+    let base_scale_nodes =
+      self.parse_mark_base_props(&mark.on.update.props.base, scales, data_node, graph);
 
     let node = graph.add_node(Operator::line(mark));
 
-    if let Some(x) = x_scale_node {
-      graph.add_edge(x, node)
-    }
-    if let Some(y) = y_scale_node {
-      graph.add_edge(y, node)
-    }
-    if let Some(width) = width_scale_node {
-      graph.add_edge(width, node)
-    }
-    if let Some(height) = height_scale_node {
-      graph.add_edge(height, node)
+    for base_scale_node in base_scale_nodes {
+      graph.add_edge(base_scale_node, node)
     }
 
     node
+  }
+
+  fn parse_mark_base_props(
+    &self,
+    base: &BaseMarkProperties,
+    scales: &HashMap<String, Scale>,
+    data_node: usize,
+    graph: &mut Graph,
+  ) -> Vec<usize> {
+    let mut scale_nodes = Vec::new();
+
+    // Parse scale node for the "x" field
+    if let Some(x_scale_node) = base
+      .x
+      .as_ref()
+      .map(|x| Parser::parse_scale(x, X_AXIS_FIELD_NAME, scales, data_node, graph))
+    {
+      scale_nodes.push(x_scale_node);
+    }
+
+    // Parse scale node for the "y" field
+    if let Some(y_scale_node) = base
+      .y
+      .as_ref()
+      .map(|y| Parser::parse_scale(y, Y_AXIS_FIELD_NAME, scales, data_node, graph))
+    {
+      scale_nodes.push(y_scale_node);
+    }
+
+    // Parse scale node for the "width" field
+    if let Some(width_scale_node) = base
+      .width
+      .as_ref()
+      .map(|width| Parser::parse_scale(width, WIDTH_FIELD_NAME, scales, data_node, graph))
+    {
+      scale_nodes.push(width_scale_node);
+    }
+
+    // Parse scale node for the "height" field
+    if let Some(height_scale_node) = base
+      .height
+      .as_ref()
+      .map(|height| Parser::parse_scale(height, HEIGHT_FIELD_NAME, scales, data_node, graph))
+    {
+      scale_nodes.push(height_scale_node);
+    }
+
+    scale_nodes
   }
 
   /// Parse a scale for a certain mark's data source by creating a new scale node in the graph
@@ -191,7 +193,8 @@ impl Parser {
 
 #[cfg(test)]
 mod tests {
-  use super::Parser;
+  use std::collections::{BTreeMap, HashSet};
+
   use crate::graph::node::{Node, Operator};
   use crate::graph::Edge;
   use crate::spec::scale::ScaleKind;
@@ -207,7 +210,8 @@ mod tests {
     spec::transform::{filter::FilterPipe, pipe::Pipe},
     Specification,
   };
-  use std::collections::{BTreeMap, HashSet};
+
+  use super::Parser;
 
   #[test]
   fn parses_simple() {
