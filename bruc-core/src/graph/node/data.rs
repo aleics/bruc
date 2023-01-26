@@ -6,7 +6,7 @@ use crate::{
 
 /// `DataOperator` represents an operator of the graph, which has a list of `DataValue` as source.
 #[derive(Debug, PartialEq)]
-pub struct DataOperator {
+pub(crate) struct DataOperator {
   data: Vec<DataValue>,
 }
 

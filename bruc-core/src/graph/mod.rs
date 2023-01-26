@@ -3,7 +3,7 @@ use std::iter::FromIterator;
 
 use crate::data::DataValue;
 use crate::graph::node::{Node, Operator};
-use crate::scene::{SceneGroup, SceneItem, Scenegraph};
+use crate::scene::SceneItem;
 
 pub mod node;
 
@@ -11,7 +11,7 @@ pub mod node;
 /// in topological order. The graph can be evaluated by passing data from the roots into the leaves,
 /// where a `Pulse` instance is being used to collect the data being passed between nodes.
 #[derive(Debug, Default, PartialEq)]
-pub struct Graph {
+pub(crate) struct Graph {
   /// List of nodes of the graph.
   pub(crate) nodes: Vec<Node>,
 
@@ -38,12 +38,12 @@ pub struct Graph {
 
 impl Graph {
   /// Create a new `Graph` instance with no nodes.
-  pub fn new() -> Self {
+  pub(crate) fn new() -> Self {
     Graph::default()
   }
 
   /// Add node with connections to existing source nodes
-  pub fn add(&mut self, operator: Operator, sources: Vec<usize>) -> usize {
+  pub(crate) fn add(&mut self, operator: Operator, sources: Vec<usize>) -> usize {
     let id = self.add_node(operator);
 
     sources
@@ -140,14 +140,12 @@ impl Graph {
       .collect()
   }
 
-  /// Builds the `Scenegraph` instance by evaluating the full tree once, and building the scene
+  /// Builds the scene items by evaluating the full tree once, and building the scene
   /// items out of the pulse value of the outputs.
-  pub async fn build(&mut self) -> Scenegraph {
+  pub async fn build(&mut self) -> Vec<SceneItem> {
     let outputs = self.evaluate().await;
 
-    let items = outputs.into_iter().filter_map(SceneItem::build).collect();
-
-    Scenegraph::new(SceneGroup::with_items(items))
+    outputs.into_iter().filter_map(SceneItem::build).collect()
   }
 
   /// Evaluates the current graph iterating through all the edges of the graph in topological
@@ -372,6 +370,7 @@ impl PulseValue {
 
 #[cfg(test)]
 mod tests {
+  use crate::graph::node::mark::SceneWindow;
   use crate::spec::mark::line::{Interpolate, LineMark, LineMarkProperties};
   use crate::spec::mark::DataSource;
   use crate::spec::scale::domain::Domain;
@@ -409,7 +408,7 @@ mod tests {
 
     let x_scale = graph.add(
       Operator::linear(
-        LinearScale::new(Domain::Literal(0.0, 100.0), Range::Literal(0.0, 20.0)),
+        LinearScale::new(Domain::Literal(0.0, 20.0), Range::Literal(0.0, 20.0)),
         "a",
         "x",
       ),
@@ -418,7 +417,7 @@ mod tests {
 
     let y_scale = graph.add(
       Operator::linear(
-        LinearScale::new(Domain::Literal(0.0, 100.0), Range::Literal(0.0, 10.0)),
+        LinearScale::new(Domain::Literal(0.0, 20.0), Range::Literal(0.0, 20.0)),
         "b",
         "y",
       ),
@@ -426,13 +425,16 @@ mod tests {
     );
 
     graph.add(
-      Operator::line(LineMark::new(LineMarkProperties::new(
-        Some(DataSource::field("a", Some("horizontal"))),
-        Some(DataSource::field("b", Some("vertical"))),
-        None,
-        None,
-        Interpolate::Linear,
-      ))),
+      Operator::line(
+        LineMark::new(LineMarkProperties::new(
+          Some(DataSource::field("a", Some("horizontal"))),
+          Some(DataSource::field("b", Some("vertical"))),
+          None,
+          None,
+          Interpolate::Linear,
+        )),
+        SceneWindow::new(20, 20),
+      ),
       vec![x_scale, y_scale],
     );
 
@@ -449,8 +451,8 @@ mod tests {
     assert_eq!(
       outputs[0].pulse,
       Pulse::single(vec![PulseValue::Marks(SceneItem::line(
-        (1.0, 0.7),
-        (2.6, 1.5),
+        (5.0, 13.0),
+        (13.0, 5.0),
         "black",
         1.0
       ))])
@@ -461,13 +463,16 @@ mod tests {
   async fn builds_scenegraph() {
     let mut graph = graph();
 
-    let scenegraph = graph.build().await;
+    let scene_items = graph.build().await;
 
     assert_eq!(
-      scenegraph,
-      Scenegraph::new(SceneGroup::with_items(vec![SceneItem::group(vec![
-        SceneItem::line((1.0, 0.7), (2.6, 1.5), "black", 1.0)
-      ])]))
+      scene_items,
+      vec![SceneItem::group(vec![SceneItem::line(
+        (5.0, 13.0),
+        (13.0, 5.0),
+        "black",
+        1.0
+      )])]
     );
   }
 }

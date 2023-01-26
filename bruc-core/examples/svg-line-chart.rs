@@ -5,6 +5,10 @@ use bruc_core::View;
 async fn main() {
   let specification = serde_json::from_str(
     r#"{
+      "dimensions": {
+        "width": 500,
+        "height": 200
+      },
       "data": [
         {
           "name": "primary",
@@ -20,14 +24,14 @@ async fn main() {
         {
           "type": "linear",
           "name": "horizontal",
-          "domain": [0, 10],
-          "range": [0, 100]
+          "domain": [0, 5],
+          "range": [0, 500]
         },
         {
           "type": "linear",
           "name": "vertical",
-          "domain": [0, 100],
-          "range": [0, 100]
+          "domain": [0, 50],
+          "range": [0, 200]
         }
       ],
       "marks": [

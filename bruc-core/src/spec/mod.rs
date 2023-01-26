@@ -10,17 +10,47 @@ pub mod transform;
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 pub struct Specification {
+  #[cfg_attr(feature = "serde", serde(default))]
+  pub(crate) dimensions: Dimensions,
   pub(crate) data: Vec<DataEntry>,
   pub(crate) scales: Vec<Scale>,
   pub(crate) marks: Vec<Mark>,
 }
 
 impl Specification {
-  pub fn new(data: Vec<DataEntry>, scales: Vec<Scale>, marks: Vec<Mark>) -> Self {
+  pub fn new(
+    dimensions: Dimensions,
+    data: Vec<DataEntry>,
+    scales: Vec<Scale>,
+    marks: Vec<Mark>,
+  ) -> Self {
     Specification {
+      dimensions,
       data,
       scales,
       marks,
+    }
+  }
+}
+
+#[derive(Debug, PartialEq, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize))]
+pub struct Dimensions {
+  pub width: usize,
+  pub height: usize,
+}
+
+impl Dimensions {
+  pub fn new(width: usize, height: usize) -> Self {
+    Dimensions { width, height }
+  }
+}
+
+impl Default for Dimensions {
+  fn default() -> Self {
+    Dimensions {
+      width: 500,
+      height: 200,
     }
   }
 }
@@ -37,7 +67,7 @@ mod serde_tests {
   use crate::spec::scale::{Scale, ScaleKind};
   use crate::spec::transform::filter::FilterPipe;
   use crate::spec::transform::pipe::Pipe;
-  use crate::spec::DataEntry;
+  use crate::spec::{DataEntry, Dimensions};
   use crate::Specification;
 
   #[test]
@@ -50,7 +80,10 @@ mod serde_tests {
       }"#,
     )
     .unwrap();
-    assert_eq!(spec, Specification::new(vec![], vec![], vec![]));
+    assert_eq!(
+      spec,
+      Specification::new(Dimensions::default(), vec![], vec![], vec![])
+    );
   }
 
   #[test]
@@ -95,6 +128,7 @@ mod serde_tests {
     assert_eq!(
       spec,
       Specification::new(
+        Dimensions::default(),
         vec![DataEntry::new(
           "primary",
           vec![

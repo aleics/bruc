@@ -1,12 +1,14 @@
 use std::collections::HashMap;
 
 use crate::data::DataValue;
+use crate::graph::node::mark::SceneWindow;
 use crate::spec::mark::base::{
   BaseMarkProperties, HEIGHT_FIELD_NAME, WIDTH_FIELD_NAME, X_AXIS_FIELD_NAME, Y_AXIS_FIELD_NAME,
 };
 use crate::spec::mark::line::LineMark;
 use crate::spec::mark::{DataSource, Mark, MarkKind};
 use crate::spec::scale::Scale;
+use crate::spec::Dimensions;
 use crate::{
   graph::{node::Operator, Graph},
   spec::data::DataEntry,
@@ -20,30 +22,30 @@ pub(crate) struct Parser;
 impl Parser {
   /// Parse a specification instance into a new graph.
   pub(crate) fn parse(&self, specification: Specification) -> Graph {
-    let mut graph = Graph::new();
+    let mark_parser = MarkParser::new(&specification.scales, specification.dimensions);
 
-    let data_nodes = self.parse_data(specification.data, &mut graph);
-    self.parse_marks(
-      specification.marks,
-      specification.scales,
-      &data_nodes,
-      &mut graph,
-    );
+    let mut graph = Graph::new();
+    let data_nodes = DataParser::parse(specification.data, &mut graph);
+    mark_parser.parse_marks(specification.marks, &data_nodes, &mut graph);
 
     graph
   }
+}
 
+struct DataParser;
+
+impl DataParser {
   /// Parse the specification data into the graph by adding data and transform nodes.
   /// Return the leave indices of the nodes in the graph, identified by the data specification name.
-  fn parse_data(&self, data: Vec<DataEntry>, graph: &mut Graph) -> HashMap<String, usize> {
+  fn parse(data: Vec<DataEntry>, graph: &mut Graph) -> HashMap<String, usize> {
     data.into_iter().fold(HashMap::new(), |mut acc, entry| {
-      let (identifier, node) = Parser::parse_data_entry(entry, graph);
+      let (identifier, node) = DataParser::parse_entry(entry, graph);
       acc.insert(identifier, node);
       acc
     })
   }
 
-  fn parse_data_entry(entry: DataEntry, graph: &mut Graph) -> (String, usize) {
+  fn parse_entry(entry: DataEntry, graph: &mut Graph) -> (String, usize) {
     let data_node = graph.add_node(Operator::data(entry.values));
 
     let node = entry.transform.into_iter().fold(data_node, |acc, pipe| {
@@ -52,56 +54,56 @@ impl Parser {
 
     (entry.name, node)
   }
+}
+
+struct MarkParser {
+  scales: HashMap<String, Scale>,
+  dimensions: Dimensions,
+}
+
+impl MarkParser {
+  fn new(scales: &[Scale], dimensions: Dimensions) -> Self {
+    let scales = scales
+      .iter()
+      .map(|scale| (scale.name.clone(), scale.clone()))
+      .collect::<HashMap<String, Scale>>();
+
+    MarkParser { scales, dimensions }
+  }
 
   /// Parse the specification marks into the graph by creating mark and scale nodes, which are
   /// properly connected within each other and the incoming data node.
   fn parse_marks(
     &self,
     marks: Vec<Mark>,
-    scales: Vec<Scale>,
     data_nodes: &HashMap<String, usize>,
     graph: &mut Graph,
   ) -> Vec<usize> {
-    // Create a map of scales for easy access of the scales when parsing each mark.
-    let scales_map = scales
+    marks
       .into_iter()
-      .map(|scale| (scale.name.clone(), scale))
-      .collect::<HashMap<String, Scale>>();
-
-    let mut nodes = Vec::with_capacity(marks.len());
-    for mark in marks {
-      if let Some(data_node) = data_nodes.get(&mark.from) {
-        nodes.push(self.parse_mark(mark, &scales_map, *data_node, graph));
-      }
-    }
-    nodes
+      .filter_map(|mark| {
+        data_nodes
+          .get(&mark.from)
+          .map(|data_node| self.parse_mark(mark, *data_node, graph))
+      })
+      .collect()
   }
 
   /// Parse a single mark by creating the referenced scale nodes and the needed graph edges with
   /// the data node.
-  fn parse_mark(
-    &self,
-    mark: Mark,
-    scales: &HashMap<String, Scale>,
-    data_node: usize,
-    graph: &mut Graph,
-  ) -> usize {
+  fn parse_mark(&self, mark: Mark, data_node: usize, graph: &mut Graph) -> usize {
     match mark.kind {
-      MarkKind::Line(line_mark) => self.parse_line_mark(line_mark, scales, data_node, graph),
+      MarkKind::Line(line_mark) => self.parse_line_mark(line_mark, data_node, graph),
     }
   }
 
-  fn parse_line_mark(
-    &self,
-    mark: LineMark,
-    scales: &HashMap<String, Scale>,
-    data_node: usize,
-    graph: &mut Graph,
-  ) -> usize {
-    let base_scale_nodes =
-      self.parse_mark_base_props(&mark.on.update.props.base, scales, data_node, graph);
+  fn parse_line_mark(&self, mark: LineMark, data_node: usize, graph: &mut Graph) -> usize {
+    let base_scale_nodes = self.parse_mark_base_props(&mark.on.update.props.base, data_node, graph);
 
-    let node = graph.add_node(Operator::line(mark));
+    let node = graph.add_node(Operator::line(
+      mark,
+      SceneWindow::new(self.dimensions.width, self.dimensions.height),
+    ));
 
     for base_scale_node in base_scale_nodes {
       graph.add_edge(base_scale_node, node)
@@ -113,7 +115,6 @@ impl Parser {
   fn parse_mark_base_props(
     &self,
     base: &BaseMarkProperties,
-    scales: &HashMap<String, Scale>,
     data_node: usize,
     graph: &mut Graph,
   ) -> Vec<usize> {
@@ -123,7 +124,7 @@ impl Parser {
     if let Some(x_scale_node) = base
       .x
       .as_ref()
-      .map(|x| Parser::parse_scale(x, X_AXIS_FIELD_NAME, scales, data_node, graph))
+      .map(|x| self.parse_scale(x, X_AXIS_FIELD_NAME, data_node, graph))
     {
       scale_nodes.push(x_scale_node);
     }
@@ -132,7 +133,7 @@ impl Parser {
     if let Some(y_scale_node) = base
       .y
       .as_ref()
-      .map(|y| Parser::parse_scale(y, Y_AXIS_FIELD_NAME, scales, data_node, graph))
+      .map(|y| self.parse_scale(y, Y_AXIS_FIELD_NAME, data_node, graph))
     {
       scale_nodes.push(y_scale_node);
     }
@@ -141,7 +142,7 @@ impl Parser {
     if let Some(width_scale_node) = base
       .width
       .as_ref()
-      .map(|width| Parser::parse_scale(width, WIDTH_FIELD_NAME, scales, data_node, graph))
+      .map(|width| self.parse_scale(width, WIDTH_FIELD_NAME, data_node, graph))
     {
       scale_nodes.push(width_scale_node);
     }
@@ -150,7 +151,7 @@ impl Parser {
     if let Some(height_scale_node) = base
       .height
       .as_ref()
-      .map(|height| Parser::parse_scale(height, HEIGHT_FIELD_NAME, scales, data_node, graph))
+      .map(|height| self.parse_scale(height, HEIGHT_FIELD_NAME, data_node, graph))
     {
       scale_nodes.push(height_scale_node);
     }
@@ -161,9 +162,9 @@ impl Parser {
   /// Parse a scale for a certain mark's data source by creating a new scale node in the graph
   /// and connecting it to the incoming data node.
   fn parse_scale(
+    &self,
     data_source: &DataSource,
     output: &str,
-    scales: &HashMap<String, Scale>,
     data_node: usize,
     graph: &mut Graph,
   ) -> usize {
@@ -172,7 +173,7 @@ impl Parser {
       DataSource::FieldSource { field, scale } => {
         let operator = scale
           .as_ref()
-          .and_then(|scale_name| scales.get(scale_name))
+          .and_then(|scale_name| self.scales.get(scale_name))
           .cloned()
           .map(|scale| Operator::scale(scale, field, output))
           // If no scale is defined, then we copy the field's value in the output field.
@@ -195,10 +196,12 @@ impl Parser {
 mod tests {
   use std::collections::{BTreeMap, HashSet};
 
+  use crate::graph::node::mark::SceneWindow;
   use crate::graph::node::{Node, Operator};
   use crate::graph::Edge;
   use crate::spec::scale::ScaleKind;
   use crate::spec::transform::map::MapPipe;
+  use crate::spec::Dimensions;
   use crate::{
     data::DataValue,
     spec::data::DataEntry,
@@ -216,8 +219,9 @@ mod tests {
   #[test]
   fn parses_simple() {
     // given
-    let spec: Specification = Specification {
-      data: vec![DataEntry::new(
+    let spec: Specification = Specification::new(
+      Dimensions::default(),
+      vec![DataEntry::new(
         "primary",
         vec![
           DataValue::from_pairs(vec![("a", 10.0.into())]),
@@ -228,7 +232,7 @@ mod tests {
           Pipe::Filter(FilterPipe::new("b > 2").unwrap()),
         ],
       )],
-      scales: vec![
+      vec![
         Scale::new(
           "horizontal",
           ScaleKind::Linear(LinearScale::new(
@@ -244,7 +248,7 @@ mod tests {
           )),
         ),
       ],
-      marks: vec![Mark::line(
+      vec![Mark::line(
         "primary",
         LineMark::new(LineMarkProperties::new(
           Some(DataSource::field("a", Some("horizontal"))),
@@ -254,7 +258,7 @@ mod tests {
           Interpolate::Linear,
         )),
       )],
-    };
+    );
     let parser = Parser;
 
     // when
@@ -280,13 +284,16 @@ mod tests {
           "b",
           "y"
         )),
-        Node::init(Operator::line(LineMark::new(LineMarkProperties::new(
-          Some(DataSource::field("a", Some("horizontal"))),
-          Some(DataSource::field("b", Some("vertical"))),
-          None,
-          None,
-          Interpolate::Linear,
-        ))))
+        Node::init(Operator::line(
+          LineMark::new(LineMarkProperties::new(
+            Some(DataSource::field("a", Some("horizontal"))),
+            Some(DataSource::field("b", Some("vertical"))),
+            None,
+            None,
+            Interpolate::Linear,
+          )),
+          SceneWindow::new(500, 200),
+        ))
       ]
     );
     assert_eq!(

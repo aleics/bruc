@@ -1,4 +1,4 @@
-use crate::graph::node::mark::LineOperator;
+use crate::graph::node::mark::{LineOperator, SceneWindow};
 use crate::graph::node::scale::{IdentityOperator, LinearOperator};
 use crate::spec::mark::line::LineMark;
 use crate::spec::scale::linear::LinearScale;
@@ -43,7 +43,7 @@ impl Node {
 
 /// `Operator` collects all possible operators that can be used in a graph `Node`.
 #[derive(Debug, PartialEq)]
-pub enum Operator {
+pub(crate) enum Operator {
   Data(DataOperator),
   Map(MapOperator),
   Filter(FilterOperator),
@@ -92,8 +92,8 @@ impl Operator {
   }
 
   /// Create a new line `Operator` instance.
-  pub(crate) fn line(mark: LineMark) -> Self {
-    Operator::Line(LineOperator::new(mark))
+  pub(crate) fn line(mark: LineMark, window: SceneWindow) -> Self {
+    Operator::Line(LineOperator::new(mark, window))
   }
 
   /// Create a new identity `Operator` instance.

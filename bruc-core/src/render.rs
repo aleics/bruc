@@ -1,4 +1,4 @@
-use crate::scene::{SceneGroup, SceneItem, SceneLine, Scenegraph};
+use crate::scene::{SceneGroup, SceneItem, SceneLine, SceneRoot, Scenegraph};
 
 pub trait Renderer {
   fn render(&self, scene: &Scenegraph) -> String;
@@ -15,6 +15,15 @@ impl Renderer for DebugRenderer {
 pub struct SvgRenderer;
 
 impl SvgRenderer {
+  fn render_root(root: &SceneRoot) -> String {
+    let width = root.width;
+    let height = root.height;
+    let content = root.items.iter().fold(String::new(), |acc, item| {
+      acc + &SvgRenderer::render_item(item)
+    });
+    format!("<svg width=\"{width}\" height=\"{height}\">{content}</svg>")
+  }
+
   fn render_group(group: &SceneGroup) -> String {
     let content = group.items.iter().fold(String::new(), |acc, item| {
       acc + &SvgRenderer::render_item(item)
@@ -43,31 +52,29 @@ impl SvgRenderer {
 
 impl Renderer for SvgRenderer {
   fn render(&self, scene: &Scenegraph) -> String {
-    let root = SvgRenderer::render_group(&scene.root);
-    format!("<svg>{root}</svg>")
+    SvgRenderer::render_root(&scene.root)
   }
 }
 
 #[cfg(test)]
 mod tests {
   use crate::render::{Renderer, SvgRenderer};
-  use crate::scene::{SceneGroup, SceneItem, Scenegraph};
+  use crate::scene::{SceneItem, SceneRoot, Scenegraph};
 
   #[test]
   fn render_svg_line() {
-    let scenegraph = Scenegraph::new(SceneGroup::with_items(vec![SceneItem::line(
-      (0.0, 10.0),
-      (1.0, 20.0),
-      "black",
-      1.0,
-    )]));
+    let scenegraph = Scenegraph::new(SceneRoot::new(
+      vec![SceneItem::line((0.0, 10.0), (1.0, 20.0), "black", 1.0)],
+      500,
+      200,
+    ));
 
     let renderer = SvgRenderer;
     let result = renderer.render(&scenegraph);
 
     assert_eq!(
       result,
-      "<svg><g><line x1=\"0\" y1=\"10\" x2=\"1\" y2=\"20\" stroke=\"black\" stroke-width=\"1\"></line></g></svg>"
+      "<svg width=\"500\" height=\"200\"><line x1=\"0\" y1=\"10\" x2=\"1\" y2=\"20\" stroke=\"black\" stroke-width=\"1\"></line></svg>"
     )
   }
 }

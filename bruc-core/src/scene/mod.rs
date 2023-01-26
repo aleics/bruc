@@ -3,12 +3,29 @@ use crate::graph::{Pulse, PulseValue};
 
 #[derive(Debug, PartialEq)]
 pub struct Scenegraph {
-  pub(crate) root: SceneGroup,
+  pub(crate) root: SceneRoot,
 }
 
 impl Scenegraph {
-  pub fn new(root: SceneGroup) -> Self {
+  pub fn new(root: SceneRoot) -> Self {
     Scenegraph { root }
+  }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct SceneRoot {
+  pub(crate) items: Vec<SceneItem>,
+  pub(crate) width: usize,
+  pub(crate) height: usize,
+}
+
+impl SceneRoot {
+  pub fn new(items: Vec<SceneItem>, width: usize, height: usize) -> Self {
+    SceneRoot {
+      items,
+      width,
+      height,
+    }
   }
 }
 

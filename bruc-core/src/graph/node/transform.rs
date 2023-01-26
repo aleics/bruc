@@ -15,7 +15,7 @@ use crate::{
 
 /// `MapOperator` represents an operator of the graph, which maps data values by a given map pipe.
 #[derive(Debug, PartialEq)]
-pub struct MapOperator {
+pub(crate) struct MapOperator {
   pipe: MapPipe,
 }
 

@@ -3,7 +3,7 @@
 
 use crate::parser::Parser;
 use crate::render::Renderer;
-use crate::scene::Scenegraph;
+use crate::scene::{SceneRoot, Scenegraph};
 use crate::spec::Specification;
 
 pub mod data;
@@ -24,9 +24,13 @@ impl View {
   }
 
   pub async fn build(spec: Specification) -> View {
-    let scene = Parser.parse(spec).build().await;
+    let width = spec.dimensions.width;
+    let height = spec.dimensions.height;
+    let items = Parser.parse(spec).build().await;
 
-    View::new(scene)
+    let scenegraph = Scenegraph::new(SceneRoot::new(items, width, height));
+
+    View::new(scenegraph)
   }
 
   pub fn render<R: Renderer>(self, renderer: R) -> String {
@@ -38,7 +42,7 @@ impl View {
 mod tests {
   use crate::data::DataValue;
   use crate::render::DebugRenderer;
-  use crate::scene::{SceneGroup, SceneItem, Scenegraph};
+  use crate::scene::{SceneItem, SceneRoot, Scenegraph};
   use crate::spec::data::DataEntry;
   use crate::spec::mark::line::{Interpolate, LineMark, LineMarkProperties};
   use crate::spec::mark::{DataSource, Mark};
@@ -49,12 +53,13 @@ mod tests {
   use crate::spec::transform::filter::FilterPipe;
   use crate::spec::transform::map::MapPipe;
   use crate::spec::transform::pipe::Pipe;
-  use crate::spec::Specification;
+  use crate::spec::{Dimensions, Specification};
   use crate::View;
 
   fn specification() -> Specification {
-    Specification {
-      data: vec![DataEntry::new(
+    Specification::new(
+      Dimensions::new(40, 20),
+      vec![DataEntry::new(
         "primary",
         vec![
           DataValue::from_pairs(vec![("a", 5.0.into())]),
@@ -65,23 +70,23 @@ mod tests {
           Pipe::Filter(FilterPipe::new("b > 2").unwrap()),
         ],
       )],
-      scales: vec![
+      vec![
         Scale::new(
           "horizontal",
           ScaleKind::Linear(LinearScale::new(
-            Domain::Literal(0.0, 100.0),
-            Range::Literal(0.0, 20.0),
+            Domain::Literal(0.0, 20.0),
+            Range::Literal(0.0, 40.0),
           )),
         ),
         Scale::new(
           "vertical",
           ScaleKind::Linear(LinearScale::new(
-            Domain::Literal(0.0, 100.0),
-            Range::Literal(0.0, 10.0),
+            Domain::Literal(0.0, 20.0),
+            Range::Literal(0.0, 20.0),
           )),
         ),
       ],
-      marks: vec![Mark::line(
+      vec![Mark::line(
         "primary",
         LineMark::new(LineMarkProperties::new(
           Some(DataSource::field("a", Some("horizontal"))),
@@ -91,7 +96,7 @@ mod tests {
           Interpolate::Linear,
         )),
       )],
-    }
+    )
   }
 
   #[tokio::test]
@@ -102,9 +107,16 @@ mod tests {
     // then
     assert_eq!(
       view,
-      View::new(Scenegraph::new(SceneGroup::with_items(vec![
-        SceneItem::group(vec![SceneItem::line((1.0, 0.7), (2.6, 1.5), "black", 1.0)])
-      ])))
+      View::new(Scenegraph::new(SceneRoot::new(
+        vec![SceneItem::group(vec![SceneItem::line(
+          (10.0, 13.0),
+          (26.0, 5.0),
+          "black",
+          1.0
+        )])],
+        40,
+        20
+      )))
     );
   }
 
@@ -119,7 +131,7 @@ mod tests {
     // then
     assert_eq!(
       result,
-      "Scenegraph { root: SceneGroup { items: [Group(SceneGroup { items: [Line(SceneLine { stroke: \"black\", stroke_width: 1.0, begin: (1.0, 0.7), end: (2.6, 1.5) })] })] } }"
+      "Scenegraph { root: SceneRoot { items: [Group(SceneGroup { items: [Line(SceneLine { stroke: \"black\", stroke_width: 1.0, begin: (10.0, 13.0), end: (26.0, 5.0) })] })], width: 40, height: 20 } }"
     )
   }
 }
