@@ -289,17 +289,17 @@ mod tests {
 
   #[test]
   fn interprets_not_boolean_literals() {
-    let expression = Expression::from(unary(Expression::from(true), Operator::Not));
+    let expression = unary(Expression::from(true), Operator::Not);
 
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, false);
 
-    let expression = Expression::from(unary(Expression::from(false), Operator::Not));
+    let expression = unary(Expression::from(false), Operator::Not);
 
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, true);
 
-    let expression = Expression::from(unary(Expression::from("a"), Operator::Not));
+    let expression = unary(Expression::from("a"), Operator::Not);
 
     let result: bool = expression
       .interpret(&Variables::from_pairs(vec![("a", true.into())]))
@@ -309,17 +309,11 @@ mod tests {
 
   #[test]
   fn interprets_not_unary_boolean_expressions() {
-    let expression = Expression::from(unary(
-      Expression::from(unary(Expression::from(false), Operator::Not)),
-      Operator::Not,
-    ));
+    let expression = unary(unary(Expression::from(false), Operator::Not), Operator::Not);
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, false);
 
-    let expression = Expression::from(unary(
-      Expression::from(unary(Expression::from("a"), Operator::Not)),
-      Operator::Not,
-    ));
+    let expression = unary(unary(Expression::from("a"), Operator::Not), Operator::Not);
     let result: bool = expression
       .interpret(&Variables::from_pairs(vec![("a", true.into())]))
       .unwrap();
@@ -328,57 +322,53 @@ mod tests {
 
   #[test]
   fn interprets_not_binary_boolean_expressions() {
-    let expression = Expression::from(unary(
-      Expression::from(binary(
+    let expression = unary(
+      binary(
         Expression::from(true),
         Operator::And,
         Expression::from(true),
-      )),
+      ),
       Operator::Not,
-    ));
+    );
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, false);
   }
 
   #[test]
   fn interprets_binary_and_boolean_expressions() {
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from(true),
       Operator::And,
       Expression::from(true),
-    ));
+    );
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, true);
 
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from(true),
       Operator::And,
       Expression::from(false),
-    ));
+    );
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, false);
 
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from(false),
       Operator::And,
       Expression::from(true),
-    ));
+    );
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, false);
 
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from(false),
       Operator::And,
       Expression::from(false),
-    ));
+    );
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, false);
 
-    let expression = Expression::from(binary(
-      Expression::from("a"),
-      Operator::And,
-      Expression::from("b"),
-    ));
+    let expression = binary(Expression::from("a"), Operator::And, Expression::from("b"));
     let result: bool = expression
       .interpret(&Variables::from_pairs(vec![
         ("a", true.into()),
@@ -390,43 +380,35 @@ mod tests {
 
   #[test]
   fn interprets_binary_or_boolean_expressions() {
-    let expression = Expression::from(binary(
-      Expression::from(true),
-      Operator::Or,
-      Expression::from(true),
-    ));
+    let expression = binary(Expression::from(true), Operator::Or, Expression::from(true));
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, true);
 
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from(true),
       Operator::Or,
       Expression::from(false),
-    ));
+    );
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, true);
 
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from(false),
       Operator::Or,
       Expression::from(true),
-    ));
+    );
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, true);
 
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from(false),
       Operator::Or,
       Expression::from(false),
-    ));
+    );
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, false);
 
-    let expression = Expression::from(binary(
-      Expression::from("a"),
-      Operator::Or,
-      Expression::from("b"),
-    ));
+    let expression = binary(Expression::from("a"), Operator::Or, Expression::from("b"));
     let result: bool = expression
       .interpret(&Variables::from_pairs(vec![
         ("a", true.into()),
@@ -438,43 +420,43 @@ mod tests {
 
   #[test]
   fn interprets_binary_eq_boolean_expressions() {
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from(true),
       Operator::Equal,
       Expression::from(true),
-    ));
+    );
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, true);
 
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from(true),
       Operator::Equal,
       Expression::from(false),
-    ));
+    );
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, false);
 
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from(false),
       Operator::Equal,
       Expression::from(true),
-    ));
+    );
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, false);
 
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from(false),
       Operator::Equal,
       Expression::from(false),
-    ));
+    );
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, true);
 
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from("a"),
       Operator::Equal,
       Expression::from("b"),
-    ));
+    );
     let result: bool = expression
       .interpret(&Variables::from_pairs(vec![
         ("a", true.into()),
@@ -486,43 +468,43 @@ mod tests {
 
   #[test]
   fn interprets_binary_neq_boolean_expressions() {
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from(true),
       Operator::NotEqual,
       Expression::from(true),
-    ));
+    );
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, false);
 
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from(true),
       Operator::NotEqual,
       Expression::from(false),
-    ));
+    );
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, true);
 
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from(false),
       Operator::NotEqual,
       Expression::from(true),
-    ));
+    );
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, true);
 
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from(false),
       Operator::NotEqual,
       Expression::from(false),
-    ));
+    );
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, false);
 
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from("a"),
       Operator::NotEqual,
       Expression::from("b"),
-    ));
+    );
     let result: bool = expression
       .interpret(&Variables::from_pairs(vec![
         ("a", true.into()),
@@ -534,44 +516,44 @@ mod tests {
 
   #[test]
   fn doesn_interpret_gt_boolean_expressions() {
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from(false),
       Operator::Greater,
       Expression::from(false),
-    ));
+    );
     let result: Result<bool> = expression.interpret(&Variables::new());
     assert_eq!(result.is_err(), true);
   }
 
   #[test]
   fn doesn_interpret_ge_boolean_expressions() {
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from(false),
       Operator::GreaterOrEqual,
       Expression::from(false),
-    ));
+    );
     let result: Result<bool> = expression.interpret(&Variables::new());
     assert_eq!(result.is_err(), true);
   }
 
   #[test]
   fn doesn_interpret_lt_boolean_expressions() {
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from(false),
       Operator::Less,
       Expression::from(false),
-    ));
+    );
     let result: Result<bool> = expression.interpret(&Variables::new());
     assert_eq!(result.is_err(), true);
   }
 
   #[test]
   fn doesn_interpret_le_boolean_expressions() {
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from(false),
       Operator::LessOrEqual,
       Expression::from(false),
-    ));
+    );
     let result: Result<bool> = expression.interpret(&Variables::new());
     assert_eq!(result.is_err(), true);
   }
@@ -604,35 +586,35 @@ mod tests {
 
   #[test]
   fn interprets_binary_gt_numeric_expressions() {
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from(3.0),
       Operator::Greater,
       Expression::from(2.0),
-    ));
+    );
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, true);
 
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from(2.0),
       Operator::Greater,
       Expression::from(2.0),
-    ));
+    );
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, false);
 
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from(1.0),
       Operator::Greater,
       Expression::from(2.0),
-    ));
+    );
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, false);
 
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from("a"),
       Operator::Greater,
       Expression::from("b"),
-    ));
+    );
     let result: bool = expression
       .interpret(&Variables::from_pairs(vec![
         ("a", 3.0.into()),
@@ -644,35 +626,35 @@ mod tests {
 
   #[test]
   fn interprets_binary_ge_numeric_expressions() {
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from(3.0),
       Operator::GreaterOrEqual,
       Expression::from(2.0),
-    ));
+    );
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, true);
 
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from(2.0),
       Operator::GreaterOrEqual,
       Expression::from(2.0),
-    ));
+    );
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, true);
 
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from(1.0),
       Operator::GreaterOrEqual,
       Expression::from(2.0),
-    ));
+    );
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, false);
 
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from("a"),
       Operator::GreaterOrEqual,
       Expression::from("b"),
-    ));
+    );
     let result: bool = expression
       .interpret(&Variables::from_pairs(vec![
         ("a", 3.0.into()),
@@ -684,35 +666,19 @@ mod tests {
 
   #[test]
   fn interprets_binary_lt_numeric_expressions() {
-    let expression = Expression::from(binary(
-      Expression::from(3.0),
-      Operator::Less,
-      Expression::from(2.0),
-    ));
+    let expression = binary(Expression::from(3.0), Operator::Less, Expression::from(2.0));
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, false);
 
-    let expression = Expression::from(binary(
-      Expression::from(2.0),
-      Operator::Less,
-      Expression::from(2.0),
-    ));
+    let expression = binary(Expression::from(2.0), Operator::Less, Expression::from(2.0));
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, false);
 
-    let expression = Expression::from(binary(
-      Expression::from(1.0),
-      Operator::Less,
-      Expression::from(2.0),
-    ));
+    let expression = binary(Expression::from(1.0), Operator::Less, Expression::from(2.0));
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, true);
 
-    let expression = Expression::from(binary(
-      Expression::from("a"),
-      Operator::Less,
-      Expression::from("b"),
-    ));
+    let expression = binary(Expression::from("a"), Operator::Less, Expression::from("b"));
     let result: bool = expression
       .interpret(&Variables::from_pairs(vec![
         ("a", 3.0.into()),
@@ -724,35 +690,35 @@ mod tests {
 
   #[test]
   fn interprets_binary_le_numeric_expressions() {
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from(3.0),
       Operator::LessOrEqual,
       Expression::from(2.0),
-    ));
+    );
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, false);
 
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from(2.0),
       Operator::LessOrEqual,
       Expression::from(2.0),
-    ));
+    );
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, true);
 
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from(1.0),
       Operator::LessOrEqual,
       Expression::from(2.0),
-    ));
+    );
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, true);
 
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from("a"),
       Operator::LessOrEqual,
       Expression::from("b"),
-    ));
+    );
     let result: bool = expression
       .interpret(&Variables::from_pairs(vec![
         ("a", 3.0.into()),
@@ -764,35 +730,35 @@ mod tests {
 
   #[test]
   fn interprets_binary_eq_numeric_expressions() {
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from(3.0),
       Operator::Equal,
       Expression::from(2.0),
-    ));
+    );
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, false);
 
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from(2.0),
       Operator::Equal,
       Expression::from(2.0),
-    ));
+    );
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, true);
 
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from(1.0),
       Operator::Equal,
       Expression::from(2.0),
-    ));
+    );
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, false);
 
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from("a"),
       Operator::Equal,
       Expression::from("b"),
-    ));
+    );
     let result: bool = expression
       .interpret(&Variables::from_pairs(vec![
         ("a", 3.0.into()),
@@ -804,35 +770,35 @@ mod tests {
 
   #[test]
   fn interprets_binary_neq_numeric_expressions() {
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from(3.0),
       Operator::NotEqual,
       Expression::from(2.0),
-    ));
+    );
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, true);
 
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from(2.0),
       Operator::NotEqual,
       Expression::from(2.0),
-    ));
+    );
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, false);
 
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from(1.0),
       Operator::NotEqual,
       Expression::from(2.0),
-    ));
+    );
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, true);
 
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from("a"),
       Operator::NotEqual,
       Expression::from("b"),
-    ));
+    );
     let result: bool = expression
       .interpret(&Variables::from_pairs(vec![
         ("a", 3.0.into()),
@@ -844,60 +810,60 @@ mod tests {
 
   #[test]
   fn interprets_multiple_binary_boolean_expressions() {
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from(true),
       Operator::And,
-      Expression::from(binary(
+      binary(
         Expression::from(false),
         Operator::Or,
         Expression::from(true),
-      )),
-    ));
+      ),
+    );
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, true);
 
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from(true),
       Operator::And,
-      Expression::from(binary(
+      binary(
         Expression::from(false),
         Operator::Or,
         Expression::from(false),
-      )),
-    ));
+      ),
+    );
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, false);
 
-    let expression = Expression::from(binary(
-      Expression::from(binary(
+    let expression = binary(
+      binary(
         Expression::from(true),
         Operator::And,
         Expression::from(false),
-      )),
+      ),
       Operator::Or,
-      Expression::from(binary(
+      binary(
         Expression::from(true),
         Operator::And,
         Expression::from(false),
-      )),
-    ));
+      ),
+    );
 
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, false);
 
-    let expression = Expression::from(binary(
-      Expression::from(binary(
+    let expression = binary(
+      binary(
         Expression::from(true),
         Operator::And,
         Expression::from(false),
-      )),
+      ),
       Operator::Or,
-      Expression::from(binary(
+      binary(
         Expression::from(false),
         Operator::Or,
         Expression::from(true),
-      )),
-    ));
+      ),
+    );
 
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, true);
@@ -905,70 +871,62 @@ mod tests {
 
   #[test]
   fn interprets_multiple_binary_numeric_expressions() {
-    let expression = Expression::from(binary(
-      Expression::from(binary(
+    let expression = binary(
+      binary(
         Expression::from(3.0),
         Operator::Greater,
         Expression::from(1.0),
-      )),
+      ),
       Operator::And,
-      Expression::from(binary(
-        Expression::from(3.0),
-        Operator::Less,
-        Expression::from(1.0),
-      )),
-    ));
+      binary(Expression::from(3.0), Operator::Less, Expression::from(1.0)),
+    );
 
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, false);
 
-    let expression = Expression::from(binary(
-      Expression::from(binary(
+    let expression = binary(
+      binary(
         Expression::from(3.0),
         Operator::Equal,
         Expression::from(1.0),
-      )),
+      ),
       Operator::Or,
-      Expression::from(binary(
+      binary(
         Expression::from(2.0),
         Operator::GreaterOrEqual,
         Expression::from(2.0),
-      )),
-    ));
+      ),
+    );
 
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, true);
 
-    let expression = Expression::from(binary(
-      Expression::from(binary(
+    let expression = binary(
+      binary(
         Expression::from(3.0),
         Operator::Greater,
         Expression::from(1.0),
-      )),
+      ),
       Operator::And,
-      Expression::from(binary(
-        Expression::from(3.0),
-        Operator::Less,
-        Expression::from(1.0),
-      )),
-    ));
+      binary(Expression::from(3.0), Operator::Less, Expression::from(1.0)),
+    );
 
     let result: bool = expression.interpret(&Variables::new()).unwrap();
     assert_eq!(result, false);
 
-    let expression = Expression::from(binary(
-      Expression::from(binary(
+    let expression = binary(
+      binary(
         Expression::from("a"),
         Operator::Equal,
         Expression::from(1.0),
-      )),
+      ),
       Operator::Or,
-      Expression::from(binary(
+      binary(
         Expression::from(2.0),
         Operator::GreaterOrEqual,
         Expression::from("a"),
-      )),
-    ));
+      ),
+    );
 
     let result: bool = expression
       .interpret(&Variables::from_pairs(vec![("a", 2.0.into())]))
@@ -978,15 +936,15 @@ mod tests {
 
   #[test]
   fn interprets_multiple_binary_mixed_expressions() {
-    let expression = Expression::from(binary(
+    let expression = binary(
       Expression::from("a"),
       Operator::And,
-      Expression::from(binary(
+      binary(
         Expression::from("b"),
         Operator::Greater,
         Expression::from(3.0),
-      )),
-    ));
+      ),
+    );
     let result: bool = expression
       .interpret(&Variables::from_pairs(vec![
         ("a", true.into()),
@@ -995,15 +953,15 @@ mod tests {
       .unwrap();
     assert_eq!(result, false);
 
-    let expression = Expression::from(binary(
-      Expression::from(binary(
+    let expression = binary(
+      binary(
         Expression::from("b"),
         Operator::Greater,
         Expression::from(3.0),
-      )),
+      ),
       Operator::Or,
       Expression::from("a"),
-    ));
+    );
     let result: bool = expression
       .interpret(&Variables::from_pairs(vec![
         ("a", true.into()),
@@ -1012,15 +970,15 @@ mod tests {
       .unwrap();
     assert_eq!(result, true);
 
-    let expression = Expression::from(binary(
-      Expression::from(binary(
+    let expression = binary(
+      binary(
         Expression::from("a"),
         Operator::Greater,
         Expression::from(3.0),
-      )),
+      ),
       Operator::And,
-      Expression::from(unary(Expression::from("b"), Operator::Not)),
-    ));
+      unary(Expression::from("b"), Operator::Not),
+    );
     let result: bool = expression
       .interpret(&Variables::from_pairs(vec![
         ("a", 4.0.into()),
