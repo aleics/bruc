@@ -1,14 +1,69 @@
 use crate::spec::mark::base::{BaseMarkProperties, Phases};
 use crate::spec::mark::DataSource;
+use bruc_expression::data::DataItem;
+
+pub(crate) struct LinePropertiesBuilder {
+  x: Option<DataSource>,
+  y: Option<DataSource>,
+  interpolate: Interpolate,
+  stroke: Option<DataItem>,
+  stroke_width: Option<DataItem>,
+}
+
+impl LinePropertiesBuilder {
+  pub(crate) fn new() -> Self {
+    LinePropertiesBuilder {
+      x: None,
+      y: None,
+      interpolate: Interpolate::default(),
+      stroke: None,
+      stroke_width: None,
+    }
+  }
+
+  pub(crate) fn with_x(mut self, x: DataSource) -> Self {
+    self.x = Some(x);
+    self
+  }
+
+  pub(crate) fn with_y(mut self, y: DataSource) -> Self {
+    self.y = Some(y);
+    self
+  }
+
+  pub(crate) fn with_interpolate(mut self, interpolate: Interpolate) -> Self {
+    self.interpolate = interpolate;
+    self
+  }
+
+  pub(crate) fn with_stroke(mut self, stroke: DataItem) -> Self {
+    self.stroke = Some(stroke);
+    self
+  }
+
+  pub(crate) fn with_stroke_width(mut self, stroke_width: f32) -> Self {
+    self.stroke_width = Some(stroke_width.into());
+    self
+  }
+
+  pub(crate) fn build(self) -> LineProperties {
+    LineProperties {
+      base: BaseMarkProperties::new(self.x, self.y, None, None),
+      interpolate: self.interpolate,
+      stroke: self.stroke,
+      stroke_width: self.stroke_width,
+    }
+  }
+}
 
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 pub struct LineMark {
-  pub(crate) on: Phases<LineMarkProperties>,
+  pub(crate) on: Phases<LineProperties>,
 }
 
 impl LineMark {
-  pub fn new(props: LineMarkProperties) -> LineMark {
+  pub(crate) fn new(props: LineProperties) -> LineMark {
     LineMark {
       on: Phases::new(props),
     }
@@ -16,28 +71,18 @@ impl LineMark {
 }
 
 #[derive(Debug, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Deserialize))]
-pub struct LineMarkProperties {
+#[cfg_attr(
+  feature = "serde",
+  derive(serde::Deserialize),
+  serde(rename_all = "camelCase")
+)]
+pub(crate) struct LineProperties {
   #[cfg_attr(feature = "serde", serde(default))]
   pub(crate) interpolate: Interpolate,
-
+  pub(crate) stroke: Option<DataItem>,
+  pub(crate) stroke_width: Option<DataItem>,
   #[cfg_attr(feature = "serde", serde(flatten))]
   pub(crate) base: BaseMarkProperties,
-}
-
-impl LineMarkProperties {
-  pub fn new(
-    x: Option<DataSource>,
-    y: Option<DataSource>,
-    width: Option<DataSource>,
-    height: Option<DataSource>,
-    interpolate: Interpolate,
-  ) -> LineMarkProperties {
-    LineMarkProperties {
-      interpolate,
-      base: BaseMarkProperties::new(x, y, width, height),
-    }
-  }
 }
 
 #[derive(Debug, PartialEq, Clone, Copy, Default)]
@@ -51,7 +96,7 @@ pub enum Interpolate {
 #[cfg(test)]
 #[cfg(feature = "serde")]
 mod serde_tests {
-  use crate::spec::mark::line::{Interpolate, LineMark, LineMarkProperties};
+  use crate::spec::mark::line::{Interpolate, LineMark, LineProperties, LinePropertiesBuilder};
   use crate::spec::mark::DataSource;
 
   #[test]
@@ -61,7 +106,9 @@ mod serde_tests {
         "on": {
           "update": {
             "x": { "field": "x", "scale": "xscale" },
-            "y": { "field": "y", "scale": "yscale" }
+            "y": { "field": "y", "scale": "yscale" },
+            "interpolate": "linear",
+            "strokeWidth": 2
           }
         }
       }"#,
@@ -70,57 +117,48 @@ mod serde_tests {
 
     assert_eq!(
       line_mark,
-      LineMark::new(LineMarkProperties::new(
-        Some(DataSource::field("x", Some("xscale"))),
-        Some(DataSource::field("y", Some("yscale"))),
-        None,
-        None,
-        Interpolate::Linear,
-      ))
+      LineMark::new(
+        LinePropertiesBuilder::new()
+          .with_x(DataSource::field("x", Some("xscale")))
+          .with_y(DataSource::field("y", Some("yscale")))
+          .with_interpolate(Interpolate::Linear)
+          .with_stroke_width(2.0)
+          .build()
+      )
     )
   }
 
   #[test]
   fn deserialize_props() {
-    let props: LineMarkProperties = serde_json::from_str(
+    let props: LineProperties = serde_json::from_str(
       r#"{
         "x": { "field": "x", "scale": "xscale" },
-        "y": { "field": "y", "scale": "yscale" },
-        "width": 100,
-        "height": 100
+        "y": { "field": "y", "scale": "yscale" }
       }"#,
     )
     .unwrap();
     assert_eq!(
       props,
-      LineMarkProperties::new(
-        Some(DataSource::field("x", Some("xscale"))),
-        Some(DataSource::field("y", Some("yscale"))),
-        Some(DataSource::value(100.0.into())),
-        Some(DataSource::value(100.0.into())),
-        Interpolate::Linear,
-      )
+      LinePropertiesBuilder::new()
+        .with_x(DataSource::field("x", Some("xscale")))
+        .with_y(DataSource::field("y", Some("yscale")))
+        .build()
     );
 
-    let props: LineMarkProperties = serde_json::from_str(
+    let props: LineProperties = serde_json::from_str(
       r#"{
         "x": { "field": "x", "scale": "xscale" },
         "y": { "field": "y", "scale": "yscale" },
-        "width": 100,
-        "height": 100,
         "interpolate": "linear"
       }"#,
     )
     .unwrap();
     assert_eq!(
       props,
-      LineMarkProperties::new(
-        Some(DataSource::field("x", Some("xscale"))),
-        Some(DataSource::field("y", Some("yscale"))),
-        Some(DataSource::value(100.0.into())),
-        Some(DataSource::value(100.0.into())),
-        Interpolate::Linear,
-      )
+      LinePropertiesBuilder::new()
+        .with_x(DataSource::field("x", Some("xscale")))
+        .with_y(DataSource::field("y", Some("yscale")))
+        .build()
     );
   }
 }

@@ -44,7 +44,7 @@ mod tests {
   use crate::render::DebugRenderer;
   use crate::scene::{SceneItem, SceneRoot, Scenegraph};
   use crate::spec::data::DataEntry;
-  use crate::spec::mark::line::{Interpolate, LineMark, LineMarkProperties};
+  use crate::spec::mark::line::{LineMark, LinePropertiesBuilder};
   use crate::spec::mark::{DataSource, Mark};
   use crate::spec::scale::domain::Domain;
   use crate::spec::scale::linear::LinearScale;
@@ -88,13 +88,12 @@ mod tests {
       ],
       vec![Mark::line(
         "primary",
-        LineMark::new(LineMarkProperties::new(
-          Some(DataSource::field("a", Some("horizontal"))),
-          Some(DataSource::field("b", Some("vertical"))),
-          None,
-          None,
-          Interpolate::Linear,
-        )),
+        LineMark::new(
+          LinePropertiesBuilder::new()
+            .with_x(DataSource::field("a", Some("horizontal")))
+            .with_y(DataSource::field("b", Some("vertical")))
+            .build(),
+        ),
       )],
     )
   }

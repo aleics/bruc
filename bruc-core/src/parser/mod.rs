@@ -98,15 +98,15 @@ impl MarkParser {
   }
 
   fn parse_line_mark(&self, mark: LineMark, data_node: usize, graph: &mut Graph) -> usize {
-    let base_scale_nodes = self.parse_mark_base_props(&mark.on.update.props.base, data_node, graph);
+    let mut input_nodes = self.parse_mark_base_props(&mark.on.update.props.base, data_node, graph);
 
     let node = graph.add_node(Operator::line(
       mark,
       SceneWindow::new(self.dimensions.width, self.dimensions.height),
     ));
 
-    for base_scale_node in base_scale_nodes {
-      graph.add_edge(base_scale_node, node)
+    for input_node in input_nodes {
+      graph.add_edge(input_node, node)
     }
 
     node
@@ -199,16 +199,14 @@ mod tests {
   use crate::graph::node::mark::SceneWindow;
   use crate::graph::node::{Node, Operator};
   use crate::graph::Edge;
+  use crate::spec::mark::line::LinePropertiesBuilder;
   use crate::spec::scale::ScaleKind;
   use crate::spec::transform::map::MapPipe;
   use crate::spec::Dimensions;
   use crate::{
     data::DataValue,
     spec::data::DataEntry,
-    spec::mark::{
-      line::{Interpolate, LineMark, LineMarkProperties},
-      DataSource, Mark,
-    },
+    spec::mark::{line::LineMark, DataSource, Mark},
     spec::scale::{domain::Domain, linear::LinearScale, range::Range, Scale},
     spec::transform::{filter::FilterPipe, pipe::Pipe},
     Specification,
@@ -250,13 +248,12 @@ mod tests {
       ],
       vec![Mark::line(
         "primary",
-        LineMark::new(LineMarkProperties::new(
-          Some(DataSource::field("a", Some("horizontal"))),
-          Some(DataSource::field("b", Some("vertical"))),
-          None,
-          None,
-          Interpolate::Linear,
-        )),
+        LineMark::new(
+          LinePropertiesBuilder::new()
+            .with_x(DataSource::field("a", Some("horizontal")))
+            .with_y(DataSource::field("b", Some("vertical")))
+            .build(),
+        ),
       )],
     );
     let parser = Parser;
@@ -285,13 +282,12 @@ mod tests {
           "y"
         )),
         Node::init(Operator::line(
-          LineMark::new(LineMarkProperties::new(
-            Some(DataSource::field("a", Some("horizontal"))),
-            Some(DataSource::field("b", Some("vertical"))),
-            None,
-            None,
-            Interpolate::Linear,
-          )),
+          LineMark::new(
+            LinePropertiesBuilder::new()
+              .with_x(DataSource::field("a", Some("horizontal")))
+              .with_y(DataSource::field("b", Some("vertical")))
+              .build()
+          ),
           SceneWindow::new(500, 200),
         ))
       ]

@@ -13,7 +13,7 @@ pub struct Mark {
 }
 
 impl Mark {
-  pub fn line(from: &str, mark: LineMark) -> Mark {
+  pub(crate) fn line(from: &str, mark: LineMark) -> Mark {
     Mark {
       from: from.to_string(),
       kind: MarkKind::Line(mark),
@@ -56,7 +56,7 @@ impl DataSource {
 #[cfg(test)]
 #[cfg(feature = "serde")]
 mod serde_tests {
-  use crate::spec::mark::line::{Interpolate, LineMark, LineMarkProperties};
+  use crate::spec::mark::line::{LineMark, LinePropertiesBuilder};
   use crate::spec::mark::{DataSource, Mark};
 
   #[test]
@@ -79,13 +79,12 @@ mod serde_tests {
       mark,
       Mark::line(
         "table",
-        LineMark::new(LineMarkProperties::new(
-          Some(DataSource::field("x", Some("xscale"))),
-          Some(DataSource::field("y", Some("yscale"))),
-          None,
-          None,
-          Interpolate::Linear,
-        )),
+        LineMark::new(
+          LinePropertiesBuilder::new()
+            .with_x(DataSource::field("x", Some("xscale")))
+            .with_y(DataSource::field("y", Some("yscale")))
+            .build()
+        )
       )
     );
   }

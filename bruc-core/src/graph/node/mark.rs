@@ -42,17 +42,27 @@ impl LineOperator {
       let begin = values
         .get(i)
         .and_then(|value| LineOperator::read_point(value, &self.window));
+
       let end = values
         .get(i + 1)
         .and_then(|value| LineOperator::read_point(value, &self.window));
 
+      let stroke_width = self
+        .mark
+        .on
+        .update
+        .props
+        .stroke_width
+        .and_then(|stroke_width| stroke_width.get_number().copied())
+        .unwrap_or(1.0);
+
       match (begin, end) {
         (Some(begin), Some(end)) => {
-          let line = PulseValue::Marks(SceneItem::line(begin, end, "black", 1.0));
+          let line = PulseValue::Marks(SceneItem::line(begin, end, "black", stroke_width));
           lines.push(line)
         }
         (Some(begin), None) => {
-          let line = PulseValue::Marks(SceneItem::line(begin, begin, "black", 1.0));
+          let line = PulseValue::Marks(SceneItem::line(begin, begin, "black", stroke_width));
           lines.push(line)
         }
         _ => {}
@@ -100,7 +110,7 @@ mod tests {
   use crate::graph::node::mark::{LineOperator, SceneWindow};
   use crate::graph::{Evaluation, Pulse, PulseValue, SinglePulse};
   use crate::scene::SceneItem;
-  use crate::spec::mark::line::{Interpolate, LineMark, LineMarkProperties};
+  use crate::spec::mark::line::{LineMark, LinePropertiesBuilder};
 
   #[tokio::test]
   async fn computes_line() {
@@ -116,45 +126,22 @@ mod tests {
       PulseValue::Data(DataValue::from_pairs(vec![("y", 1.0.into())])),
       PulseValue::Data(DataValue::from_pairs(vec![("y", 1.0.into())])),
     ]);
-    let width_pulse = SinglePulse::new(vec![
-      PulseValue::Data(DataValue::from_pairs(vec![("width", 100.0.into())])),
-      PulseValue::Data(DataValue::from_pairs(vec![("width", 100.0.into())])),
-      PulseValue::Data(DataValue::from_pairs(vec![("width", 100.0.into())])),
-      PulseValue::Data(DataValue::from_pairs(vec![("width", 100.0.into())])),
-    ]);
-    let height_pulse = SinglePulse::new(vec![
-      PulseValue::Data(DataValue::from_pairs(vec![("height", 100.0.into())])),
-      PulseValue::Data(DataValue::from_pairs(vec![("height", 100.0.into())])),
-      PulseValue::Data(DataValue::from_pairs(vec![("height", 100.0.into())])),
-      PulseValue::Data(DataValue::from_pairs(vec![("height", 100.0.into())])),
-    ]);
 
     let operator = LineOperator::new(
-      LineMark::new(LineMarkProperties::new(
-        None,
-        None,
-        None,
-        None,
-        Interpolate::Linear,
-      )),
+      LineMark::new(LinePropertiesBuilder::new().with_stroke_width(2.0).build()),
       SceneWindow::new(20, 2),
     );
 
     let pulse = operator
-      .evaluate(Pulse::multi(vec![
-        x_pulse,
-        y_pulse,
-        width_pulse,
-        height_pulse,
-      ]))
+      .evaluate(Pulse::multi(vec![x_pulse, y_pulse]))
       .await;
 
     assert_eq!(
       pulse,
       Pulse::single(vec![
-        PulseValue::Marks(SceneItem::line((2.0, 1.0), (5.0, 1.0), "black", 1.0)),
-        PulseValue::Marks(SceneItem::line((5.0, 1.0), (10.0, 1.0), "black", 1.0)),
-        PulseValue::Marks(SceneItem::line((10.0, 1.0), (15.0, 1.0), "black", 1.0))
+        PulseValue::Marks(SceneItem::line((2.0, 1.0), (5.0, 1.0), "black", 2.0)),
+        PulseValue::Marks(SceneItem::line((5.0, 1.0), (10.0, 1.0), "black", 2.0)),
+        PulseValue::Marks(SceneItem::line((10.0, 1.0), (15.0, 1.0), "black", 2.0))
       ])
     );
   }

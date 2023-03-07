@@ -371,7 +371,7 @@ impl PulseValue {
 #[cfg(test)]
 mod tests {
   use crate::graph::node::mark::SceneWindow;
-  use crate::spec::mark::line::{Interpolate, LineMark, LineMarkProperties};
+  use crate::spec::mark::line::{LineMark, LinePropertiesBuilder};
   use crate::spec::mark::DataSource;
   use crate::spec::scale::domain::Domain;
   use crate::spec::scale::linear::LinearScale;
@@ -426,13 +426,12 @@ mod tests {
 
     graph.add(
       Operator::line(
-        LineMark::new(LineMarkProperties::new(
-          Some(DataSource::field("a", Some("horizontal"))),
-          Some(DataSource::field("b", Some("vertical"))),
-          None,
-          None,
-          Interpolate::Linear,
-        )),
+        LineMark::new(
+          LinePropertiesBuilder::new()
+            .with_x(DataSource::field("a", Some("horizontal")))
+            .with_y(DataSource::field("b", Some("vertical")))
+            .build(),
+        ),
         SceneWindow::new(20, 20),
       ),
       vec![x_scale, y_scale],

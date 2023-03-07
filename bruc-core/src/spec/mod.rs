@@ -59,7 +59,7 @@ impl Default for Dimensions {
 #[cfg(test)]
 mod serde_tests {
   use crate::data::DataValue;
-  use crate::spec::mark::line::{Interpolate, LineMark, LineMarkProperties};
+  use crate::spec::mark::line::{Interpolate, LineMark, LineProperties, LinePropertiesBuilder};
   use crate::spec::mark::{DataSource, Mark};
   use crate::spec::scale::domain::Domain;
   use crate::spec::scale::linear::LinearScale;
@@ -147,13 +147,11 @@ mod serde_tests {
         )],
         vec![Mark::line(
           "primary",
-          LineMark::new(LineMarkProperties::new(
-            Some(DataSource::field("a", Some("horizontal"))),
-            None,
-            None,
-            None,
-            Interpolate::Linear,
-          )),
+          LineMark::new(
+            LinePropertiesBuilder::new()
+              .with_x(DataSource::field("a", Some("horizontal")))
+              .build()
+          ),
         )],
       )
     );
