@@ -59,7 +59,7 @@ impl Default for Dimensions {
 #[cfg(test)]
 mod serde_tests {
   use crate::data::DataValue;
-  use crate::spec::mark::line::{Interpolate, LineMark, LineProperties, LinePropertiesBuilder};
+  use crate::spec::mark::line::{LineMark, LinePropertiesBuilder};
   use crate::spec::mark::{DataSource, Mark};
   use crate::spec::scale::domain::Domain;
   use crate::spec::scale::linear::LinearScale;

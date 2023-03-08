@@ -64,7 +64,12 @@ mod tests {
   #[test]
   fn render_svg_line() {
     let scenegraph = Scenegraph::new(SceneRoot::new(
-      vec![SceneItem::line((0.0, 10.0), (1.0, 20.0), "black", 1.0)],
+      vec![SceneItem::line(
+        (0.0, 10.0),
+        (1.0, 20.0),
+        "black".to_string(),
+        1.0,
+      )],
       500,
       200,
     ));

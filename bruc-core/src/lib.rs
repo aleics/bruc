@@ -110,7 +110,7 @@ mod tests {
         vec![SceneItem::group(vec![SceneItem::line(
           (10.0, 13.0),
           (26.0, 5.0),
-          "black",
+          "black".to_string(),
           1.0
         )])],
         40,

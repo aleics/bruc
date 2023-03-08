@@ -47,23 +47,34 @@ impl LineOperator {
         .get(i + 1)
         .and_then(|value| LineOperator::read_point(value, &self.window));
 
+      let stroke = self
+        .mark
+        .on
+        .update
+        .props
+        .stroke
+        .as_ref()
+        .and_then(|stroke| stroke.get_text())
+        .cloned()
+        .unwrap_or("black".to_string());
+
       let stroke_width = self
         .mark
         .on
         .update
         .props
         .stroke_width
-        .clone()
+        .as_ref()
         .and_then(|stroke_width| stroke_width.get_number().copied())
         .unwrap_or(1.0);
 
       match (begin, end) {
         (Some(begin), Some(end)) => {
-          let line = PulseValue::Marks(SceneItem::line(begin, end, "black", stroke_width));
+          let line = PulseValue::Marks(SceneItem::line(begin, end, stroke, stroke_width));
           lines.push(line)
         }
         (Some(begin), None) => {
-          let line = PulseValue::Marks(SceneItem::line(begin, begin, "black", stroke_width));
+          let line = PulseValue::Marks(SceneItem::line(begin, begin, stroke, stroke_width));
           lines.push(line)
         }
         _ => {}
@@ -129,7 +140,12 @@ mod tests {
     ]);
 
     let operator = LineOperator::new(
-      LineMark::new(LinePropertiesBuilder::new().with_stroke_width(2.0).build()),
+      LineMark::new(
+        LinePropertiesBuilder::new()
+          .with_stroke("red")
+          .with_stroke_width(2.0)
+          .build(),
+      ),
       SceneWindow::new(20, 2),
     );
 
@@ -140,9 +156,24 @@ mod tests {
     assert_eq!(
       pulse,
       Pulse::single(vec![
-        PulseValue::Marks(SceneItem::line((2.0, 1.0), (5.0, 1.0), "black", 2.0)),
-        PulseValue::Marks(SceneItem::line((5.0, 1.0), (10.0, 1.0), "black", 2.0)),
-        PulseValue::Marks(SceneItem::line((10.0, 1.0), (15.0, 1.0), "black", 2.0))
+        PulseValue::Marks(SceneItem::line(
+          (2.0, 1.0),
+          (5.0, 1.0),
+          "red".to_string(),
+          2.0
+        )),
+        PulseValue::Marks(SceneItem::line(
+          (5.0, 1.0),
+          (10.0, 1.0),
+          "red".to_string(),
+          2.0
+        )),
+        PulseValue::Marks(SceneItem::line(
+          (10.0, 1.0),
+          (15.0, 1.0),
+          "red".to_string(),
+          2.0
+        ))
       ])
     );
   }

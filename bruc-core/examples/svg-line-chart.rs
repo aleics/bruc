@@ -42,6 +42,7 @@ async fn main() {
             "update": {
               "x": { "field": "x", "scale": "horizontal" },
               "y": { "field": "y", "scale": "vertical" },
+              "stroke": "red",
               "strokeWidth": 2
             }
           }

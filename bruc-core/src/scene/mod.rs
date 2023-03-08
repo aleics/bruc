@@ -40,7 +40,7 @@ impl SceneItem {
     SceneItem::Group(Box::new(SceneGroup::with_items(items)))
   }
 
-  pub fn line(begin: (f32, f32), end: (f32, f32), stroke: &str, stroke_width: f32) -> Self {
+  pub fn line(begin: (f32, f32), end: (f32, f32), stroke: String, stroke_width: f32) -> Self {
     SceneItem::Line(Box::new(SceneLine::new(begin, end, stroke, stroke_width)))
   }
 
@@ -90,11 +90,11 @@ pub struct SceneLine {
 }
 
 impl SceneLine {
-  pub fn new(begin: (f32, f32), end: (f32, f32), stroke: &str, stroke_width: f32) -> Self {
+  pub fn new(begin: (f32, f32), end: (f32, f32), stroke: String, stroke_width: f32) -> Self {
     SceneLine {
       begin,
       end,
-      stroke: stroke.to_string(),
+      stroke,
       stroke_width,
     }
   }

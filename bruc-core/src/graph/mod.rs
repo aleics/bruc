@@ -452,7 +452,7 @@ mod tests {
       Pulse::single(vec![PulseValue::Marks(SceneItem::line(
         (5.0, 13.0),
         (13.0, 5.0),
-        "black",
+        "black".to_string(),
         1.0
       ))])
     );
@@ -469,7 +469,7 @@ mod tests {
       vec![SceneItem::group(vec![SceneItem::line(
         (5.0, 13.0),
         (13.0, 5.0),
-        "black",
+        "black".to_string(),
         1.0
       )])]
     );
