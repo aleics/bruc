@@ -6,12 +6,13 @@ pub trait DataSource {
   fn get(&self, key: &str) -> Option<&DataItem>;
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(untagged))]
 pub enum DataItem {
   Bool(bool),
   Number(f32),
+  Text(String),
 }
 
 impl DataItem {
@@ -30,6 +31,14 @@ impl DataItem {
       None
     }
   }
+
+  pub fn get_text(&self) -> Option<&String> {
+    if let DataItem::Text(value) = &self {
+      Some(value)
+    } else {
+      None
+    }
+  }
 }
 
 impl Display for DataItem {
@@ -37,17 +46,19 @@ impl Display for DataItem {
     match self {
       DataItem::Bool(value) => write!(f, "{value}"),
       DataItem::Number(value) => write!(f, "{value}"),
+      DataItem::Text(value) => write!(f, "{value}"),
     }
   }
 }
 
 impl Hash for DataItem {
-  fn hash<H: Hasher>(&self, state: &mut H) {
+  fn hash<H: Hasher>(&self, hasher: &mut H) {
     match self {
-      DataItem::Bool(value) => state.write_i8(i8::from(*value)),
-      DataItem::Number(value) => state.write(&value.to_be_bytes()),
+      DataItem::Bool(value) => hasher.write_i8(i8::from(*value)),
+      DataItem::Number(value) => hasher.write(&value.to_be_bytes()),
+      DataItem::Text(value) => value.hash(hasher),
     };
-    state.finish();
+    hasher.finish();
   }
 }
 
@@ -68,6 +79,13 @@ impl PartialEq for DataItem {
           false
         }
       }
+      DataItem::Text(value) => {
+        if let DataItem::Text(other_value) = other {
+          value == other_value
+        } else {
+          false
+        }
+      }
     }
   }
 }
@@ -83,5 +101,17 @@ impl From<bool> for DataItem {
 impl From<f32> for DataItem {
   fn from(value: f32) -> Self {
     DataItem::Number(value)
+  }
+}
+
+impl From<&str> for DataItem {
+  fn from(value: &str) -> Self {
+    DataItem::Text(value.to_string())
+  }
+}
+
+impl From<String> for DataItem {
+  fn from(value: String) -> Self {
+    DataItem::Text(value)
   }
 }

@@ -322,7 +322,7 @@ impl MultiPulse {
       } else {
         for j in 0..data_values.len() {
           if let Some(pairs) = pulse_pairs.get_mut(j) {
-            pairs.extend(data_values.get(j).unwrap());
+            pairs.extend(data_values.get(j).cloned().unwrap());
           }
         }
       }

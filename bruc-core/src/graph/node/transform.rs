@@ -154,7 +154,7 @@ impl CountOperator {
           match counts.get_mut(target) {
             Some(count) => count.add_assign(1),
             None => {
-              counts.insert(*target, 1);
+              counts.insert(target.clone(), 1);
             }
           }
         }

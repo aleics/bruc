@@ -36,8 +36,8 @@ impl LinePropertiesBuilder {
     self
   }
 
-  pub(crate) fn with_stroke(mut self, stroke: DataItem) -> Self {
-    self.stroke = Some(stroke);
+  pub(crate) fn with_stroke(mut self, stroke: &str) -> Self {
+    self.stroke = Some(stroke.to_string().into());
     self
   }
 
@@ -108,7 +108,8 @@ mod serde_tests {
             "x": { "field": "x", "scale": "xscale" },
             "y": { "field": "y", "scale": "yscale" },
             "interpolate": "linear",
-            "strokeWidth": 2
+            "strokeWidth": 2,
+            "stroke": "red"
           }
         }
       }"#,
@@ -122,6 +123,7 @@ mod serde_tests {
           .with_x(DataSource::field("x", Some("xscale")))
           .with_y(DataSource::field("y", Some("yscale")))
           .with_interpolate(Interpolate::Linear)
+          .with_stroke("red")
           .with_stroke_width(2.0)
           .build()
       )

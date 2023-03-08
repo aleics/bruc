@@ -36,7 +36,7 @@ impl DataValue {
     self
       .instance
       .iter()
-      .map(|(key, value)| (key.as_str(), *value))
+      .map(|(key, value)| (key.as_str(), value.clone()))
       .collect()
   }
 

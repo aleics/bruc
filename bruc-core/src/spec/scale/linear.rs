@@ -27,11 +27,11 @@ impl Scaler for LinearScale {
     let Range::Literal(range_min, range_max) = &self.range;
 
     match value {
-      DataItem::Bool(_) => None,
       DataItem::Number(value) => Some(interpolate(
         normalize(*value, (*domain_min, *domain_max)),
         (*range_min, *range_max),
       )),
+      _ => None,
     }
   }
 }

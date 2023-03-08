@@ -53,6 +53,7 @@ impl LineOperator {
         .update
         .props
         .stroke_width
+        .clone()
         .and_then(|stroke_width| stroke_width.get_number().copied())
         .unwrap_or(1.0);
 

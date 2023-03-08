@@ -92,7 +92,7 @@ impl IdentityOperator {
         // Find field in data value
         if let Some(item) = data_value.get(&self.field) {
           // Add result to value with the output's name
-          data_value.insert(&self.output, *item);
+          data_value.insert(&self.output, item.clone());
         }
       }
     }
