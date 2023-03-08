@@ -9,7 +9,7 @@ use crate::{
 /// `LinearOperator` represents an operator of the graph, which linearly scales data values from a
 /// certain `field` reference, and creates a new field in the defined `output` field.
 #[derive(Debug, PartialEq)]
-pub(crate) struct LinearOperator {
+pub struct LinearOperator {
   scale: LinearScale,
   field: String,
   output: String,

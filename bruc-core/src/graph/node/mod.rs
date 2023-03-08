@@ -43,7 +43,7 @@ impl Node {
 
 /// `Operator` collects all possible operators that can be used in a graph `Node`.
 #[derive(Debug, PartialEq)]
-pub(crate) enum Operator {
+pub enum Operator {
   Data(DataOperator),
   Map(MapOperator),
   Filter(FilterOperator),

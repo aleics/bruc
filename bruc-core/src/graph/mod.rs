@@ -11,7 +11,7 @@ pub mod node;
 /// in topological order. The graph can be evaluated by passing data from the roots into the leaves,
 /// where a `Pulse` instance is being used to collect the data being passed between nodes.
 #[derive(Debug, Default, PartialEq)]
-pub(crate) struct Graph {
+pub struct Graph {
   /// List of nodes of the graph.
   pub(crate) nodes: Vec<Node>,
 
@@ -38,12 +38,12 @@ pub(crate) struct Graph {
 
 impl Graph {
   /// Create a new `Graph` instance with no nodes.
-  pub(crate) fn new() -> Self {
+  pub fn new() -> Self {
     Graph::default()
   }
 
   /// Add node with connections to existing source nodes
-  pub(crate) fn add(&mut self, operator: Operator, sources: Vec<usize>) -> usize {
+  pub fn add(&mut self, operator: Operator, sources: Vec<usize>) -> usize {
     let id = self.add_node(operator);
 
     sources

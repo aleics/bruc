@@ -21,7 +21,7 @@ impl SceneWindow {
 /// `LineOperator` represents an operator of the graph, which generates a `LineMark` instance from
 /// the incoming `Pulse` instance.
 #[derive(Debug, PartialEq)]
-pub(crate) struct LineOperator {
+pub struct LineOperator {
   mark: LineMark,
   window: SceneWindow,
 }
