@@ -1,2 +1,2 @@
 [workspace]
-members = ["bruc-core", "bruc-expression"]
+members = ["bruc-core", "bruc-expression", "bruc-wasm"]
