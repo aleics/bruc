@@ -1,6 +1,4 @@
-import init, { Bruc } from "bruc";
-
-await init();
+import { Bruc } from "bruc";
 
 const spec = `{
   "dimensions": {

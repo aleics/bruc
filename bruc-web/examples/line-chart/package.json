@@ -7,7 +7,7 @@
     "start": "webpack-dev-server"
   },
   "dependencies": {
-    "bruc": "file:../../pkg"
+    "bruc": "file:../../"
   },
   "devDependencies": {
     "webpack": "^5.76.1",
