@@ -40,8 +40,8 @@ impl SceneItem {
     SceneItem::Group(Box::new(SceneGroup::with_items(items)))
   }
 
-  pub fn line(begin: (f32, f32), end: (f32, f32), stroke: String, stroke_width: f32) -> Self {
-    SceneItem::Line(Box::new(SceneLine::new(begin, end, stroke, stroke_width)))
+  pub fn line(points: Vec<(f32, f32)>, stroke: String, stroke_width: f32) -> Self {
+    SceneItem::Line(Box::new(SceneLine::new(points, stroke, stroke_width)))
   }
 
   pub(crate) fn build(node: &Node) -> Option<Self> {
@@ -85,15 +85,13 @@ impl Default for SceneGroup {
 pub struct SceneLine {
   pub(crate) stroke: String,
   pub(crate) stroke_width: f32,
-  pub(crate) begin: (f32, f32),
-  pub(crate) end: (f32, f32),
+  pub(crate) points: Vec<(f32, f32)>,
 }
 
 impl SceneLine {
-  pub fn new(begin: (f32, f32), end: (f32, f32), stroke: String, stroke_width: f32) -> Self {
+  pub fn new(points: Vec<(f32, f32)>, stroke: String, stroke_width: f32) -> Self {
     SceneLine {
-      begin,
-      end,
+      points,
       stroke,
       stroke_width,
     }

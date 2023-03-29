@@ -108,8 +108,7 @@ mod tests {
       view,
       View::new(Scenegraph::new(SceneRoot::new(
         vec![SceneItem::group(vec![SceneItem::line(
-          (10.0, 13.0),
-          (26.0, 5.0),
+          vec![(10.0, 13.0), (26.0, 5.0)],
           "black".to_string(),
           1.0
         )])],
@@ -130,7 +129,7 @@ mod tests {
     // then
     assert_eq!(
       result,
-      "Scenegraph { root: SceneRoot { items: [Group(SceneGroup { items: [Line(SceneLine { stroke: \"black\", stroke_width: 1.0, begin: (10.0, 13.0), end: (26.0, 5.0) })] })], width: 40, height: 20 } }"
+      "Scenegraph { root: SceneRoot { items: [Group(SceneGroup { items: [Line(SceneLine { stroke: \"black\", stroke_width: 1.0, points: [(10.0, 13.0), (26.0, 5.0)] })] })], width: 40, height: 20 } }"
     )
   }
 }

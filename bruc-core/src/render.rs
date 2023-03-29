@@ -32,14 +32,24 @@ impl SvgRenderer {
   }
 
   fn render_line(line: &SceneLine) -> String {
-    let x1 = line.begin.0;
-    let y1 = line.begin.1;
-    let x2 = line.end.0;
-    let y2 = line.end.1;
+    let path = line
+      .points
+      .iter()
+      .enumerate()
+      .fold(String::new(), |mut acc, (index, (x, y))| {
+        let coordinates = if index == 0 {
+          format!("M{} {}", x, y)
+        } else {
+          format!(" L{} {}", x, y)
+        };
+        acc.push_str(&coordinates);
+        acc
+      });
+
     let stroke = &line.stroke;
     let stroke_width = line.stroke_width;
 
-    format!("<line x1=\"{x1}\" y1=\"{y1}\" x2=\"{x2}\" y2=\"{y2}\" stroke=\"{stroke}\" stroke-width=\"{stroke_width}\"></line>")
+    format!("<path d=\"{path}\" fill=\"transparent\" stroke=\"{stroke}\" stroke-width=\"{stroke_width}\" />")
   }
 
   fn render_item(item: &SceneItem) -> String {
@@ -65,8 +75,7 @@ mod tests {
   fn render_svg_line() {
     let scenegraph = Scenegraph::new(SceneRoot::new(
       vec![SceneItem::line(
-        (0.0, 10.0),
-        (1.0, 20.0),
+        vec![(0.0, 10.0), (1.0, 20.0)],
         "black".to_string(),
         1.0,
       )],
@@ -79,7 +88,7 @@ mod tests {
 
     assert_eq!(
       result,
-      "<svg width=\"500\" height=\"200\"><line x1=\"0\" y1=\"10\" x2=\"1\" y2=\"20\" stroke=\"black\" stroke-width=\"1\"></line></svg>"
+      "<svg width=\"500\" height=\"200\"><path d=\"M0 10 L1 20\" fill=\"transparent\" stroke=\"black\" stroke-width=\"1\" /></svg>"
     )
   }
 }

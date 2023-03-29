@@ -450,8 +450,7 @@ mod tests {
     assert_eq!(
       outputs[0].pulse,
       Pulse::single(vec![PulseValue::Marks(SceneItem::line(
-        (5.0, 13.0),
-        (13.0, 5.0),
+        vec![(5.0, 13.0), (13.0, 5.0)],
         "black".to_string(),
         1.0
       ))])
@@ -467,8 +466,7 @@ mod tests {
     assert_eq!(
       scene_items,
       vec![SceneItem::group(vec![SceneItem::line(
-        (5.0, 13.0),
-        (13.0, 5.0),
+        vec![(5.0, 13.0), (13.0, 5.0)],
         "black".to_string(),
         1.0
       )])]

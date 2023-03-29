@@ -9,10 +9,10 @@ const spec = `{
     {
       "name": "primary",
       "values": [
-        { "x": 0, "y": 0 },
-        { "x": 1, "y": 50 },
-        { "x": 2, "y": 15 },
-        { "x": 3, "y": 30 }
+        { "x": 0, "y": 0, "k": 0, "q": 10 },
+        { "x": 1, "y": 50, "k": 1, "q": 20 },
+        { "x": 2, "y": 15, "k": 2, "q": 50 },
+        { "x": 3, "y": 30, "k": 3, "q": 10 }
       ]
     }
   ],
@@ -39,6 +39,18 @@ const spec = `{
           "x": { "field": "x", "scale": "horizontal" },
           "y": { "field": "y", "scale": "vertical" },
           "stroke": "red",
+          "strokeWidth": 2
+        }
+      }
+    },
+    {
+      "from": "primary",
+      "type": "line",
+      "on": {
+        "update": {
+          "x": { "field": "k", "scale": "horizontal" },
+          "y": { "field": "q", "scale": "vertical" },
+          "stroke": "blue",
           "strokeWidth": 2
         }
       }

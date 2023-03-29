@@ -35,53 +35,37 @@ impl LineOperator {
   /// Apply the operator's logic by generating line marks from the incoming already encoded pulse.
   /// values.
   fn apply(&self, values: &[PulseValue]) -> Vec<PulseValue> {
-    let mut lines = Vec::new();
+    let points = values
+      .iter()
+      .flat_map(|value| LineOperator::read_point(value, &self.window))
+      .collect();
 
-    // Iterate in chunks of 2 consisting of the begin and end of the line
-    for i in 0..(values.len() - 1) {
-      let begin = values
-        .get(i)
-        .and_then(|value| LineOperator::read_point(value, &self.window));
+    let stroke = self
+      .mark
+      .on
+      .update
+      .props
+      .stroke
+      .as_ref()
+      .and_then(|stroke| stroke.get_text())
+      .cloned()
+      .unwrap_or("black".to_string());
 
-      let end = values
-        .get(i + 1)
-        .and_then(|value| LineOperator::read_point(value, &self.window));
+    let stroke_width = self
+      .mark
+      .on
+      .update
+      .props
+      .stroke_width
+      .as_ref()
+      .and_then(|stroke_width| stroke_width.get_number().copied())
+      .unwrap_or(1.0);
 
-      let stroke = self
-        .mark
-        .on
-        .update
-        .props
-        .stroke
-        .as_ref()
-        .and_then(|stroke| stroke.get_text())
-        .cloned()
-        .unwrap_or("black".to_string());
-
-      let stroke_width = self
-        .mark
-        .on
-        .update
-        .props
-        .stroke_width
-        .as_ref()
-        .and_then(|stroke_width| stroke_width.get_number().copied())
-        .unwrap_or(1.0);
-
-      match (begin, end) {
-        (Some(begin), Some(end)) => {
-          let line = PulseValue::Marks(SceneItem::line(begin, end, stroke, stroke_width));
-          lines.push(line)
-        }
-        (Some(begin), None) => {
-          let line = PulseValue::Marks(SceneItem::line(begin, begin, stroke, stroke_width));
-          lines.push(line)
-        }
-        _ => {}
-      };
-    }
-
-    lines
+    vec![PulseValue::Marks(SceneItem::line(
+      points,
+      stroke,
+      stroke_width,
+    ))]
   }
 
   /// Read a point out of a data pulse value
@@ -155,26 +139,11 @@ mod tests {
 
     assert_eq!(
       pulse,
-      Pulse::single(vec![
-        PulseValue::Marks(SceneItem::line(
-          (2.0, 1.0),
-          (5.0, 1.0),
-          "red".to_string(),
-          2.0
-        )),
-        PulseValue::Marks(SceneItem::line(
-          (5.0, 1.0),
-          (10.0, 1.0),
-          "red".to_string(),
-          2.0
-        )),
-        PulseValue::Marks(SceneItem::line(
-          (10.0, 1.0),
-          (15.0, 1.0),
-          "red".to_string(),
-          2.0
-        ))
-      ])
+      Pulse::single(vec![PulseValue::Marks(SceneItem::line(
+        vec![(2.0, 1.0), (5.0, 1.0), (10.0, 1.0), (15.0, 1.0)],
+        "red".to_string(),
+        2.0
+      ))])
     );
   }
 }
