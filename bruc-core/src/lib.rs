@@ -1,6 +1,14 @@
 #![allow(incomplete_features)]
 #![feature(async_fn_in_trait)]
 
+use std::collections::HashMap;
+
+use async_std::channel::{bounded, Sender};
+use async_std::stream::{Stream, StreamExt};
+use data::DataValue;
+use graph::Graph;
+use graph::node::{Node, Operator};
+
 use crate::parser::Parser;
 use crate::render::Renderer;
 use crate::scene::{SceneRoot, Scenegraph};
@@ -13,36 +21,52 @@ pub mod render;
 mod scene;
 pub mod spec;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 pub struct View {
-  scene: Scenegraph,
+  width: usize,
+  height: usize,
+  graph: Graph,
+  data_nodes: HashMap<String, usize>,
+  jobs: Vec<Sender<Scenegraph>>,
 }
 
 impl View {
-  pub fn new(scene: Scenegraph) -> View {
-    View { scene }
-  }
-
-  pub async fn build(spec: Specification) -> View {
+  pub fn new(spec: Specification) -> View {
     let width = spec.dimensions.width;
     let height = spec.dimensions.height;
-    let items = Parser.parse(spec).build().await;
+    let parse_result = Parser.parse(spec);
 
-    let scenegraph = Scenegraph::new(SceneRoot::new(items, width, height));
+    View {
+      width,
+      height,
+      graph: parse_result.graph,
+      data_nodes: parse_result.data_nodes,
+      jobs: Vec::new(),
+    }
 
-    View::new(scenegraph)
+
   }
 
-  pub fn render<R: Renderer>(self, renderer: R) -> String {
-    renderer.render(&self.scene)
+  pub async fn render<R: Renderer>(&mut self, renderer: R) -> impl Stream<Item = String> {
+    let (sender, recv) = bounded(5);
+
+    let items = self.graph.build().await;
+    let scene = Scenegraph::new(SceneRoot::new(items, self.width, self.height));
+
+    sender.send(scene).await.unwrap();
+    self.jobs.push(sender);
+
+    recv.map(move |scene| renderer.render(&scene))
   }
 }
 
 #[cfg(test)]
 mod tests {
+  use async_std::stream::StreamExt;
+  use std::collections::HashMap;
+
   use crate::data::DataValue;
   use crate::render::DebugRenderer;
-  use crate::scene::{SceneItem, SceneRoot, Scenegraph};
   use crate::spec::data::DataEntry;
   use crate::spec::mark::line::{LineMark, LinePropertiesBuilder};
   use crate::spec::mark::{DataSource, Mark};
@@ -98,37 +122,29 @@ mod tests {
     )
   }
 
-  #[tokio::test]
-  async fn builds_specification() {
+  #[test]
+  fn builds_specification() {
     // when
-    let view = View::build(specification()).await;
+    let view = View::new(specification());
 
     // then
-    assert_eq!(
-      view,
-      View::new(Scenegraph::new(SceneRoot::new(
-        vec![SceneItem::group(vec![SceneItem::line(
-          vec![(10.0, 13.0), (26.0, 5.0)],
-          "black".to_string(),
-          1.0
-        )])],
-        40,
-        20
-      )))
-    );
+    assert_eq!(view.width, 40);
+    assert_eq!(view.height, 20);
+    assert_eq!(view.data_nodes, HashMap::from([("primary".to_string(), 2)]));
   }
 
   #[tokio::test]
   async fn renders() {
     // given
-    let view = View::build(specification()).await;
+    let mut view = View::new(specification());
 
     // when
-    let result = view.render(DebugRenderer);
+    let mut result = view.render(DebugRenderer).await;
+    let content = result.next().await.unwrap();
 
     // then
     assert_eq!(
-      result,
+      content,
       "Scenegraph { root: SceneRoot { items: [Group(SceneGroup { items: [Line(SceneLine { stroke: \"black\", stroke_width: 1.0, points: [(10.0, 13.0), (26.0, 5.0)] })] })], width: 40, height: 20 } }"
     )
   }

@@ -15,20 +15,26 @@ use crate::{
   Specification,
 };
 
+/// `ParseResult` collects all the data needed after parsing the `Specification`
+pub(crate) struct ParseResult {
+  pub(crate) graph: Graph,
+  pub(crate) data_nodes: HashMap<String, usize>,
+}
+
 /// `Parser` allows to parse a certain `Specification` into a `Graph` representation, where
 /// nodes are generated from the different specification parts, and inter-connected accordingly.
 pub(crate) struct Parser;
 
 impl Parser {
   /// Parse a specification instance into a new graph.
-  pub(crate) fn parse(&self, specification: Specification) -> Graph {
+  pub(crate) fn parse(&self, specification: Specification) -> ParseResult {
     let mark_parser = MarkParser::new(&specification.scales, specification.dimensions);
 
     let mut graph = Graph::new();
     let data_nodes = DataParser::parse(specification.data, &mut graph);
     mark_parser.parse_marks(specification.marks, &data_nodes, &mut graph);
 
-    graph
+    ParseResult { graph, data_nodes }
   }
 }
 
@@ -194,11 +200,12 @@ impl MarkParser {
 
 #[cfg(test)]
 mod tests {
-  use std::collections::{BTreeMap, HashSet};
+  use std::collections::{BTreeMap, HashMap, HashSet};
 
   use crate::graph::node::mark::SceneWindow;
   use crate::graph::node::{Node, Operator};
   use crate::graph::Edge;
+  use crate::parser::ParseResult;
   use crate::spec::mark::line::LinePropertiesBuilder;
   use crate::spec::scale::ScaleKind;
   use crate::spec::transform::map::MapPipe;
@@ -259,7 +266,7 @@ mod tests {
     let parser = Parser;
 
     // when
-    let graph = parser.parse(spec);
+    let ParseResult { graph, data_nodes } = parser.parse(spec);
 
     // then
     assert_eq!(
@@ -336,5 +343,6 @@ mod tests {
       ])
     );
     assert_eq!(graph.order, vec![0, 1, 2, 3, 4]);
+    assert_eq!(data_nodes, HashMap::from([("primary".to_string(), 2)]))
   }
 }

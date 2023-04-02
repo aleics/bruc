@@ -1,3 +1,4 @@
+use async_std::stream::StreamExt;
 use bruc_core::render::SvgRenderer;
 use bruc_core::View;
 
@@ -52,8 +53,10 @@ async fn main() {
   )
   .unwrap();
 
-  let view = View::build(specification).await;
-  let svg = view.render(SvgRenderer);
+  let mut view = View::new(specification);
+  let mut render_result = view.render(SvgRenderer).await;
+
+  let svg = render_result.next().await.unwrap();
 
   println!("{}", svg);
 }

@@ -1,3 +1,4 @@
+use async_std::stream::StreamExt;
 use bruc_core::render::SvgRenderer;
 use bruc_core::View;
 use wasm_bindgen::prelude::*;
@@ -10,15 +11,15 @@ pub struct Bruc {
 #[wasm_bindgen]
 impl Bruc {
   #[wasm_bindgen]
-  pub async fn build(specification: String) -> Bruc {
+  pub fn build(specification: String) -> Bruc {
     let specification = serde_json::from_str(specification.as_str()).unwrap();
-    let view = View::build(specification).await;
+    let view = View::new(specification);
 
     Bruc { view }
   }
 
   #[wasm_bindgen(js_name = renderAsSvg)]
-  pub fn render_as_svg(self, selector: &str) {
+  pub async fn render_as_svg(&mut self, selector: &str) {
     let window = web_sys::window().expect("No global window");
     let document = window.document().expect("No document on window");
 
@@ -27,8 +28,11 @@ impl Bruc {
       .expect("Element with selector {selector} could not be queried.");
 
     let element = element.expect("Element not present in document.");
-    let content = self.view.render(SvgRenderer);
 
-    element.set_inner_html(&content);
+    let mut render_result = self.view.render(SvgRenderer).await;
+
+    while let Some(content) = render_result.next().await {
+      element.set_inner_html(&content);
+    }
   }
 }
