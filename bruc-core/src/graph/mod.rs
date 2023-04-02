@@ -42,6 +42,15 @@ impl Graph {
     Graph::default()
   }
 
+  /// Replaces a node from the specified `index` for another node
+  pub(crate) fn replace_node(&mut self, index: usize, new_node: Node) -> Option<Node> {
+    if index < self.nodes.len() {
+      Some(std::mem::replace(&mut self.nodes[index], new_node))
+    } else {
+      None
+    }
+  }
+
   /// Add node with connections to existing source nodes
   pub fn add(&mut self, operator: Operator, sources: Vec<usize>) -> usize {
     let id = self.add_node(operator);

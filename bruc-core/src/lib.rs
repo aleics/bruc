@@ -6,8 +6,8 @@ use std::collections::HashMap;
 use async_std::channel::{bounded, Sender};
 use async_std::stream::{Stream, StreamExt};
 use data::DataValue;
-use graph::Graph;
 use graph::node::{Node, Operator};
+use graph::Graph;
 
 use crate::parser::Parser;
 use crate::render::Renderer;
@@ -43,8 +43,21 @@ impl View {
       data_nodes: parse_result.data_nodes,
       jobs: Vec::new(),
     }
+  }
 
+  pub async fn set_data(&mut self, name: &str, values: Vec<DataValue>) {
+    if let Some(node) = self.data_nodes.get(name) {
+      self
+        .graph
+        .replace_node(*node, Node::init(Operator::data(values)));
 
+      let items = self.graph.build().await;
+      let scene = Scenegraph::new(SceneRoot::new(items, self.width, self.height));
+
+      for job in &self.jobs {
+        job.send(scene.clone()).await.unwrap();
+      }
+    }
   }
 
   pub async fn render<R: Renderer>(&mut self, renderer: R) -> impl Stream<Item = String> {
@@ -140,12 +153,44 @@ mod tests {
 
     // when
     let mut result = view.render(DebugRenderer).await;
-    let content = result.next().await.unwrap();
+    let content = result.next().await;
 
     // then
     assert_eq!(
-      content,
+      content.unwrap(),
       "Scenegraph { root: SceneRoot { items: [Group(SceneGroup { items: [Line(SceneLine { stroke: \"black\", stroke_width: 1.0, points: [(10.0, 13.0), (26.0, 5.0)] })] })], width: 40, height: 20 } }"
     )
+  }
+
+  #[tokio::test]
+  async fn renders_after_set_data() {
+    // given
+    let mut view = View::new(specification());
+
+    // when
+    let mut result = view.render(DebugRenderer).await;
+    let first = result.next().await;
+
+    view
+      .set_data(
+        "primary",
+        vec![
+          DataValue::from_pairs(vec![("a", 10.0.into())]),
+          DataValue::from_pairs(vec![("a", 8.0.into())]),
+        ],
+      )
+      .await;
+
+    let second = result.next().await;
+
+    // then
+    assert_eq!(
+      first.unwrap(),
+      "Scenegraph { root: SceneRoot { items: [Group(SceneGroup { items: [Line(SceneLine { stroke: \"black\", stroke_width: 1.0, points: [(10.0, 13.0), (26.0, 5.0)] })] })], width: 40, height: 20 } }"
+    );
+    assert_eq!(
+      second.unwrap(),
+      "Scenegraph { root: SceneRoot { items: [Group(SceneGroup { items: [Line(SceneLine { stroke: \"black\", stroke_width: 1.0, points: [(20.0, 20.0), (16.0, 20.0)] })] })], width: 40, height: 20 } }"
+    );
   }
 }

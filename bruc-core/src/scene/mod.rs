@@ -1,7 +1,7 @@
 use crate::graph::node::Node;
 use crate::graph::{Pulse, PulseValue};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Scenegraph {
   pub(crate) root: SceneRoot,
 }
@@ -12,7 +12,7 @@ impl Scenegraph {
   }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct SceneRoot {
   pub(crate) items: Vec<SceneItem>,
   pub(crate) width: usize,
