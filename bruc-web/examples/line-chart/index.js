@@ -58,6 +58,31 @@ const spec = `{
   ]
 }`;
 
-const bruc = await Bruc.build(spec);
+const bruc = Bruc.build(spec);
 
-bruc.renderAsSvg("#chart");
+await bruc.renderAsSvg("#first");
+await bruc.renderAsSvg("#second");
+
+while(true) {
+  await delay(1000);
+  await bruc.setData(
+    "primary",
+    randomData()
+  )
+}
+
+function randomData() {
+  const values = [];
+  for (var i = 0; i < 4; i++) {
+    values.push({ x: i, y: randomValue(50), k: i, q: randomValue(50) });
+  }
+  return values;
+}
+
+function randomValue(max) {
+  return Math.floor(Math.random() * max);
+}
+
+function delay(time) {
+  return new Promise(resolve => setTimeout(resolve, time));
+}
