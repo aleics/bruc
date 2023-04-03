@@ -31,8 +31,10 @@ impl Bruc {
 
     let mut render_result = self.view.render(SvgRenderer).await;
 
-    while let Some(content) = render_result.next().await {
-      element.set_inner_html(&content);
-    }
+    wasm_bindgen_futures::spawn_local(async move {
+      while let Some(content) = render_result.next().await {
+        element.set_inner_html(&content);
+      }
+    });
   }
 }
