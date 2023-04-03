@@ -18,6 +18,16 @@ impl Bruc {
     Bruc { view }
   }
 
+  #[wasm_bindgen(js_name = setData)]
+  pub async fn set_data(&mut self, name: String, values: Vec<JsValue>) {
+    let values = values
+      .into_iter()
+      .map(|value| serde_wasm_bindgen::from_value(value).unwrap())
+      .collect();
+
+    self.view.set_data(&name, values).await;
+  }
+
   #[wasm_bindgen(js_name = renderAsSvg)]
   pub async fn render_as_svg(&mut self, selector: &str) {
     let window = web_sys::window().expect("No global window");
