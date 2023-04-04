@@ -42,8 +42,6 @@ impl LineOperator {
 
     let stroke = self
       .mark
-      .on
-      .update
       .props
       .stroke
       .as_ref()
@@ -53,8 +51,6 @@ impl LineOperator {
 
     let stroke_width = self
       .mark
-      .on
-      .update
       .props
       .stroke_width
       .as_ref()

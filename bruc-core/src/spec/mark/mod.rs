@@ -65,11 +65,9 @@ mod serde_tests {
       r#"{
         "from": "table",
         "type": "line",
-        "on": {
-          "update": {
-            "x": { "field": "x", "scale": "xscale" },
-            "y": { "field": "y", "scale": "yscale" }
-          }
+        "properties": {
+          "x": { "field": "x", "scale": "xscale" },
+          "y": { "field": "y", "scale": "yscale" }
         }
       }"#,
     )

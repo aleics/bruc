@@ -39,13 +39,11 @@ async fn main() {
         {
           "from": "primary",
           "type": "line",
-          "on": {
-            "update": {
-              "x": { "field": "x", "scale": "horizontal" },
-              "y": { "field": "y", "scale": "vertical" },
-              "stroke": "red",
-              "strokeWidth": 2
-            }
+          "properties": {
+            "x": { "field": "x", "scale": "horizontal" },
+            "y": { "field": "y", "scale": "vertical" },
+            "stroke": "red",
+            "strokeWidth": 2
           }
         }
       ]

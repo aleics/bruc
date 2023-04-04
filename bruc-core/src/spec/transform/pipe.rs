@@ -28,10 +28,10 @@ mod serde_tests {
   #[test]
   fn deserializes_pipes() {
     let pipes_json = r#"[
-        { "type": "filter", "fn": "a > 2" },
-        { "type": "map", "fn": "a + 2", "output": "b" },
-        { "type": "group", "by": "b", "op": "count", "output": "count" }
-      ]"#;
+      { "type": "filter", "fn": "a > 2" },
+      { "type": "map", "fn": "a + 2", "output": "b" },
+      { "type": "group", "by": "b", "op": "count", "output": "count" }
+    ]"#;
     let pipes: Vec<Pipe> = serde_json::from_str(pipes_json).unwrap();
 
     assert_eq!(pipes.len(), 3);

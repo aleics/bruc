@@ -34,25 +34,21 @@ const spec = `{
     {
       "from": "primary",
       "type": "line",
-      "on": {
-        "update": {
-          "x": { "field": "x", "scale": "horizontal" },
-          "y": { "field": "y", "scale": "vertical" },
-          "stroke": "red",
-          "strokeWidth": 2
-        }
+      "properties": {
+        "x": { "field": "x", "scale": "horizontal" },
+        "y": { "field": "y", "scale": "vertical" },
+        "stroke": "red",
+        "strokeWidth": 2
       }
     },
     {
       "from": "primary",
       "type": "line",
-      "on": {
-        "update": {
-          "x": { "field": "k", "scale": "horizontal" },
-          "y": { "field": "q", "scale": "vertical" },
-          "stroke": "blue",
-          "strokeWidth": 2
-        }
+      "properties": {
+        "x": { "field": "k", "scale": "horizontal" },
+        "y": { "field": "q", "scale": "vertical" },
+        "stroke": "blue",
+        "strokeWidth": 2
       }
     }
   ]

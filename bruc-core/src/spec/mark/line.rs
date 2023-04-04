@@ -1,4 +1,4 @@
-use crate::spec::mark::base::{BaseMarkProperties, Phases};
+use crate::spec::mark::base::BaseMarkProperties;
 use crate::spec::mark::DataSource;
 use bruc_expression::data::DataItem;
 
@@ -59,14 +59,13 @@ impl LinePropertiesBuilder {
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 pub struct LineMark {
-  pub(crate) on: Phases<LineProperties>,
+  #[cfg_attr(feature = "serde", serde(rename = "properties"))]
+  pub(crate) props: LineProperties,
 }
 
 impl LineMark {
   pub(crate) fn new(props: LineProperties) -> LineMark {
-    LineMark {
-      on: Phases::new(props),
-    }
+    LineMark { props }
   }
 }
 
@@ -103,14 +102,12 @@ mod serde_tests {
   fn deserialize_line_mark() {
     let line_mark: LineMark = serde_json::from_str(
       r#"{
-        "on": {
-          "update": {
-            "x": { "field": "x", "scale": "xscale" },
-            "y": { "field": "y", "scale": "yscale" },
-            "interpolate": "linear",
-            "strokeWidth": 2,
-            "stroke": "red"
-          }
+        "properties": {
+          "x": { "field": "x", "scale": "xscale" },
+          "y": { "field": "y", "scale": "yscale" },
+          "interpolate": "linear",
+          "strokeWidth": 2,
+          "stroke": "red"
         }
       }"#,
     )

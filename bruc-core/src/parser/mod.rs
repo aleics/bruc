@@ -104,7 +104,7 @@ impl MarkParser {
   }
 
   fn parse_line_mark(&self, mark: LineMark, data_node: usize, graph: &mut Graph) -> usize {
-    let input_nodes = self.parse_mark_base_props(&mark.on.update.props.base, data_node, graph);
+    let input_nodes = self.parse_mark_base_props(&mark.props.base, data_node, graph);
 
     let node = graph.add_node(Operator::line(
       mark,

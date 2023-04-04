@@ -7,27 +7,6 @@ pub(crate) const HEIGHT_FIELD_NAME: &str = "height";
 
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
-pub struct Phases<T> {
-  pub(crate) update: Phase<T>,
-}
-
-impl<T> Phases<T> {
-  pub fn new(props: T) -> Phases<T> {
-    Phases {
-      update: Phase { props },
-    }
-  }
-}
-
-#[derive(Debug, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Deserialize))]
-pub struct Phase<T> {
-  #[cfg_attr(feature = "serde", serde(flatten))]
-  pub(crate) props: T,
-}
-
-#[derive(Debug, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 pub struct BaseMarkProperties {
   pub(crate) x: Option<DataSource>,
   pub(crate) y: Option<DataSource>,
@@ -54,12 +33,12 @@ impl BaseMarkProperties {
 #[cfg(test)]
 #[cfg(feature = "serde")]
 mod serde_tests {
-  use crate::spec::mark::base::{BaseMarkProperties, Phase};
+  use crate::spec::mark::base::BaseMarkProperties;
   use crate::spec::mark::DataSource;
 
   #[test]
   fn deserialize_update_phase() {
-    let phase: Phase<BaseMarkProperties> = serde_json::from_str(
+    let props: BaseMarkProperties = serde_json::from_str(
       r#"{
         "x": { "field": "x", "scale": "xscale" },
         "y": { "field": "y", "scale": "yscale" },
@@ -70,14 +49,12 @@ mod serde_tests {
     .unwrap();
 
     assert_eq!(
-      phase,
-      Phase {
-        props: BaseMarkProperties {
-          x: Some(DataSource::field("x", Some("xscale"))),
-          y: Some(DataSource::field("y", Some("yscale"))),
-          width: Some(DataSource::ValueSource(100.0.into())),
-          height: Some(DataSource::ValueSource(100.0.into())),
-        }
+      props,
+      BaseMarkProperties {
+        x: Some(DataSource::field("x", Some("xscale"))),
+        y: Some(DataSource::field("y", Some("yscale"))),
+        width: Some(DataSource::ValueSource(100.0.into())),
+        height: Some(DataSource::ValueSource(100.0.into())),
       }
     );
   }

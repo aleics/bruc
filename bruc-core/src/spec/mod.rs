@@ -115,10 +115,8 @@ mod serde_tests {
           {
             "from": "primary",
             "type": "line",
-            "on": {
-              "update": {
-                "x": { "field": "a", "scale": "horizontal" }
-              }
+            "properties": {
+              "x": { "field": "a", "scale": "horizontal" }
             }
           }
         ]
