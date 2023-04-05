@@ -31,7 +31,7 @@ pub struct View {
 }
 
 impl View {
-  pub fn new(spec: Specification) -> View {
+  pub fn build(spec: Specification) -> View {
     let width = spec.dimensions.width;
     let height = spec.dimensions.height;
     let parse_result = Parser.parse(spec);
@@ -46,12 +46,12 @@ impl View {
   }
 
   pub async fn set_data(&mut self, name: &str, values: Vec<DataValue>) {
-    if let Some(node) = self.data_nodes.get(name) {
+    if let Some(node) = self.data_nodes.get(name).copied() {
       self
         .graph
-        .replace_node(*node, Node::init(Operator::data(values)));
+        .replace_node(node, Node::init(Operator::data(values)));
 
-      let items = self.graph.build().await;
+      let items = self.graph.build_tree(node).await;
       let scene = Scenegraph::new(SceneRoot::new(items, self.width, self.height));
 
       for job in &self.jobs {
@@ -138,7 +138,7 @@ mod tests {
   #[test]
   fn builds_specification() {
     // when
-    let view = View::new(specification());
+    let view = View::build(specification());
 
     // then
     assert_eq!(view.width, 40);
@@ -149,7 +149,7 @@ mod tests {
   #[tokio::test]
   async fn renders() {
     // given
-    let mut view = View::new(specification());
+    let mut view = View::build(specification());
 
     // when
     let mut result = view.render(DebugRenderer).await;
@@ -165,7 +165,7 @@ mod tests {
   #[tokio::test]
   async fn renders_after_set_data() {
     // given
-    let mut view = View::new(specification());
+    let mut view = View::build(specification());
 
     // when
     let mut result = view.render(DebugRenderer).await;

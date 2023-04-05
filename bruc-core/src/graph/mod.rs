@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashSet, VecDeque};
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::iter::FromIterator;
 
 use crate::data::DataValue;
@@ -19,10 +19,10 @@ pub struct Graph {
   pub(crate) edges: Vec<Edge>,
 
   /// Map associating the node index in the graph and their target nodes.
-  pub(crate) targets: BTreeMap<usize, HashSet<usize>>,
+  pub(crate) targets: BTreeMap<usize, BTreeSet<usize>>,
 
   /// Map associating the node index in the graph and their source nodes.
-  pub(crate) sources: BTreeMap<usize, HashSet<usize>>,
+  pub(crate) sources: BTreeMap<usize, BTreeSet<usize>>,
 
   /// Node's degree distribution, defining the degree of a node as the amount of incoming
   /// edges connected to a certain node. Key is the node index in the graph. Value is
@@ -30,7 +30,7 @@ pub struct Graph {
   pub(crate) degrees: BTreeMap<usize, usize>,
 
   /// Map associating a node degree with the respective node indices in the graph.
-  pub(crate) nodes_in_degree: BTreeMap<usize, HashSet<usize>>,
+  pub(crate) nodes_in_degree: BTreeMap<usize, BTreeSet<usize>>,
 
   /// The topological order of the graph nodes.
   pub(crate) order: Vec<usize>,
@@ -70,7 +70,7 @@ impl Graph {
 
     self.nodes.push(Node::init(operator));
     self.degrees.insert(index, 0);
-    self.nodes_in_degree.insert(0, HashSet::from_iter([index]));
+    self.nodes_in_degree.insert(0, BTreeSet::from_iter([index]));
 
     index
   }
@@ -84,14 +84,14 @@ impl Graph {
       .degrees
       .iter()
       .fold(BTreeMap::new(), |mut acc, (node, degree)| {
-        acc.entry(*degree).or_insert(HashSet::new()).insert(*node);
+        acc.entry(*degree).or_insert(BTreeSet::new()).insert(*node);
         acc
       });
 
-    let target = self.targets.entry(from).or_insert(HashSet::new());
+    let target = self.targets.entry(from).or_insert(BTreeSet::new());
     target.insert(to);
 
-    let source = self.sources.entry(to).or_insert(HashSet::new());
+    let source = self.sources.entry(to).or_insert(BTreeSet::new());
     source.insert(from);
 
     self.edges.push(Edge::new(from, to));
@@ -131,12 +131,12 @@ impl Graph {
   }
 
   /// Get node indices that have a certain degree.
-  fn get_nodes_in_degree(&self, degree: usize) -> HashSet<usize> {
+  fn get_nodes_in_degree(&self, degree: usize) -> BTreeSet<usize> {
     self
       .nodes_in_degree
       .get(&degree)
       .cloned()
-      .unwrap_or(HashSet::new())
+      .unwrap_or(BTreeSet::new())
   }
 
   /// Return the leave nodes in the graph.
@@ -157,10 +157,18 @@ impl Graph {
     outputs.into_iter().filter_map(SceneItem::build).collect()
   }
 
+  /// Builds the scene item by evaluating a sub-tree starting with a `node` index and
+  /// building the scene items out of the pulse value of the outputs.
+  pub async fn build_tree(&mut self, node: usize) -> Vec<SceneItem> {
+    let outputs = self.evaluate_tree(node).await;
+
+    outputs.into_iter().filter_map(SceneItem::build).collect()
+  }
+
   /// Evaluates the current graph iterating through all the edges of the graph in topological
   /// order, and keeps track of the values by using `Pulse` instances. Once the evaluation
   /// has completed, it returns the leave nodes.
-  pub async fn evaluate(&mut self) -> Vec<&Node> {
+  async fn evaluate(&mut self) -> Vec<&Node> {
     // Start evaluating the graph from the root nodes
     let mut queue = VecDeque::from_iter(self.get_nodes_in_degree(0));
 
@@ -169,6 +177,26 @@ impl Graph {
 
       // Append the targets to the queue
       if let Some(targets) = self.targets.get(&index) {
+        queue.extend(targets.iter());
+      }
+    }
+
+    self.leaves()
+  }
+
+  /// Evaluates the sub-tree of the current graph starting from `node` index by iterating
+  /// through all the edges of the graph in topological order, and keeps track of the values
+  /// by using `Pulse` instances. Once the evaluation has completed, it returns the leave
+  /// nodes.
+  async fn evaluate_tree(&mut self, node: usize) -> Vec<&Node> {
+    // Start evaluating the tree from the node
+    let mut queue = VecDeque::from_iter([node]);
+
+    while let Some(node) = queue.pop_front() {
+      self.evaluate_node(node).await;
+
+      // Append the targets to the queue
+      if let Some(targets) = self.targets.get(&node) {
         queue.extend(targets.iter());
       }
     }
@@ -460,6 +488,28 @@ mod tests {
       outputs[0].pulse,
       Pulse::single(vec![PulseValue::Marks(SceneItem::line(
         vec![(5.0, 13.0), (13.0, 5.0)],
+        "black".to_string(),
+        1.0
+      ))])
+    );
+  }
+
+  #[tokio::test]
+  async fn evaluates_tree_in_topological_sort() {
+    let mut graph = graph();
+
+    graph.evaluate().await;
+
+    let map = Node::init(Operator::map(MapPipe::new("a + 3", "b").unwrap()));
+    graph.replace_node(2, map);
+
+    let outputs = graph.evaluate_tree(2).await;
+
+    assert_eq!(outputs.len(), 1);
+    assert_eq!(
+      outputs[0].pulse,
+      Pulse::single(vec![PulseValue::Marks(SceneItem::line(
+        vec![(5.0, 20.0 - 8.0), (13.0, 20.0 - 16.0), (2.0, 20.0 - 5.0)],
         "black".to_string(),
         1.0
       ))])

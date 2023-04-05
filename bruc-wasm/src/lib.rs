@@ -13,7 +13,7 @@ impl Bruc {
   #[wasm_bindgen]
   pub fn build(specification: String) -> Bruc {
     let specification = serde_json::from_str(specification.as_str()).unwrap();
-    let view = View::new(specification);
+    let view = View::build(specification);
 
     Bruc { view }
   }

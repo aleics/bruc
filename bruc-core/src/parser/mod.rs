@@ -200,7 +200,7 @@ impl MarkParser {
 
 #[cfg(test)]
 mod tests {
-  use std::collections::{BTreeMap, HashMap, HashSet};
+  use std::collections::{BTreeMap, BTreeSet, HashMap};
 
   use crate::graph::node::mark::SceneWindow;
   use crate::graph::node::{Node, Operator};
@@ -313,21 +313,21 @@ mod tests {
     assert_eq!(
       graph.targets,
       BTreeMap::from([
-        (0, HashSet::from([1])),
-        (1, HashSet::from([2])),
-        (2, HashSet::from([3, 4])),
-        (3, HashSet::from([5])),
-        (4, HashSet::from([5]))
+        (0, BTreeSet::from([1])),
+        (1, BTreeSet::from([2])),
+        (2, BTreeSet::from([3, 4])),
+        (3, BTreeSet::from([5])),
+        (4, BTreeSet::from([5]))
       ])
     );
     assert_eq!(
       graph.sources,
       BTreeMap::from([
-        (1, HashSet::from([0])),
-        (2, HashSet::from([1])),
-        (3, HashSet::from([2])),
-        (4, HashSet::from([2])),
-        (5, HashSet::from([3, 4]))
+        (1, BTreeSet::from([0])),
+        (2, BTreeSet::from([1])),
+        (3, BTreeSet::from([2])),
+        (4, BTreeSet::from([2])),
+        (5, BTreeSet::from([3, 4]))
       ])
     );
     assert_eq!(
@@ -337,9 +337,9 @@ mod tests {
     assert_eq!(
       graph.nodes_in_degree,
       BTreeMap::from([
-        (0, HashSet::from([0])),
-        (1, HashSet::from([1, 2, 3, 4])),
-        (2, HashSet::from([5]))
+        (0, BTreeSet::from([0])),
+        (1, BTreeSet::from([1, 2, 3, 4])),
+        (2, BTreeSet::from([5]))
       ])
     );
     assert_eq!(graph.order, vec![0, 1, 2, 3, 4]);

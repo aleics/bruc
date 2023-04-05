@@ -69,7 +69,7 @@ while(true) {
 
 function randomData() {
   const values = [];
-  for (var i = 0; i < 4; i++) {
+  for (let i = 0; i < 4; i++) {
     values.push({ x: i, y: randomValue(50), k: i, q: randomValue(50) });
   }
   return values;

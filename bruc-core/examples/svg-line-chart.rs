@@ -51,7 +51,7 @@ async fn main() {
   )
   .unwrap();
 
-  let mut view = View::new(specification);
+  let mut view = View::build(specification);
   let mut render_result = view.render(SvgRenderer).await;
 
   let svg = render_result.next().await.unwrap();
