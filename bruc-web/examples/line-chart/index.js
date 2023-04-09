@@ -30,7 +30,7 @@ const spec = `{
       "range": [0, 200]
     }
   ],
-  "marks": [
+  "shapes": [
     {
       "from": "primary",
       "type": "line",

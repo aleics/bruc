@@ -1,10 +1,10 @@
 use crate::spec::data::DataEntry;
-use crate::spec::mark::Mark;
 use crate::spec::scale::Scale;
+use crate::spec::shape::Shape;
 
 pub mod data;
-pub mod mark;
 pub mod scale;
+pub mod shape;
 pub mod transform;
 
 #[derive(Debug, PartialEq)]
@@ -14,7 +14,7 @@ pub struct Specification {
   pub(crate) dimensions: Dimensions,
   pub(crate) data: Vec<DataEntry>,
   pub(crate) scales: Vec<Scale>,
-  pub(crate) marks: Vec<Mark>,
+  pub(crate) shapes: Vec<Shape>,
 }
 
 impl Specification {
@@ -22,13 +22,13 @@ impl Specification {
     dimensions: Dimensions,
     data: Vec<DataEntry>,
     scales: Vec<Scale>,
-    marks: Vec<Mark>,
+    shapes: Vec<Shape>,
   ) -> Self {
     Specification {
       dimensions,
       data,
       scales,
-      marks,
+      shapes,
     }
   }
 }
@@ -59,12 +59,12 @@ impl Default for Dimensions {
 #[cfg(test)]
 mod serde_tests {
   use crate::data::DataValue;
-  use crate::spec::mark::line::{LineMark, LinePropertiesBuilder};
-  use crate::spec::mark::{DataSource, Mark};
   use crate::spec::scale::domain::Domain;
   use crate::spec::scale::linear::LinearScale;
   use crate::spec::scale::range::Range;
   use crate::spec::scale::{Scale, ScaleKind};
+  use crate::spec::shape::line::{LinePropertiesBuilder, LineShape};
+  use crate::spec::shape::{DataSource, Shape};
   use crate::spec::transform::filter::FilterPipe;
   use crate::spec::transform::pipe::Pipe;
   use crate::spec::{DataEntry, Dimensions};
@@ -76,7 +76,7 @@ mod serde_tests {
       r#"{
         "data": [],
         "scales": [],
-        "marks": []
+        "shapes": []
       }"#,
     )
     .unwrap();
@@ -111,7 +111,7 @@ mod serde_tests {
             "range": [0, 20]
           }
         ],
-        "marks": [
+        "shapes": [
           {
             "from": "primary",
             "type": "line",
@@ -143,9 +143,9 @@ mod serde_tests {
             Range::Literal(0.0, 20.0),
           ))
         )],
-        vec![Mark::line(
+        vec![Shape::line(
           "primary",
-          LineMark::new(
+          LineShape::new(
             LinePropertiesBuilder::new()
               .with_x(DataSource::field("a", Some("horizontal")))
               .build()

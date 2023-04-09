@@ -1,5 +1,5 @@
-use crate::spec::mark::base::BaseMarkProperties;
-use crate::spec::mark::DataSource;
+use crate::spec::shape::base::BaseShapeProperties;
+use crate::spec::shape::DataSource;
 use bruc_expression::data::DataItem;
 
 pub(crate) struct LinePropertiesBuilder {
@@ -48,7 +48,7 @@ impl LinePropertiesBuilder {
 
   pub(crate) fn build(self) -> LineProperties {
     LineProperties {
-      base: BaseMarkProperties::new(self.x, self.y, None, None),
+      base: BaseShapeProperties::new(self.x, self.y, None, None),
       interpolate: self.interpolate,
       stroke: self.stroke,
       stroke_width: self.stroke_width,
@@ -58,14 +58,14 @@ impl LinePropertiesBuilder {
 
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
-pub struct LineMark {
+pub struct LineShape {
   #[cfg_attr(feature = "serde", serde(rename = "properties"))]
   pub(crate) props: LineProperties,
 }
 
-impl LineMark {
-  pub(crate) fn new(props: LineProperties) -> LineMark {
-    LineMark { props }
+impl LineShape {
+  pub(crate) fn new(props: LineProperties) -> LineShape {
+    LineShape { props }
   }
 }
 
@@ -81,7 +81,7 @@ pub(crate) struct LineProperties {
   pub(crate) stroke: Option<DataItem>,
   pub(crate) stroke_width: Option<DataItem>,
   #[cfg_attr(feature = "serde", serde(flatten))]
-  pub(crate) base: BaseMarkProperties,
+  pub(crate) base: BaseShapeProperties,
 }
 
 #[derive(Debug, PartialEq, Clone, Copy, Default)]
@@ -95,12 +95,12 @@ pub enum Interpolate {
 #[cfg(test)]
 #[cfg(feature = "serde")]
 mod serde_tests {
-  use crate::spec::mark::line::{Interpolate, LineMark, LineProperties, LinePropertiesBuilder};
-  use crate::spec::mark::DataSource;
+  use crate::spec::shape::line::{Interpolate, LineProperties, LinePropertiesBuilder, LineShape};
+  use crate::spec::shape::DataSource;
 
   #[test]
-  fn deserialize_line_mark() {
-    let line_mark: LineMark = serde_json::from_str(
+  fn deserialize_line_shape() {
+    let line_shape: LineShape = serde_json::from_str(
       r#"{
         "properties": {
           "x": { "field": "x", "scale": "xscale" },
@@ -114,8 +114,8 @@ mod serde_tests {
     .unwrap();
 
     assert_eq!(
-      line_mark,
-      LineMark::new(
+      line_shape,
+      LineShape::new(
         LinePropertiesBuilder::new()
           .with_x(DataSource::field("x", Some("xscale")))
           .with_y(DataSource::field("y", Some("yscale")))

@@ -16,8 +16,8 @@ pub struct SvgRenderer;
 
 impl SvgRenderer {
   fn render_root(root: &SceneRoot) -> String {
-    let width = root.width;
-    let height = root.height;
+    let width = root.dimensions.width;
+    let height = root.dimensions.height;
     let content = root.items.iter().fold(String::new(), |acc, item| {
       acc + &SvgRenderer::render_item(item)
     });
@@ -69,7 +69,7 @@ impl Renderer for SvgRenderer {
 #[cfg(test)]
 mod tests {
   use crate::render::{Renderer, SvgRenderer};
-  use crate::scene::{SceneItem, SceneRoot, Scenegraph};
+  use crate::scene::{SceneDimensions, SceneItem, SceneRoot, Scenegraph};
 
   #[test]
   fn render_svg_line() {
@@ -79,8 +79,10 @@ mod tests {
         "black".to_string(),
         1.0,
       )],
-      500,
-      200,
+      SceneDimensions {
+        width: 500,
+        height: 200,
+      },
     ));
 
     let renderer = SvgRenderer;

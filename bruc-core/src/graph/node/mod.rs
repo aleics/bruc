@@ -1,8 +1,8 @@
-use crate::graph::node::mark::{LineOperator, SceneWindow};
 use crate::graph::node::scale::{IdentityOperator, LinearOperator};
-use crate::spec::mark::line::LineMark;
+use crate::graph::node::shape::{LineOperator, SceneWindow};
 use crate::spec::scale::linear::LinearScale;
 use crate::spec::scale::{Scale, ScaleKind};
+use crate::spec::shape::line::LineShape;
 use crate::{
   data::DataValue,
   spec::transform::{filter::FilterPipe, group::GroupPipe, map::MapPipe, pipe::Pipe},
@@ -14,8 +14,8 @@ use self::{data::DataOperator, transform::GroupOperator};
 use super::{Evaluation, Pulse};
 
 pub(crate) mod data;
-pub(crate) mod mark;
 pub(crate) mod scale;
+pub(crate) mod shape;
 pub(crate) mod transform;
 
 /// `Node` represents a node in the `Graph` with a certain operator and a `Pulse` instance.
@@ -92,8 +92,8 @@ impl Operator {
   }
 
   /// Create a new line `Operator` instance.
-  pub(crate) fn line(mark: LineMark, window: SceneWindow) -> Self {
-    Operator::Line(LineOperator::new(mark, window))
+  pub(crate) fn line(shape: LineShape, window: SceneWindow) -> Self {
+    Operator::Line(LineOperator::new(shape, window))
   }
 
   /// Create a new identity `Operator` instance.

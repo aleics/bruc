@@ -1,4 +1,4 @@
-use crate::spec::mark::DataSource;
+use crate::spec::shape::DataSource;
 
 pub(crate) const X_AXIS_FIELD_NAME: &str = "x";
 pub(crate) const Y_AXIS_FIELD_NAME: &str = "y";
@@ -7,21 +7,21 @@ pub(crate) const HEIGHT_FIELD_NAME: &str = "height";
 
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
-pub struct BaseMarkProperties {
+pub struct BaseShapeProperties {
   pub(crate) x: Option<DataSource>,
   pub(crate) y: Option<DataSource>,
   pub(crate) width: Option<DataSource>,
   pub(crate) height: Option<DataSource>,
 }
 
-impl BaseMarkProperties {
+impl BaseShapeProperties {
   pub fn new(
     x: Option<DataSource>,
     y: Option<DataSource>,
     width: Option<DataSource>,
     height: Option<DataSource>,
-  ) -> BaseMarkProperties {
-    BaseMarkProperties {
+  ) -> BaseShapeProperties {
+    BaseShapeProperties {
       x,
       y,
       width,
@@ -33,12 +33,12 @@ impl BaseMarkProperties {
 #[cfg(test)]
 #[cfg(feature = "serde")]
 mod serde_tests {
-  use crate::spec::mark::base::BaseMarkProperties;
-  use crate::spec::mark::DataSource;
+  use crate::spec::shape::base::BaseShapeProperties;
+  use crate::spec::shape::DataSource;
 
   #[test]
   fn deserialize_update_phase() {
-    let props: BaseMarkProperties = serde_json::from_str(
+    let props: BaseShapeProperties = serde_json::from_str(
       r#"{
         "x": { "field": "x", "scale": "xscale" },
         "y": { "field": "y", "scale": "yscale" },
@@ -50,7 +50,7 @@ mod serde_tests {
 
     assert_eq!(
       props,
-      BaseMarkProperties {
+      BaseShapeProperties {
         x: Some(DataSource::field("x", Some("xscale"))),
         y: Some(DataSource::field("y", Some("yscale"))),
         width: Some(DataSource::ValueSource(100.0.into())),
@@ -60,16 +60,16 @@ mod serde_tests {
   }
 
   #[test]
-  fn deserialize_mark_props() {
-    let mark_style: BaseMarkProperties = serde_json::from_str(
+  fn deserialize_shape_props() {
+    let shape_style: BaseShapeProperties = serde_json::from_str(
       r#"{
         "x": { "field": "x", "scale": "xscale" }
       }"#,
     )
     .unwrap();
     assert_eq!(
-      mark_style,
-      BaseMarkProperties {
+      shape_style,
+      BaseShapeProperties {
         x: Some(DataSource::field("x", Some("xscale"))),
         y: None,
         width: None,
@@ -77,10 +77,10 @@ mod serde_tests {
       }
     );
 
-    let mark_style: BaseMarkProperties = serde_json::from_str(r#"{ "y": 20 }"#).unwrap();
+    let shape_style: BaseShapeProperties = serde_json::from_str(r#"{ "y": 20 }"#).unwrap();
     assert_eq!(
-      mark_style,
-      BaseMarkProperties {
+      shape_style,
+      BaseShapeProperties {
         x: None,
         y: Some(DataSource::ValueSource(20.0.into())),
         width: None,
@@ -88,15 +88,15 @@ mod serde_tests {
       }
     );
 
-    let mark_style: BaseMarkProperties = serde_json::from_str(
+    let shape_style: BaseShapeProperties = serde_json::from_str(
       r#"{
         "width": { "field": "x", "scale": "widthscale" }
       }"#,
     )
     .unwrap();
     assert_eq!(
-      mark_style,
-      BaseMarkProperties {
+      shape_style,
+      BaseShapeProperties {
         x: None,
         y: None,
         width: Some(DataSource::field("x", Some("widthscale"))),
@@ -104,10 +104,10 @@ mod serde_tests {
       }
     );
 
-    let mark_style: BaseMarkProperties = serde_json::from_str(r#"{ "height": 100 }"#).unwrap();
+    let shape_style: BaseShapeProperties = serde_json::from_str(r#"{ "height": 100 }"#).unwrap();
     assert_eq!(
-      mark_style,
-      BaseMarkProperties {
+      shape_style,
+      BaseShapeProperties {
         x: None,
         y: None,
         width: None,

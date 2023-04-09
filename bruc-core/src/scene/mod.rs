@@ -1,6 +1,12 @@
 use crate::graph::node::Node;
 use crate::graph::{Pulse, PulseValue};
 
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub struct SceneDimensions {
+  pub(crate) width: usize,
+  pub(crate) height: usize,
+}
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct Scenegraph {
   pub(crate) root: SceneRoot,
@@ -15,17 +21,12 @@ impl Scenegraph {
 #[derive(Debug, PartialEq, Clone)]
 pub struct SceneRoot {
   pub(crate) items: Vec<SceneItem>,
-  pub(crate) width: usize,
-  pub(crate) height: usize,
+  pub(crate) dimensions: SceneDimensions,
 }
 
 impl SceneRoot {
-  pub fn new(items: Vec<SceneItem>, width: usize, height: usize) -> Self {
-    SceneRoot {
-      items,
-      width,
-      height,
-    }
+  pub fn new(items: Vec<SceneItem>, dimensions: SceneDimensions) -> Self {
+    SceneRoot { items, dimensions }
   }
 }
 
@@ -49,7 +50,7 @@ impl SceneItem {
       let items = single
         .values
         .iter()
-        .filter_map(PulseValue::get_marks)
+        .filter_map(PulseValue::get_shapes)
         .cloned()
         .collect();
 

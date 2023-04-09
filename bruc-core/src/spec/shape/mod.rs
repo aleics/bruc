@@ -1,4 +1,4 @@
-use crate::spec::mark::line::LineMark;
+use crate::spec::shape::line::LineShape;
 use bruc_expression::data::DataItem;
 
 pub(crate) mod base;
@@ -6,17 +6,17 @@ pub(crate) mod line;
 
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
-pub struct Mark {
+pub struct Shape {
   pub(crate) from: String,
   #[cfg_attr(feature = "serde", serde(flatten))]
-  pub(crate) kind: MarkKind,
+  pub(crate) kind: ShapeKind,
 }
 
-impl Mark {
-  pub(crate) fn line(from: &str, mark: LineMark) -> Mark {
-    Mark {
+impl Shape {
+  pub(crate) fn line(from: &str, line: LineShape) -> Shape {
+    Shape {
       from: from.to_string(),
-      kind: MarkKind::Line(mark),
+      kind: ShapeKind::Line(line),
     }
   }
 }
@@ -25,8 +25,8 @@ impl Mark {
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(tag = "type"))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
-pub enum MarkKind {
-  Line(LineMark),
+pub enum ShapeKind {
+  Line(LineShape),
 }
 
 #[derive(Debug, PartialEq)]
@@ -56,12 +56,12 @@ impl DataSource {
 #[cfg(test)]
 #[cfg(feature = "serde")]
 mod serde_tests {
-  use crate::spec::mark::line::{LineMark, LinePropertiesBuilder};
-  use crate::spec::mark::{DataSource, Mark};
+  use crate::spec::shape::line::{LinePropertiesBuilder, LineShape};
+  use crate::spec::shape::{DataSource, Shape};
 
   #[test]
-  fn deserialize_mark() {
-    let mark: Mark = serde_json::from_str(
+  fn deserialize_shape() {
+    let shape: Shape = serde_json::from_str(
       r#"{
         "from": "table",
         "type": "line",
@@ -74,10 +74,10 @@ mod serde_tests {
     .unwrap();
 
     assert_eq!(
-      mark,
-      Mark::line(
+      shape,
+      Shape::line(
         "table",
-        LineMark::new(
+        LineShape::new(
           LinePropertiesBuilder::new()
             .with_x(DataSource::field("x", Some("xscale")))
             .with_y(DataSource::field("y", Some("yscale")))

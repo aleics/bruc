@@ -1,7 +1,7 @@
 use crate::graph::{Evaluation, MultiPulse, Pulse, PulseValue, SinglePulse};
 use crate::scene::SceneItem;
-use crate::spec::mark::base::{X_AXIS_FIELD_NAME, Y_AXIS_FIELD_NAME};
-use crate::spec::mark::line::LineMark;
+use crate::spec::shape::base::{X_AXIS_FIELD_NAME, Y_AXIS_FIELD_NAME};
+use crate::spec::shape::line::LineShape;
 
 #[derive(Debug, PartialEq)]
 pub(crate) struct SceneWindow {
@@ -18,21 +18,21 @@ impl SceneWindow {
   }
 }
 
-/// `LineOperator` represents an operator of the graph, which generates a `LineMark` instance from
+/// `LineOperator` represents an operator of the graph, which generates a `LineShape` instance from
 /// the incoming `Pulse` instance.
 #[derive(Debug, PartialEq)]
 pub struct LineOperator {
-  mark: LineMark,
+  shape: LineShape,
   window: SceneWindow,
 }
 
 impl LineOperator {
-  /// Create a new `LineOperator` instance with a certain line mark.
-  pub(crate) fn new(mark: LineMark, window: SceneWindow) -> Self {
-    LineOperator { mark, window }
+  /// Create a new `LineOperator` instance with a certain line shape.
+  pub(crate) fn new(shape: LineShape, window: SceneWindow) -> Self {
+    LineOperator { shape, window }
   }
 
-  /// Apply the operator's logic by generating line marks from the incoming already encoded pulse.
+  /// Apply the operator's logic by generating line shapes from the incoming already encoded pulse.
   /// values.
   fn apply(&self, values: &[PulseValue]) -> Vec<PulseValue> {
     let points = values
@@ -41,7 +41,7 @@ impl LineOperator {
       .collect();
 
     let stroke = self
-      .mark
+      .shape
       .props
       .stroke
       .as_ref()
@@ -50,14 +50,14 @@ impl LineOperator {
       .unwrap_or("black".to_string());
 
     let stroke_width = self
-      .mark
+      .shape
       .props
       .stroke_width
       .as_ref()
       .and_then(|stroke_width| stroke_width.get_number().copied())
       .unwrap_or(1.0);
 
-    vec![PulseValue::Marks(SceneItem::line(
+    vec![PulseValue::Shapes(SceneItem::line(
       points,
       stroke,
       stroke_width,
@@ -99,10 +99,10 @@ impl Evaluation for LineOperator {
 #[cfg(test)]
 mod tests {
   use crate::data::DataValue;
-  use crate::graph::node::mark::{LineOperator, SceneWindow};
+  use crate::graph::node::shape::{LineOperator, SceneWindow};
   use crate::graph::{Evaluation, Pulse, PulseValue, SinglePulse};
   use crate::scene::SceneItem;
-  use crate::spec::mark::line::{LineMark, LinePropertiesBuilder};
+  use crate::spec::shape::line::{LinePropertiesBuilder, LineShape};
 
   #[tokio::test]
   async fn computes_line() {
@@ -120,7 +120,7 @@ mod tests {
     ]);
 
     let operator = LineOperator::new(
-      LineMark::new(
+      LineShape::new(
         LinePropertiesBuilder::new()
           .with_stroke("red")
           .with_stroke_width(2.0)
@@ -135,7 +135,7 @@ mod tests {
 
     assert_eq!(
       pulse,
-      Pulse::single(vec![PulseValue::Marks(SceneItem::line(
+      Pulse::single(vec![PulseValue::Shapes(SceneItem::line(
         vec![(2.0, 1.0), (5.0, 1.0), (10.0, 1.0), (15.0, 1.0)],
         "red".to_string(),
         2.0

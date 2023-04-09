@@ -11,7 +11,7 @@ pub struct Bruc {
 #[wasm_bindgen]
 impl Bruc {
   #[wasm_bindgen]
-  pub fn build(specification: String) -> Bruc {
+  pub fn build(specification: String) -> Self {
     let specification = serde_json::from_str(specification.as_str()).unwrap();
     let view = View::build(specification);
 

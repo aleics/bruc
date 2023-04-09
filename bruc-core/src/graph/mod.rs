@@ -382,7 +382,7 @@ pub enum PulseValue {
   /// `DataValue` pulse value.
   Data(DataValue),
   /// `SceneItem` pulse value.
-  Marks(SceneItem),
+  Shapes(SceneItem),
 }
 
 impl PulseValue {
@@ -396,8 +396,8 @@ impl PulseValue {
   }
 
   /// Get the pulse value as `SceneItem`
-  pub(crate) fn get_marks(&self) -> Option<&SceneItem> {
-    if let PulseValue::Marks(scene) = &self {
+  pub(crate) fn get_shapes(&self) -> Option<&SceneItem> {
+    if let PulseValue::Shapes(scene) = &self {
       Some(scene)
     } else {
       None
@@ -407,12 +407,12 @@ impl PulseValue {
 
 #[cfg(test)]
 mod tests {
-  use crate::graph::node::mark::SceneWindow;
-  use crate::spec::mark::line::{LineMark, LinePropertiesBuilder};
-  use crate::spec::mark::DataSource;
+  use crate::graph::node::shape::SceneWindow;
   use crate::spec::scale::domain::Domain;
   use crate::spec::scale::linear::LinearScale;
   use crate::spec::scale::range::Range;
+  use crate::spec::shape::line::{LinePropertiesBuilder, LineShape};
+  use crate::spec::shape::DataSource;
   use crate::{
     data::DataValue,
     spec::transform::{filter::FilterPipe, map::MapPipe},
@@ -463,7 +463,7 @@ mod tests {
 
     graph.add(
       Operator::line(
-        LineMark::new(
+        LineShape::new(
           LinePropertiesBuilder::new()
             .with_x(DataSource::field("a", Some("horizontal")))
             .with_y(DataSource::field("b", Some("vertical")))
@@ -486,7 +486,7 @@ mod tests {
     assert_eq!(outputs.len(), 1);
     assert_eq!(
       outputs[0].pulse,
-      Pulse::single(vec![PulseValue::Marks(SceneItem::line(
+      Pulse::single(vec![PulseValue::Shapes(SceneItem::line(
         vec![(5.0, 13.0), (13.0, 5.0)],
         "black".to_string(),
         1.0
@@ -508,7 +508,7 @@ mod tests {
     assert_eq!(outputs.len(), 1);
     assert_eq!(
       outputs[0].pulse,
-      Pulse::single(vec![PulseValue::Marks(SceneItem::line(
+      Pulse::single(vec![PulseValue::Shapes(SceneItem::line(
         vec![(5.0, 20.0 - 8.0), (13.0, 20.0 - 16.0), (2.0, 20.0 - 5.0)],
         "black".to_string(),
         1.0
