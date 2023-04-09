@@ -30,28 +30,30 @@ const spec = `{
       "range": [0, 200]
     }
   ],
-  "shapes": [
-    {
-      "from": "primary",
-      "type": "line",
-      "properties": {
-        "x": { "field": "x", "scale": "horizontal" },
-        "y": { "field": "y", "scale": "vertical" },
-        "stroke": "red",
-        "strokeWidth": 2
+  "visual": {
+    "shapes": [
+      {
+        "from": "primary",
+        "type": "line",
+        "properties": {
+          "x": { "field": "x", "scale": "horizontal" },
+          "y": { "field": "y", "scale": "vertical" },
+          "stroke": "red",
+          "strokeWidth": 2
+        }
+      },
+      {
+        "from": "primary",
+        "type": "line",
+        "properties": {
+          "x": { "field": "k", "scale": "horizontal" },
+          "y": { "field": "q", "scale": "vertical" },
+          "stroke": "blue",
+          "strokeWidth": 2
+        }
       }
-    },
-    {
-      "from": "primary",
-      "type": "line",
-      "properties": {
-        "x": { "field": "k", "scale": "horizontal" },
-        "y": { "field": "q", "scale": "vertical" },
-        "stroke": "blue",
-        "strokeWidth": 2
-      }
-    }
-  ]
+    ]
+  }
 }`;
 
 const bruc = Bruc.build(spec);

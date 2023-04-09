@@ -168,7 +168,7 @@ impl Graph {
   /// Evaluates the current graph iterating through all the edges of the graph in topological
   /// order, and keeps track of the values by using `Pulse` instances. Once the evaluation
   /// has completed, it returns the leave nodes.
-  async fn evaluate(&mut self) -> Vec<&Node> {
+  pub async fn evaluate(&mut self) -> Vec<&Node> {
     // Start evaluating the graph from the root nodes
     let mut queue = VecDeque::from_iter(self.get_nodes_in_degree(0));
 

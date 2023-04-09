@@ -105,7 +105,7 @@ mod tests {
   use crate::spec::transform::filter::FilterPipe;
   use crate::spec::transform::map::MapPipe;
   use crate::spec::transform::pipe::Pipe;
-  use crate::spec::{Dimensions, Specification};
+  use crate::spec::{Dimensions, Specification, Visual};
   use crate::View;
 
   fn specification() -> Specification {
@@ -138,7 +138,7 @@ mod tests {
           )),
         ),
       ],
-      vec![Shape::line(
+      Visual::new(vec![Shape::line(
         "primary",
         LineShape::new(
           LinePropertiesBuilder::new()
@@ -146,7 +146,7 @@ mod tests {
             .with_y(DataSource::field("b", Some("vertical")))
             .build(),
         ),
-      )],
+      )]),
     )
   }
 

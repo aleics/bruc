@@ -14,7 +14,8 @@ pub struct Specification {
   pub(crate) dimensions: Dimensions,
   pub(crate) data: Vec<DataEntry>,
   pub(crate) scales: Vec<Scale>,
-  pub(crate) shapes: Vec<Shape>,
+  #[cfg_attr(feature = "serde", serde(default))]
+  pub(crate) visual: Visual,
 }
 
 impl Specification {
@@ -22,13 +23,13 @@ impl Specification {
     dimensions: Dimensions,
     data: Vec<DataEntry>,
     scales: Vec<Scale>,
-    shapes: Vec<Shape>,
+    visual: Visual,
   ) -> Self {
     Specification {
       dimensions,
       data,
       scales,
-      shapes,
+      visual,
     }
   }
 }
@@ -55,6 +56,18 @@ impl Default for Dimensions {
   }
 }
 
+#[derive(Debug, PartialEq, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize))]
+pub struct Visual {
+  pub(crate) shapes: Vec<Shape>,
+}
+
+impl Visual {
+  pub fn new(shapes: Vec<Shape>) -> Self {
+    Visual { shapes }
+  }
+}
+
 #[cfg(feature = "serde")]
 #[cfg(test)]
 mod serde_tests {
@@ -67,7 +80,7 @@ mod serde_tests {
   use crate::spec::shape::{DataSource, Shape};
   use crate::spec::transform::filter::FilterPipe;
   use crate::spec::transform::pipe::Pipe;
-  use crate::spec::{DataEntry, Dimensions};
+  use crate::spec::{DataEntry, Dimensions, Visual};
   use crate::Specification;
 
   #[test]
@@ -75,14 +88,13 @@ mod serde_tests {
     let spec: Specification = serde_json::from_str(
       r#"{
         "data": [],
-        "scales": [],
-        "shapes": []
+        "scales": []
       }"#,
     )
     .unwrap();
     assert_eq!(
       spec,
-      Specification::new(Dimensions::default(), vec![], vec![], vec![])
+      Specification::new(Dimensions::default(), vec![], vec![], Visual::default())
     );
   }
 
@@ -111,15 +123,17 @@ mod serde_tests {
             "range": [0, 20]
           }
         ],
-        "shapes": [
-          {
-            "from": "primary",
-            "type": "line",
-            "properties": {
-              "x": { "field": "a", "scale": "horizontal" }
+        "visual": {
+          "shapes": [
+            {
+              "from": "primary",
+              "type": "line",
+              "properties": {
+                "x": { "field": "a", "scale": "horizontal" }
+              }
             }
-          }
-        ]
+          ]
+        }
       }"#,
     )
     .unwrap();
@@ -143,14 +157,14 @@ mod serde_tests {
             Range::Literal(0.0, 20.0),
           ))
         )],
-        vec![Shape::line(
+        Visual::new(vec![Shape::line(
           "primary",
           LineShape::new(
             LinePropertiesBuilder::new()
               .with_x(DataSource::field("a", Some("horizontal")))
               .build()
           ),
-        )],
+        )],)
       )
     );
   }

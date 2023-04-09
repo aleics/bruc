@@ -8,7 +8,7 @@ use crate::spec::shape::base::{
 };
 use crate::spec::shape::line::LineShape;
 use crate::spec::shape::{DataSource, Shape, ShapeKind};
-use crate::spec::Dimensions;
+use crate::spec::{Dimensions, Visual};
 use crate::{
   graph::{node::Operator, Graph},
   spec::data::DataEntry,
@@ -28,11 +28,11 @@ pub(crate) struct Parser;
 impl Parser {
   /// Parse a specification instance into a new graph.
   pub(crate) fn parse(&self, specification: Specification) -> ParseResult {
-    let shape_parser = ShapeParser::new(&specification.scales, specification.dimensions);
+    let visual_parser = VisualParser::new(&specification.scales, specification.dimensions);
 
     let mut graph = Graph::new();
     let data_nodes = DataParser::parse(specification.data, &mut graph);
-    shape_parser.parse_shapes(specification.shapes, &data_nodes, &mut graph);
+    visual_parser.parse(specification.visual, &data_nodes, &mut graph);
 
     ParseResult { graph, data_nodes }
   }
@@ -62,30 +62,31 @@ impl DataParser {
   }
 }
 
-struct ShapeParser {
+struct VisualParser {
   scales: HashMap<String, Scale>,
   dimensions: Dimensions,
 }
 
-impl ShapeParser {
+impl VisualParser {
   fn new(scales: &[Scale], dimensions: Dimensions) -> Self {
     let scales = scales
       .iter()
       .map(|scale| (scale.name.clone(), scale.clone()))
       .collect::<HashMap<String, Scale>>();
 
-    ShapeParser { scales, dimensions }
+    VisualParser { scales, dimensions }
   }
 
-  /// Parse the specification shapes into the graph by creating shape and scale nodes, which are
+  /// Parse the visual specification into the graph by creating shape and scale nodes, which are
   /// properly connected within each other and the incoming data node.
-  fn parse_shapes(
+  fn parse(
     &self,
-    shapes: Vec<Shape>,
+    visual: Visual,
     data_nodes: &HashMap<String, usize>,
     graph: &mut Graph,
   ) -> Vec<usize> {
-    shapes
+    visual
+      .shapes
       .into_iter()
       .filter_map(|shape| {
         data_nodes
@@ -209,7 +210,7 @@ mod tests {
   use crate::spec::scale::ScaleKind;
   use crate::spec::shape::line::LinePropertiesBuilder;
   use crate::spec::transform::map::MapPipe;
-  use crate::spec::Dimensions;
+  use crate::spec::{Dimensions, Visual};
   use crate::{
     data::DataValue,
     spec::data::DataEntry,
@@ -253,7 +254,7 @@ mod tests {
           )),
         ),
       ],
-      vec![Shape::line(
+      Visual::new(vec![Shape::line(
         "primary",
         LineShape::new(
           LinePropertiesBuilder::new()
@@ -261,7 +262,7 @@ mod tests {
             .with_y(DataSource::field("b", Some("vertical")))
             .build(),
         ),
-      )],
+      )]),
     );
     let parser = Parser;
 

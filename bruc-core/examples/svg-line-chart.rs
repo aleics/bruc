@@ -35,18 +35,20 @@ async fn main() {
           "range": [0, 200]
         }
       ],
-      "shapes": [
-        {
-          "from": "primary",
-          "type": "line",
-          "properties": {
-            "x": { "field": "x", "scale": "horizontal" },
-            "y": { "field": "y", "scale": "vertical" },
-            "stroke": "red",
-            "strokeWidth": 2
+      "visual": {
+        "shapes": [
+          {
+            "from": "primary",
+            "type": "line",
+            "properties": {
+              "x": { "field": "x", "scale": "horizontal" },
+              "y": { "field": "y", "scale": "vertical" },
+              "stroke": "red",
+              "strokeWidth": 2
+            }
           }
-        }
-      ]
+        ]
+      }
     }"#,
   )
   .unwrap();
