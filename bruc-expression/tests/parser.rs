@@ -7,7 +7,7 @@ use bruc_expression::PredicateParser;
 fn interprets_simple_bool() {
   let expression = PredicateParser::new("true || false").parse().unwrap();
   let result: bool = expression.interpret(&Variables::new()).unwrap();
-  assert_eq!(result, true);
+  assert!(result);
 }
 
 #[test]
@@ -16,7 +16,7 @@ fn interprets_simple_numeric_with_vars() {
   let expression = PredicateParser::new("a > 3").parse().unwrap();
 
   let result: bool = expression.interpret(&vars).unwrap();
-  assert_eq!(result, true);
+  assert!(result);
 }
 
 #[test]
@@ -27,7 +27,7 @@ fn interprets_multiple_with_vars() {
   ]);
   let expression = PredicateParser::new("(a > 3) && !b").parse().unwrap();
   let result: bool = expression.interpret(&vars).unwrap();
-  assert_eq!(result, false);
+  assert!(!result);
 }
 
 #[test]
@@ -38,7 +38,7 @@ fn interprets_multiple_numeric_expressions() {
   let vars = Variables::from_pairs(vec![("a", 3.0.into())]);
 
   let result: bool = expression.interpret(&vars).unwrap();
-  assert_eq!(result, false);
+  assert!(!result);
 }
 
 #[test]
@@ -49,5 +49,5 @@ fn interprets_multiple_boolean_expressions() {
   let vars = Variables::from_pairs(vec![("a", false.into())]);
 
   let result: bool = expression.interpret(&vars).unwrap();
-  assert_eq!(result, false);
+  assert!(!result);
 }

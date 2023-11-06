@@ -84,14 +84,14 @@ impl Graph {
       .degrees
       .iter()
       .fold(BTreeMap::new(), |mut acc, (node, degree)| {
-        acc.entry(*degree).or_insert(BTreeSet::new()).insert(*node);
+        acc.entry(*degree).or_default().insert(*node);
         acc
       });
 
-    let target = self.targets.entry(from).or_insert(BTreeSet::new());
+    let target = self.targets.entry(from).or_default();
     target.insert(to);
 
-    let source = self.sources.entry(to).or_insert(BTreeSet::new());
+    let source = self.sources.entry(to).or_default();
     source.insert(from);
 
     self.edges.push(Edge::new(from, to));
