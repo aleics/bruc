@@ -2,13 +2,13 @@
 name = "bruc-expression"
 version = "0.1.0"
 authors = ["aleics <aleics.casanovas@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 strizer = { version = "0.1.0" }
 
 # For external trait impls
-serde = { version = "1.0.110", features = ["derive"], optional = true }
+serde = { version = "1.0.190", features = ["derive"], optional = true }
 
 [dev-dependencies]
 serde_json = "1.0"
