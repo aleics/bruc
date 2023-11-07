@@ -70,7 +70,19 @@ impl Graph {
 
     self.nodes.push(Node::init(operator));
     self.degrees.insert(index, 0);
-    self.nodes_in_degree.insert(0, BTreeSet::from_iter([index]));
+
+    // Add node in degree zero
+    self
+      .nodes_in_degree
+      .entry(0)
+      .and_modify(|nodes| {
+        nodes.insert(index);
+      })
+      .or_insert(BTreeSet::from_iter([index]));
+
+    // Add node in sources & targets with no connection
+    self.sources.insert(index, BTreeSet::new());
+    self.targets.insert(index, BTreeSet::new());
 
     index
   }
@@ -144,7 +156,14 @@ impl Graph {
     self
       .sources
       .keys()
-      .filter(|node| !self.targets.contains_key(node))
+      .filter(|node| {
+        // Leave nodes are the ones that are not targeting any other node
+        self
+          .targets
+          .get(node)
+          .map(|node_targets| node_targets.is_empty())
+          .unwrap_or(false)
+      })
       .filter_map(|node| self.nodes.get(*node))
       .collect()
   }
@@ -408,9 +427,11 @@ impl PulseValue {
 #[cfg(test)]
 mod tests {
   use crate::graph::node::shape::SceneWindow;
+  use crate::spec::axis::{Axis, AxisOrientation};
   use crate::spec::scale::domain::Domain;
   use crate::spec::scale::linear::LinearScale;
   use crate::spec::scale::range::Range;
+  use crate::spec::scale::{Scale, ScaleKind};
   use crate::spec::shape::line::{LinePropertiesBuilder, LineShape};
   use crate::spec::shape::DataSource;
   use crate::{
@@ -524,11 +545,65 @@ mod tests {
 
     assert_eq!(
       scene_items,
-      vec![SceneItem::group(vec![SceneItem::line(
+      vec![SceneItem::line(
         vec![(5.0, 13.0), (13.0, 5.0)],
         "black".to_string(),
         1.0
-      )])]
+      )]
+    );
+  }
+
+  #[tokio::test]
+  async fn gets_leave_nodes() {
+    let mut graph = Graph::new();
+
+    let data_operator = Operator::data(vec![]);
+    let map_operator = Operator::map(MapPipe::new("a + 2", "b").unwrap());
+    let scale_operator = Operator::linear(
+      LinearScale::new(Domain::Literal(0.0, 20.0), Range::Literal(0.0, 20.0)),
+      "a",
+      "x",
+    );
+    let axis_operator = Operator::axis(
+      Axis::new("x", AxisOrientation::Left),
+      Scale::new(
+        "x",
+        ScaleKind::Linear(LinearScale::new(
+          Domain::Literal(0.0, 100.0),
+          Range::Literal(0.0, 2.0),
+        )),
+      ),
+      SceneWindow::new(500, 200),
+    );
+
+    // (data) -> (map) -> (scale)
+    // (axis)
+    let data = graph.add(data_operator, vec![]);
+    let map = graph.add(map_operator, vec![data]);
+    let _scale = graph.add(scale_operator, vec![map]);
+    let _axis = graph.add(axis_operator, vec![]);
+
+    let leave_nodes = graph.leaves();
+    assert_eq!(
+      leave_nodes,
+      vec![
+        &Node::init(Operator::linear(
+          LinearScale::new(Domain::Literal(0.0, 20.0), Range::Literal(0.0, 20.0)),
+          "a",
+          "x",
+        )),
+        &Node::init(Operator::axis(
+          Axis::new("x", AxisOrientation::Left),
+          Scale::new(
+            "x",
+            ScaleKind::Linear(LinearScale::new(
+              Domain::Literal(0.0, 100.0),
+              Range::Literal(0.0, 2.0)
+            ))
+          ),
+          SceneWindow::new(500, 200)
+        ))
+      ]
     );
   }
 }
