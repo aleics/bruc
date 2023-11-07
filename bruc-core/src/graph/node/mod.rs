@@ -1,5 +1,6 @@
 use crate::graph::node::scale::{IdentityOperator, LinearOperator};
 use crate::graph::node::shape::{LineOperator, SceneWindow};
+use crate::spec::axis::Axis;
 use crate::spec::scale::linear::LinearScale;
 use crate::spec::scale::{Scale, ScaleKind};
 use crate::spec::shape::line::LineShape;
@@ -8,11 +9,13 @@ use crate::{
   spec::transform::{filter::FilterPipe, group::GroupPipe, map::MapPipe, pipe::Pipe},
 };
 
+use self::axis::AxisOperator;
 use self::transform::{FilterOperator, MapOperator};
 use self::{data::DataOperator, transform::GroupOperator};
 
 use super::{Evaluation, Pulse};
 
+pub(crate) mod axis;
 pub(crate) mod data;
 pub(crate) mod scale;
 pub(crate) mod shape;
@@ -49,6 +52,7 @@ pub enum Operator {
   Filter(FilterOperator),
   Group(GroupOperator),
   Line(LineOperator),
+  Axis(AxisOperator),
   Linear(LinearOperator),
   Identity(IdentityOperator),
 }
@@ -96,6 +100,10 @@ impl Operator {
     Operator::Line(LineOperator::new(shape, window))
   }
 
+  pub(crate) fn axis(axis: Axis, scale: Scale, window: SceneWindow) -> Self {
+    Operator::Axis(AxisOperator::new(axis, scale, window))
+  }
+
   /// Create a new identity `Operator` instance.
   pub(crate) fn identity(field: &str, output: &str) -> Self {
     Operator::Identity(IdentityOperator::new(field, output))
@@ -115,6 +123,7 @@ impl Operator {
       Operator::Filter(filter) => filter.evaluate(pulse).await,
       Operator::Group(group) => group.evaluate(pulse).await,
       Operator::Line(line) => line.evaluate(pulse).await,
+      Operator::Axis(axis) => axis.evaluate(pulse).await,
       Operator::Linear(linear) => linear.evaluate(pulse).await,
       Operator::Identity(identity) => identity.evaluate(pulse).await,
     }

@@ -9,6 +9,18 @@ impl Range {
   pub fn default_literal() -> Range {
     Range::Literal(0.0, 1.0)
   }
+
+  pub(crate) fn from(&self) -> f32 {
+    match self {
+      Range::Literal(from, _) => *from,
+    }
+  }
+
+  pub(crate) fn to(&self) -> f32 {
+    match self {
+      Range::Literal(_, to) => *to,
+    }
+  }
 }
 
 #[cfg(test)]
