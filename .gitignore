@@ -1,9 +1,14 @@
+# cargo
 /target
 **/*.rs.bk
 Cargo.lock
+tarpaulin-report.html
 
 # editors
 .idea
 *.iml
 .vscode
 .fleet
+
+# temporary
+.todos.md
