@@ -1,5 +1,5 @@
 use async_std::stream::StreamExt;
-use bruc_core::render::SvgRenderer;
+use bruc_core::render::svg::SvgRenderer;
 use bruc_core::View;
 use wasm_bindgen::prelude::*;
 

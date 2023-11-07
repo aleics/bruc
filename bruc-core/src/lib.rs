@@ -8,7 +8,7 @@ use graph::node::{Node, Operator};
 use graph::Graph;
 
 use crate::parser::Parser;
-use crate::render::Renderer;
+use crate::render::SceneRenderer;
 use crate::scene::{SceneDimensions, SceneRoot, Scenegraph};
 use crate::spec::Specification;
 
@@ -64,7 +64,7 @@ impl View {
     }
   }
 
-  pub async fn render<R: Renderer>(&mut self, renderer: R) -> impl Stream<Item = String> {
+  pub async fn render<R: SceneRenderer>(&mut self, renderer: R) -> impl Stream<Item = String> {
     let (sender, recv) = bounded(5);
 
     let items = self.state.graph.build().await;
@@ -185,7 +185,7 @@ mod tests {
     // then
     assert_eq!(
       content.unwrap(),
-      "Scenegraph { root: SceneRoot { items: [Group(SceneGroup { items: [Line(SceneLine { stroke: \"black\", stroke_width: 1.0, points: [(10.0, 13.0), (26.0, 5.0)] })] })], dimensions: SceneDimensions { width: 40, height: 20 } } }"
+      "Scenegraph { root: SceneRoot { items: [Line(SceneLine { stroke: \"black\", stroke_width: 1.0, points: [(10.0, 13.0), (26.0, 5.0)] }), Axis(SceneAxis { rule: SceneAxisRule { from: (0.0, 0.0), to: (40.0, 0.0) }, ticks: [SceneAxisTick { position: (0.0, 0.0), label: \"0.00\" }, SceneAxisTick { position: (4.0, 0.0), label: \"2.00\" }, SceneAxisTick { position: (8.0, 0.0), label: \"4.00\" }, SceneAxisTick { position: (12.0, 0.0), label: \"6.00\" }, SceneAxisTick { position: (16.0, 0.0), label: \"8.00\" }, SceneAxisTick { position: (20.0, 0.0), label: \"10.00\" }, SceneAxisTick { position: (24.0, 0.0), label: \"12.00\" }, SceneAxisTick { position: (28.0, 0.0), label: \"14.00\" }, SceneAxisTick { position: (32.0, 0.0), label: \"16.00\" }, SceneAxisTick { position: (36.0, 0.0), label: \"18.00\" }, SceneAxisTick { position: (40.0, 0.0), label: \"20.00\" }], orientation: Bottom }), Axis(SceneAxis { rule: SceneAxisRule { from: (0.0, 0.0), to: (0.0, 20.0) }, ticks: [SceneAxisTick { position: (0.0, 0.0), label: \"0.00\" }, SceneAxisTick { position: (0.0, 2.0), label: \"2.00\" }, SceneAxisTick { position: (0.0, 4.0), label: \"4.00\" }, SceneAxisTick { position: (0.0, 6.0), label: \"6.00\" }, SceneAxisTick { position: (0.0, 8.0), label: \"8.00\" }, SceneAxisTick { position: (0.0, 10.0), label: \"10.00\" }, SceneAxisTick { position: (0.0, 12.0), label: \"12.00\" }, SceneAxisTick { position: (0.0, 14.0), label: \"14.00\" }, SceneAxisTick { position: (0.0, 16.0), label: \"16.00\" }, SceneAxisTick { position: (0.0, 18.0), label: \"18.00\" }, SceneAxisTick { position: (0.0, 20.0), label: \"20.00\" }], orientation: Left })], dimensions: SceneDimensions { width: 40, height: 20 } } }"
     )
   }
 
@@ -213,11 +213,11 @@ mod tests {
     // then
     assert_eq!(
       first.unwrap(),
-      "Scenegraph { root: SceneRoot { items: [Group(SceneGroup { items: [Line(SceneLine { stroke: \"black\", stroke_width: 1.0, points: [(10.0, 13.0), (26.0, 5.0)] })] })], dimensions: SceneDimensions { width: 40, height: 20 } } }"
+       "Scenegraph { root: SceneRoot { items: [Line(SceneLine { stroke: \"black\", stroke_width: 1.0, points: [(10.0, 13.0), (26.0, 5.0)] }), Axis(SceneAxis { rule: SceneAxisRule { from: (0.0, 0.0), to: (40.0, 0.0) }, ticks: [SceneAxisTick { position: (0.0, 0.0), label: \"0.00\" }, SceneAxisTick { position: (4.0, 0.0), label: \"2.00\" }, SceneAxisTick { position: (8.0, 0.0), label: \"4.00\" }, SceneAxisTick { position: (12.0, 0.0), label: \"6.00\" }, SceneAxisTick { position: (16.0, 0.0), label: \"8.00\" }, SceneAxisTick { position: (20.0, 0.0), label: \"10.00\" }, SceneAxisTick { position: (24.0, 0.0), label: \"12.00\" }, SceneAxisTick { position: (28.0, 0.0), label: \"14.00\" }, SceneAxisTick { position: (32.0, 0.0), label: \"16.00\" }, SceneAxisTick { position: (36.0, 0.0), label: \"18.00\" }, SceneAxisTick { position: (40.0, 0.0), label: \"20.00\" }], orientation: Bottom }), Axis(SceneAxis { rule: SceneAxisRule { from: (0.0, 0.0), to: (0.0, 20.0) }, ticks: [SceneAxisTick { position: (0.0, 0.0), label: \"0.00\" }, SceneAxisTick { position: (0.0, 2.0), label: \"2.00\" }, SceneAxisTick { position: (0.0, 4.0), label: \"4.00\" }, SceneAxisTick { position: (0.0, 6.0), label: \"6.00\" }, SceneAxisTick { position: (0.0, 8.0), label: \"8.00\" }, SceneAxisTick { position: (0.0, 10.0), label: \"10.00\" }, SceneAxisTick { position: (0.0, 12.0), label: \"12.00\" }, SceneAxisTick { position: (0.0, 14.0), label: \"14.00\" }, SceneAxisTick { position: (0.0, 16.0), label: \"16.00\" }, SceneAxisTick { position: (0.0, 18.0), label: \"18.00\" }, SceneAxisTick { position: (0.0, 20.0), label: \"20.00\" }], orientation: Left })], dimensions: SceneDimensions { width: 40, height: 20 } } }"
     );
     assert_eq!(
       second.unwrap(),
-      "Scenegraph { root: SceneRoot { items: [Group(SceneGroup { items: [Line(SceneLine { stroke: \"black\", stroke_width: 1.0, points: [(20.0, 20.0), (16.0, 20.0)] })] })], dimensions: SceneDimensions { width: 40, height: 20 } } }"
+      "Scenegraph { root: SceneRoot { items: [Line(SceneLine { stroke: \"black\", stroke_width: 1.0, points: [(20.0, 20.0), (16.0, 20.0)] }), Axis(SceneAxis { rule: SceneAxisRule { from: (0.0, 0.0), to: (40.0, 0.0) }, ticks: [SceneAxisTick { position: (0.0, 0.0), label: \"0.00\" }, SceneAxisTick { position: (4.0, 0.0), label: \"2.00\" }, SceneAxisTick { position: (8.0, 0.0), label: \"4.00\" }, SceneAxisTick { position: (12.0, 0.0), label: \"6.00\" }, SceneAxisTick { position: (16.0, 0.0), label: \"8.00\" }, SceneAxisTick { position: (20.0, 0.0), label: \"10.00\" }, SceneAxisTick { position: (24.0, 0.0), label: \"12.00\" }, SceneAxisTick { position: (28.0, 0.0), label: \"14.00\" }, SceneAxisTick { position: (32.0, 0.0), label: \"16.00\" }, SceneAxisTick { position: (36.0, 0.0), label: \"18.00\" }, SceneAxisTick { position: (40.0, 0.0), label: \"20.00\" }], orientation: Bottom }), Axis(SceneAxis { rule: SceneAxisRule { from: (0.0, 0.0), to: (0.0, 20.0) }, ticks: [SceneAxisTick { position: (0.0, 0.0), label: \"0.00\" }, SceneAxisTick { position: (0.0, 2.0), label: \"2.00\" }, SceneAxisTick { position: (0.0, 4.0), label: \"4.00\" }, SceneAxisTick { position: (0.0, 6.0), label: \"6.00\" }, SceneAxisTick { position: (0.0, 8.0), label: \"8.00\" }, SceneAxisTick { position: (0.0, 10.0), label: \"10.00\" }, SceneAxisTick { position: (0.0, 12.0), label: \"12.00\" }, SceneAxisTick { position: (0.0, 14.0), label: \"14.00\" }, SceneAxisTick { position: (0.0, 16.0), label: \"16.00\" }, SceneAxisTick { position: (0.0, 18.0), label: \"18.00\" }, SceneAxisTick { position: (0.0, 20.0), label: \"20.00\" }], orientation: Left })], dimensions: SceneDimensions { width: 40, height: 20 } } }"
     );
   }
 }
