@@ -1,7 +1,9 @@
+use crate::spec::axis::Axis;
 use crate::spec::data::DataEntry;
 use crate::spec::scale::Scale;
 use crate::spec::shape::Shape;
 
+pub mod axis;
 pub mod data;
 pub mod scale;
 pub mod shape;
@@ -60,11 +62,13 @@ impl Default for Dimensions {
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 pub struct Visual {
   pub(crate) shapes: Vec<Shape>,
+  #[cfg_attr(feature = "serde", serde(default))]
+  pub(crate) axes: Vec<Axis>,
 }
 
 impl Visual {
-  pub fn new(shapes: Vec<Shape>) -> Self {
-    Visual { shapes }
+  pub fn new(shapes: Vec<Shape>, axes: Vec<Axis>) -> Self {
+    Visual { shapes, axes }
   }
 }
 
@@ -72,6 +76,7 @@ impl Visual {
 #[cfg(test)]
 mod serde_tests {
   use crate::data::DataValue;
+  use crate::spec::axis::{Axis, AxisOrientation};
   use crate::spec::scale::domain::Domain;
   use crate::spec::scale::linear::LinearScale;
   use crate::spec::scale::range::Range;
@@ -132,6 +137,12 @@ mod serde_tests {
                 "x": { "field": "a", "scale": "horizontal" }
               }
             }
+          ],
+          "axes": [
+            {
+              "scale": "horizontal",
+              "orientation": "bottom"
+            }
           ]
         }
       }"#,
@@ -157,14 +168,17 @@ mod serde_tests {
             Range::Literal(0.0, 20.0),
           ))
         )],
-        Visual::new(vec![Shape::line(
-          "primary",
-          LineShape::new(
-            LinePropertiesBuilder::new()
-              .with_x(DataSource::field("a", Some("horizontal")))
-              .build()
-          ),
-        )],)
+        Visual::new(
+          vec![Shape::line(
+            "primary",
+            LineShape::new(
+              LinePropertiesBuilder::new()
+                .with_x(DataSource::field("a", Some("horizontal")))
+                .build()
+            ),
+          )],
+          vec![Axis::new("horizontal", AxisOrientation::Bottom)]
+        )
       )
     );
   }
