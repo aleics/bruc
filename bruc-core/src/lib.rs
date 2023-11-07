@@ -92,6 +92,7 @@ mod tests {
   use crate::data::DataValue;
   use crate::render::DebugRenderer;
   use crate::scene::SceneDimensions;
+  use crate::spec::axis::{Axis, AxisOrientation};
   use crate::spec::data::DataEntry;
   use crate::spec::scale::domain::Domain;
   use crate::spec::scale::linear::LinearScale;
@@ -135,15 +136,21 @@ mod tests {
           )),
         ),
       ],
-      Visual::new(vec![Shape::line(
-        "primary",
-        LineShape::new(
-          LinePropertiesBuilder::new()
-            .with_x(DataSource::field("a", Some("horizontal")))
-            .with_y(DataSource::field("b", Some("vertical")))
-            .build(),
-        ),
-      )]),
+      Visual::new(
+        vec![Shape::line(
+          "primary",
+          LineShape::new(
+            LinePropertiesBuilder::new()
+              .with_x(DataSource::field("a", Some("horizontal")))
+              .with_y(DataSource::field("b", Some("vertical")))
+              .build(),
+          ),
+        )],
+        vec![
+          Axis::new("horizontal", AxisOrientation::Bottom),
+          Axis::new("vertical", AxisOrientation::Left),
+        ],
+      ),
     )
   }
 

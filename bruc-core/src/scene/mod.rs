@@ -1,5 +1,6 @@
 use crate::graph::node::Node;
 use crate::graph::{Pulse, PulseValue};
+use crate::spec::axis::AxisOrientation;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct SceneDimensions {
@@ -34,6 +35,7 @@ impl SceneRoot {
 pub enum SceneItem {
   Group(Box<SceneGroup>),
   Line(Box<SceneLine>),
+  Axis(Box<SceneAxis>),
 }
 
 impl SceneItem {
@@ -45,16 +47,28 @@ impl SceneItem {
     SceneItem::Line(Box::new(SceneLine::new(points, stroke, stroke_width)))
   }
 
+  pub fn axis(
+    rule: SceneAxisRule,
+    ticks: Vec<SceneAxisTick>,
+    orientation: AxisOrientation,
+  ) -> Self {
+    SceneItem::Axis(Box::new(SceneAxis::new(rule, ticks, orientation)))
+  }
+
   pub(crate) fn build(node: &Node) -> Option<Self> {
     if let Pulse::Single(single) = &node.pulse {
-      let items = single
+      let items: Vec<SceneItem> = single
         .values
         .iter()
         .filter_map(PulseValue::get_shapes)
         .cloned()
         .collect();
 
-      Some(SceneItem::group(items))
+      if items.len() > 1 {
+        Some(SceneItem::group(items))
+      } else {
+        items.first().cloned()
+      }
     } else {
       None
     }
@@ -97,4 +111,37 @@ impl SceneLine {
       stroke_width,
     }
   }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct SceneAxis {
+  pub(crate) rule: SceneAxisRule,
+  pub(crate) ticks: Vec<SceneAxisTick>,
+  pub(crate) orientation: AxisOrientation,
+}
+
+impl SceneAxis {
+  pub(crate) fn new(
+    rule: SceneAxisRule,
+    ticks: Vec<SceneAxisTick>,
+    orientation: AxisOrientation,
+  ) -> Self {
+    SceneAxis {
+      rule,
+      ticks,
+      orientation,
+    }
+  }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct SceneAxisRule {
+  pub(crate) from: (f32, f32),
+  pub(crate) to: (f32, f32),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct SceneAxisTick {
+  pub(crate) position: (f32, f32),
+  pub(crate) label: String,
 }

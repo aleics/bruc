@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use crate::data::DataValue;
 use crate::graph::node::shape::SceneWindow;
+use crate::spec::axis::Axis;
 use crate::spec::scale::Scale;
 use crate::spec::shape::base::{
   BaseShapeProperties, HEIGHT_FIELD_NAME, WIDTH_FIELD_NAME, X_AXIS_FIELD_NAME, Y_AXIS_FIELD_NAME,
@@ -85,7 +86,9 @@ impl VisualParser {
     data_nodes: &HashMap<String, usize>,
     graph: &mut Graph,
   ) -> Vec<usize> {
-    visual
+    let mut nodes = Vec::new();
+
+    let shape_nodes: Vec<usize> = visual
       .shapes
       .into_iter()
       .filter_map(|shape| {
@@ -93,7 +96,22 @@ impl VisualParser {
           .get(&shape.from)
           .map(|data_node| self.parse_shape(shape, *data_node, graph))
       })
-      .collect()
+      .collect();
+    nodes.extend(shape_nodes);
+
+    let axis_nodes: Vec<usize> = visual
+      .axes
+      .into_iter()
+      .filter_map(|axis| {
+        self
+          .scales
+          .get(&axis.scale)
+          .map(|scale| self.parse_axis(axis, scale.clone(), graph))
+      })
+      .collect();
+    nodes.extend(axis_nodes);
+
+    nodes
   }
 
   /// Parse a single shape by creating the referenced scale nodes and the needed graph edges with
@@ -197,6 +215,17 @@ impl VisualParser {
     // Create node in the graph and connect it to the incoming data node.
     graph.add(operator, vec![data_node])
   }
+
+  fn parse_axis(&self, axis: Axis, scale: Scale, graph: &mut Graph) -> usize {
+    graph.add(
+      Operator::axis(
+        axis,
+        scale,
+        SceneWindow::new(self.dimensions.width, self.dimensions.height),
+      ),
+      vec![],
+    )
+  }
 }
 
 #[cfg(test)]
@@ -207,6 +236,7 @@ mod tests {
   use crate::graph::node::{Node, Operator};
   use crate::graph::Edge;
   use crate::parser::ParseResult;
+  use crate::spec::axis::{Axis, AxisOrientation};
   use crate::spec::scale::ScaleKind;
   use crate::spec::shape::line::LinePropertiesBuilder;
   use crate::spec::transform::map::MapPipe;
@@ -254,15 +284,21 @@ mod tests {
           )),
         ),
       ],
-      Visual::new(vec![Shape::line(
-        "primary",
-        LineShape::new(
-          LinePropertiesBuilder::new()
-            .with_x(DataSource::field("a", Some("horizontal")))
-            .with_y(DataSource::field("b", Some("vertical")))
-            .build(),
-        ),
-      )]),
+      Visual::new(
+        vec![Shape::line(
+          "primary",
+          LineShape::new(
+            LinePropertiesBuilder::new()
+              .with_x(DataSource::field("a", Some("horizontal")))
+              .with_y(DataSource::field("b", Some("vertical")))
+              .build(),
+          ),
+        )],
+        vec![
+          Axis::new("horizontal", AxisOrientation::Bottom),
+          Axis::new("vertical", AxisOrientation::Left),
+        ],
+      ),
     );
     let parser = Parser;
 
@@ -280,12 +316,12 @@ mod tests {
         Node::init(Operator::map(MapPipe::new("a - 2", "b").unwrap())),
         Node::init(Operator::filter(FilterPipe::new("b > 2").unwrap())),
         Node::init(Operator::linear(
-          LinearScale::new(Domain::Literal(0.0, 100.0), Range::Literal(0.0, 20.0),),
+          LinearScale::new(Domain::Literal(0.0, 100.0), Range::Literal(0.0, 20.0)),
           "a",
           "x"
         )),
         Node::init(Operator::linear(
-          LinearScale::new(Domain::Literal(0.0, 100.0), Range::Literal(0.0, 10.0),),
+          LinearScale::new(Domain::Literal(0.0, 100.0), Range::Literal(0.0, 10.0)),
           "b",
           "y"
         )),
@@ -297,6 +333,28 @@ mod tests {
               .build()
           ),
           SceneWindow::new(500, 200),
+        )),
+        Node::init(Operator::axis(
+          Axis::new("horizontal", AxisOrientation::Bottom),
+          Scale::new(
+            "horizontal",
+            ScaleKind::Linear(LinearScale::new(
+              Domain::Literal(0.0, 100.0),
+              Range::Literal(0.0, 20.0)
+            ))
+          ),
+          SceneWindow::new(500, 200)
+        )),
+        Node::init(Operator::axis(
+          Axis::new("vertical", AxisOrientation::Left),
+          Scale::new(
+            "vertical",
+            ScaleKind::Linear(LinearScale::new(
+              Domain::Literal(0.0, 100.0),
+              Range::Literal(0.0, 10.0)
+            ))
+          ),
+          SceneWindow::new(500, 200)
         ))
       ]
     );
@@ -318,32 +376,47 @@ mod tests {
         (1, BTreeSet::from([2])),
         (2, BTreeSet::from([3, 4])),
         (3, BTreeSet::from([5])),
-        (4, BTreeSet::from([5]))
+        (4, BTreeSet::from([5])),
+        (5, BTreeSet::new()),
+        (6, BTreeSet::new()),
+        (7, BTreeSet::new())
       ])
     );
     assert_eq!(
       graph.sources,
       BTreeMap::from([
+        (0, BTreeSet::new()),
         (1, BTreeSet::from([0])),
         (2, BTreeSet::from([1])),
         (3, BTreeSet::from([2])),
         (4, BTreeSet::from([2])),
-        (5, BTreeSet::from([3, 4]))
+        (5, BTreeSet::from([3, 4])),
+        (6, BTreeSet::new()),
+        (7, BTreeSet::new())
       ])
     );
     assert_eq!(
       graph.degrees,
-      BTreeMap::from([(0, 0), (1, 1), (2, 1), (3, 1), (4, 1), (5, 2)])
+      BTreeMap::from([
+        (0, 0),
+        (1, 1),
+        (2, 1),
+        (3, 1),
+        (4, 1),
+        (5, 2),
+        (6, 0),
+        (7, 0)
+      ])
     );
     assert_eq!(
       graph.nodes_in_degree,
       BTreeMap::from([
-        (0, BTreeSet::from([0])),
+        (0, BTreeSet::from([0, 6, 7])),
         (1, BTreeSet::from([1, 2, 3, 4])),
         (2, BTreeSet::from([5]))
       ])
     );
-    assert_eq!(graph.order, vec![0, 1, 2, 3, 4]);
+    assert_eq!(graph.order, vec![0, 6, 7, 1, 2, 3, 4, 5]);
     assert_eq!(data_nodes, HashMap::from([("primary".to_string(), 2)]))
   }
 }
