@@ -2,35 +2,48 @@ import { Bruc } from "bruc";
 
 const spec = `{
   "dimensions": {
-    "width": 500,
-    "height": 200
+    "width": 1500,
+    "height": 300
   },
   "data": [
     {
       "name": "primary",
-      "values": [
-        { "x": 0, "y": 0, "k": 0, "q": 10 },
-        { "x": 1, "y": 50, "k": 1, "q": 20 },
-        { "x": 2, "y": 15, "k": 2, "q": 50 },
-        { "x": 3, "y": 30, "k": 3, "q": 10 }
-      ]
+      "values": []
     }
   ],
   "scales": [
     {
       "type": "linear",
       "name": "horizontal",
-      "domain": [0, 5],
-      "range": [0, 500]
+      "domain": [0, 200],
+      "range": [0, 1500]
     },
     {
       "type": "linear",
       "name": "vertical",
       "domain": [0, 50],
-      "range": [0, 200]
+      "range": [0, 300]
     }
   ],
   "visual": {
+    "axes": [
+      {
+        "orientation": "top",
+        "scale": "horizontal"
+      },
+      {
+        "orientation": "bottom",
+        "scale": "horizontal"
+      },
+      {
+        "orientation": "left",
+        "scale": "vertical"
+      },
+      {
+        "orientation": "right",
+        "scale": "vertical"
+      }
+    ],
     "shapes": [
       {
         "from": "primary",
@@ -49,7 +62,7 @@ const spec = `{
           "x": { "field": "k", "scale": "horizontal" },
           "y": { "field": "q", "scale": "vertical" },
           "stroke": "blue",
-          "strokeWidth": 2
+          "strokeWidth": 1.5
         }
       }
     ]
@@ -62,16 +75,15 @@ await bruc.renderAsSvg("#first");
 await bruc.renderAsSvg("#second");
 
 while(true) {
+  const data = randomData();
+  await bruc.setData("primary", data);
+
   await delay(1000);
-  await bruc.setData(
-    "primary",
-    randomData()
-  )
 }
 
 function randomData() {
   const values = [];
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i <= 200; i++) {
     values.push({ x: i, y: randomValue(50), k: i, q: randomValue(50) });
   }
   return values;
