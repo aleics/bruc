@@ -1,6 +1,7 @@
 use bruc_expression::data::{DataItem, DataSource};
 
-use crate::graph::PulseValue;
+use crate::data::DataValue;
+
 use crate::{
   graph::{Evaluation, MultiPulse, Pulse, SinglePulse},
   spec::scale::{linear::LinearScale, Scaler},
@@ -27,22 +28,24 @@ impl LinearOperator {
 
   /// Apply the operator's logic by linearly scaling the referenced `field` and creating a new
   /// `output` field.
-  fn apply(&self, values: &[PulseValue]) -> Vec<PulseValue> {
+  fn apply(&self, pulse: &SinglePulse) -> Vec<DataValue> {
+    let SinglePulse::Data(values) = pulse else {
+      return Vec::new();
+    };
+
     let mut result = values.to_vec();
 
     // Iterate over the current series
     for value in &mut result {
-      if let PulseValue::Data(data_value) = value {
-        // Apply scale to field
-        let scale_result = data_value
-          .get(&self.field)
-          .and_then(|value| self.scale.scale(value));
+      // Apply scale to field
+      let scale_result = value
+        .get(&self.field)
+        .and_then(|value| self.scale.scale(value));
 
-        if let Some(scale_item) = scale_result {
-          // Add scale result to value with the scale's name
-          data_value.instance.clear();
-          data_value.insert(&self.output, DataItem::Number(scale_item));
-        }
+      if let Some(scale_item) = scale_result {
+        // Add scale result to value with the scale's name
+        value.instance.clear();
+        value.insert(&self.output, DataItem::Number(scale_item));
       }
     }
 
@@ -52,16 +55,17 @@ impl LinearOperator {
 
 impl Evaluation for LinearOperator {
   fn evaluate_single(&self, single: SinglePulse) -> Pulse {
-    Pulse::single(self.apply(&single.values))
+    let values = self.apply(&single);
+    Pulse::data(values)
   }
 
   fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
     let values = multi.pulses.iter().fold(Vec::new(), |mut acc, pulse| {
-      acc.extend(self.apply(&pulse.values));
+      acc.extend(self.apply(pulse));
       acc
     });
 
-    Pulse::single(values)
+    Pulse::data(values)
   }
 }
 
@@ -83,17 +87,18 @@ impl IdentityOperator {
   }
 
   /// Apply the operator's logic by copying the `field` value into a new `output` field.
-  fn apply(&self, values: &[PulseValue]) -> Vec<PulseValue> {
+  fn apply(&self, pulse: &SinglePulse) -> Vec<DataValue> {
+    let SinglePulse::Data(values) = pulse else {
+      return Vec::new();
+    };
     let mut result = values.to_vec();
 
     // Iterate over the current series
     for value in &mut result {
-      if let PulseValue::Data(data_value) = value {
-        // Find field in data value
-        if let Some(item) = data_value.get(&self.field) {
-          // Add result to value with the output's name
-          data_value.insert(&self.output, item.clone());
-        }
+      // Find field in data value
+      if let Some(item) = value.get(&self.field) {
+        // Add result to value with the output's name
+        value.insert(&self.output, item.clone());
       }
     }
 
@@ -103,22 +108,22 @@ impl IdentityOperator {
 
 impl Evaluation for IdentityOperator {
   fn evaluate_single(&self, single: SinglePulse) -> Pulse {
-    Pulse::single(self.apply(&single.values))
+    Pulse::data(self.apply(&single))
   }
 
   fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
     let values = multi.pulses.iter().fold(Vec::new(), |mut acc, pulse| {
-      acc.extend(self.apply(&pulse.values));
+      acc.extend(self.apply(pulse));
       acc
     });
 
-    Pulse::single(values)
+    Pulse::data(values)
   }
 }
 
 #[cfg(test)]
 mod tests {
-  use crate::graph::PulseValue;
+  
   use crate::{
     data::DataValue,
     graph::{Evaluation, Pulse, SinglePulse},
@@ -130,62 +135,38 @@ mod tests {
   #[tokio::test]
   async fn applies_linear_single_pulse() {
     let series = vec![
-      PulseValue::Data(DataValue::from_pairs(vec![
-        ("a", (-2.0).into()),
-        ("b", 1.0.into()),
-      ])),
-      PulseValue::Data(DataValue::from_pairs(vec![
-        ("a", 5.0.into()),
-        ("b", 1.0.into()),
-      ])),
-      PulseValue::Data(DataValue::from_pairs(vec![
-        ("a", 10.0.into()),
-        ("b", 1.0.into()),
-      ])),
-      PulseValue::Data(DataValue::from_pairs(vec![
-        ("a", 15.0.into()),
-        ("b", 1.0.into()),
-      ])),
+      DataValue::from_pairs(vec![("a", (-2.0).into()), ("b", 1.0.into())]),
+      DataValue::from_pairs(vec![("a", 5.0.into()), ("b", 1.0.into())]),
+      DataValue::from_pairs(vec![("a", 10.0.into()), ("b", 1.0.into())]),
+      DataValue::from_pairs(vec![("a", 15.0.into()), ("b", 1.0.into())]),
     ];
 
     let scale = LinearScale::new(Domain::Literal(0.0, 10.0), Range::Literal(0.0, 1.0));
 
     let operator = LinearOperator::new(scale, "a", "x");
 
-    let pulse = operator.evaluate(Pulse::single(series)).await;
+    let pulse = operator.evaluate(Pulse::data(series)).await;
 
     assert_eq!(
       pulse,
-      Pulse::single(vec![
-        PulseValue::Data(DataValue::from_pairs(vec![("x", 0.0.into())])),
-        PulseValue::Data(DataValue::from_pairs(vec![("x", 0.5.into())])),
-        PulseValue::Data(DataValue::from_pairs(vec![("x", 1.0.into())])),
-        PulseValue::Data(DataValue::from_pairs(vec![("x", 1.0.into())])),
+      Pulse::data(vec![
+        DataValue::from_pairs(vec![("x", 0.0.into())]),
+        DataValue::from_pairs(vec![("x", 0.5.into())]),
+        DataValue::from_pairs(vec![("x", 1.0.into())]),
+        DataValue::from_pairs(vec![("x", 1.0.into())]),
       ])
     );
   }
 
   #[tokio::test]
   async fn applies_linear_multi_pulse() {
-    let first_pulse = SinglePulse::new(vec![
-      PulseValue::Data(DataValue::from_pairs(vec![
-        ("a", (-2.0).into()),
-        ("b", 1.0.into()),
-      ])),
-      PulseValue::Data(DataValue::from_pairs(vec![
-        ("a", 5.0.into()),
-        ("b", 1.0.into()),
-      ])),
+    let first_pulse = SinglePulse::Data(vec![
+      DataValue::from_pairs(vec![("a", (-2.0).into()), ("b", 1.0.into())]),
+      DataValue::from_pairs(vec![("a", 5.0.into()), ("b", 1.0.into())]),
     ]);
-    let second_pulse = SinglePulse::new(vec![
-      PulseValue::Data(DataValue::from_pairs(vec![
-        ("a", 10.0.into()),
-        ("b", 1.0.into()),
-      ])),
-      PulseValue::Data(DataValue::from_pairs(vec![
-        ("a", 15.0.into()),
-        ("b", 1.0.into()),
-      ])),
+    let second_pulse = SinglePulse::Data(vec![
+      DataValue::from_pairs(vec![("a", 10.0.into()), ("b", 1.0.into())]),
+      DataValue::from_pairs(vec![("a", 15.0.into()), ("b", 1.0.into())]),
     ]);
 
     let scale = LinearScale::new(Domain::Literal(0.0, 10.0), Range::Literal(0.0, 1.0));
@@ -198,11 +179,11 @@ mod tests {
 
     assert_eq!(
       pulse,
-      Pulse::single(vec![
-        PulseValue::Data(DataValue::from_pairs(vec![("x", 0.0.into())])),
-        PulseValue::Data(DataValue::from_pairs(vec![("x", 0.5.into())])),
-        PulseValue::Data(DataValue::from_pairs(vec![("x", 1.0.into())])),
-        PulseValue::Data(DataValue::from_pairs(vec![("x", 1.0.into())])),
+      Pulse::data(vec![
+        DataValue::from_pairs(vec![("x", 0.0.into())]),
+        DataValue::from_pairs(vec![("x", 0.5.into())]),
+        DataValue::from_pairs(vec![("x", 1.0.into())]),
+        DataValue::from_pairs(vec![("x", 1.0.into())]),
       ])
     );
   }
@@ -210,38 +191,23 @@ mod tests {
   #[tokio::test]
   async fn ignores_boolean_linear() {
     let series = vec![
-      PulseValue::Data(DataValue::from_pairs(vec![
-        ("a", true.into()),
-        ("b", 1.0.into()),
-      ])),
-      PulseValue::Data(DataValue::from_pairs(vec![
-        ("a", false.into()),
-        ("b", 1.0.into()),
-      ])),
-      PulseValue::Data(DataValue::from_pairs(vec![
-        ("a", 2.0.into()),
-        ("b", 1.0.into()),
-      ])),
+      DataValue::from_pairs(vec![("a", true.into()), ("b", 1.0.into())]),
+      DataValue::from_pairs(vec![("a", false.into()), ("b", 1.0.into())]),
+      DataValue::from_pairs(vec![("a", 2.0.into()), ("b", 1.0.into())]),
     ];
 
     let scale = LinearScale::new(Domain::Literal(0.0, 10.0), Range::Literal(0.0, 1.0));
 
     let operator = LinearOperator::new(scale, "a", "x");
 
-    let pulse = operator.evaluate(Pulse::single(series)).await;
+    let pulse = operator.evaluate(Pulse::data(series)).await;
 
     assert_eq!(
       pulse,
-      Pulse::single(vec![
-        PulseValue::Data(DataValue::from_pairs(vec![
-          ("a", true.into()),
-          ("b", 1.0.into())
-        ])),
-        PulseValue::Data(DataValue::from_pairs(vec![
-          ("a", false.into()),
-          ("b", 1.0.into())
-        ])),
-        PulseValue::Data(DataValue::from_pairs(vec![("x", 0.2.into())])),
+      Pulse::data(vec![
+        DataValue::from_pairs(vec![("a", true.into()), ("b", 1.0.into())]),
+        DataValue::from_pairs(vec![("a", false.into()), ("b", 1.0.into())]),
+        DataValue::from_pairs(vec![("x", 0.2.into())]),
       ])
     );
   }

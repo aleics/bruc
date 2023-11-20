@@ -1,7 +1,7 @@
 use bruc_expression::data::DataItem;
 
 use crate::{
-  graph::{Evaluation, MultiPulse, Pulse, PulseValue, SinglePulse},
+  graph::{Evaluation, MultiPulse, Pulse, SinglePulse},
   scene::{SceneAxisRule, SceneAxisTick, SceneItem},
   spec::{
     axis::{Axis, AxisOrientation},
@@ -29,12 +29,12 @@ impl AxisOperator {
     }
   }
 
-  fn apply(&self) -> Vec<PulseValue> {
+  fn apply(&self) -> SinglePulse {
     let scene_item = match &self.scale.kind {
       ScaleKind::Linear(linear) => self.linear_axis(linear),
     };
 
-    vec![PulseValue::Shapes(scene_item)]
+    SinglePulse::Shapes(vec![scene_item])
   }
 
   fn linear_axis(&self, linear: &LinearScale) -> SceneItem {
@@ -87,11 +87,11 @@ impl AxisOperator {
 
 impl Evaluation for AxisOperator {
   fn evaluate_single(&self, _single: SinglePulse) -> Pulse {
-    Pulse::single(self.apply())
+    Pulse::Single(self.apply())
   }
 
   fn evaluate_multi(&self, _multi: MultiPulse) -> Pulse {
-    Pulse::single(self.apply())
+    Pulse::Single(self.apply())
   }
 }
 
@@ -100,7 +100,7 @@ mod tests {
   use crate::{
     graph::{
       node::{axis::AxisOperator, shape::SceneWindow},
-      Evaluation, Pulse, PulseValue,
+      Evaluation, Pulse,
     },
     scene::{SceneAxisRule, SceneAxisTick, SceneItem},
     spec::{
@@ -123,11 +123,11 @@ mod tests {
       SceneWindow::new(200, 100),
     );
 
-    let pulse = operator.evaluate(Pulse::single(vec![])).await;
+    let pulse = operator.evaluate(Pulse::data(vec![])).await;
 
     assert_eq!(
       pulse,
-      Pulse::single(vec![PulseValue::Shapes(SceneItem::axis(
+      Pulse::shapes(vec![SceneItem::axis(
         SceneAxisRule {
           from: (0.0, 100.0),
           to: (200.0, 100.0)
@@ -179,7 +179,7 @@ mod tests {
           }
         ],
         AxisOrientation::Top
-      ))])
+      )])
     )
   }
 
@@ -197,11 +197,11 @@ mod tests {
       SceneWindow::new(200, 100),
     );
 
-    let pulse = operator.evaluate(Pulse::single(vec![])).await;
+    let pulse = operator.evaluate(Pulse::data(vec![])).await;
 
     assert_eq!(
       pulse,
-      Pulse::single(vec![PulseValue::Shapes(SceneItem::axis(
+      Pulse::shapes(vec![SceneItem::axis(
         SceneAxisRule {
           from: (0.0, 0.0),
           to: (200.0, 0.0)
@@ -253,7 +253,7 @@ mod tests {
           }
         ],
         AxisOrientation::Bottom
-      ))])
+      )])
     )
   }
 
@@ -271,11 +271,11 @@ mod tests {
       SceneWindow::new(200, 100),
     );
 
-    let pulse = operator.evaluate(Pulse::single(vec![])).await;
+    let pulse = operator.evaluate(Pulse::data(vec![])).await;
 
     assert_eq!(
       pulse,
-      Pulse::single(vec![PulseValue::Shapes(SceneItem::axis(
+      Pulse::shapes(vec![SceneItem::axis(
         SceneAxisRule {
           from: (0.0, 0.0),
           to: (0.0, 200.0)
@@ -327,7 +327,7 @@ mod tests {
           }
         ],
         AxisOrientation::Left
-      ))])
+      )])
     )
   }
 
@@ -345,11 +345,11 @@ mod tests {
       SceneWindow::new(200, 100),
     );
 
-    let pulse = operator.evaluate(Pulse::single(vec![])).await;
+    let pulse = operator.evaluate(Pulse::data(vec![])).await;
 
     assert_eq!(
       pulse,
-      Pulse::single(vec![PulseValue::Shapes(SceneItem::axis(
+      Pulse::shapes(vec![SceneItem::axis(
         SceneAxisRule {
           from: (200.0, 0.0),
           to: (200.0, 200.0)
@@ -401,7 +401,7 @@ mod tests {
           }
         ],
         AxisOrientation::Right
-      ))])
+      )])
     )
   }
 }

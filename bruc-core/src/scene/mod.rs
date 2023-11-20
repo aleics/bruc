@@ -1,5 +1,5 @@
 use crate::graph::node::Node;
-use crate::graph::{Pulse, PulseValue};
+use crate::graph::{Pulse, SinglePulse};
 use crate::spec::axis::AxisOrientation;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -57,17 +57,14 @@ impl SceneItem {
 
   pub(crate) fn build(node: &Node) -> Option<Self> {
     if let Pulse::Single(single) = &node.pulse {
-      let items: Vec<SceneItem> = single
-        .values
-        .iter()
-        .filter_map(PulseValue::get_shapes)
-        .cloned()
-        .collect();
+      let SinglePulse::Shapes(shapes) = single else {
+        return None;
+      };
 
-      if items.len() > 1 {
-        Some(SceneItem::group(items))
+      if shapes.len() > 1 {
+        Some(SceneItem::group(shapes.clone()))
       } else {
-        items.first().cloned()
+        shapes.first().cloned()
       }
     } else {
       None

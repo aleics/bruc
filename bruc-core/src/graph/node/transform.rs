@@ -2,7 +2,7 @@ use std::{collections::HashMap, ops::AddAssign};
 
 use bruc_expression::data::{DataItem, DataSource};
 
-use crate::graph::PulseValue;
+
 use crate::{
   data::DataValue,
   graph::{Evaluation, MultiPulse, Pulse, SinglePulse},
@@ -26,31 +26,31 @@ impl MapOperator {
   }
 
   /// Apply the operator's logic by executing the `MapPipe` to the incoming pulse values.
-  fn apply(&self, values: &[PulseValue]) -> Vec<PulseValue> {
+  fn apply(&self, pulse: &SinglePulse) -> Vec<DataValue> {
+    let SinglePulse::Data(values) = pulse else {
+      return Vec::new();
+    };
+
     let mut result = values.to_vec();
-
     for value in &mut result {
-      if let PulseValue::Data(data_value) = value {
-        self.pipe.apply(data_value);
-      }
+      self.pipe.apply(value);
     }
-
     result
   }
 }
 
 impl Evaluation for MapOperator {
   fn evaluate_single(&self, single: SinglePulse) -> Pulse {
-    Pulse::single(self.apply(&single.values))
+    Pulse::data(self.apply(&single))
   }
 
   fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
     let values = multi.pulses.iter().fold(Vec::new(), |mut acc, pulse| {
-      acc.extend(self.apply(&pulse.values));
+      acc.extend(self.apply(pulse));
       acc
     });
 
-    Pulse::single(values)
+    Pulse::data(values)
   }
 }
 
@@ -68,33 +68,31 @@ impl FilterOperator {
   }
 
   /// Apply the operator's logic by executing the `FilterPipe` to the incoming pulse values.
-  fn apply(&self, values: &[PulseValue]) -> Vec<PulseValue> {
-    let mut result = Vec::with_capacity(values.len());
+  fn apply(&self, pulse: &SinglePulse) -> Vec<DataValue> {
+    let SinglePulse::Data(values) = pulse else {
+      return Vec::new();
+    };
 
-    for value in values {
-      if let PulseValue::Data(data_value) = value {
-        if self.pipe.apply(data_value) {
-          result.push(value.clone());
-        }
-      }
-    }
-
-    result
+    values
+      .iter()
+      .filter(|value| self.pipe.apply(value))
+      .cloned()
+      .collect()
   }
 }
 
 impl Evaluation for FilterOperator {
   fn evaluate_single(&self, single: SinglePulse) -> Pulse {
-    Pulse::single(self.apply(&single.values))
+    Pulse::data(self.apply(&single))
   }
 
   fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
     let values = multi.pulses.iter().fold(Vec::new(), |mut acc, pulse| {
-      acc.extend(self.apply(&pulse.values));
+      acc.extend(self.apply(pulse));
       acc
     });
 
-    Pulse::single(values)
+    Pulse::data(values)
   }
 }
 
@@ -145,17 +143,18 @@ impl CountOperator {
 
   /// Apply the operator's logic by grouping the pulse data values in groups depending on the
   /// `by` field value.
-  fn apply(&self, values: &[PulseValue]) -> Vec<PulseValue> {
+  fn apply(&self, pulse: &SinglePulse) -> Vec<DataValue> {
+    let SinglePulse::Data(values) = pulse else {
+      return Vec::new();
+    };
     let mut counts: HashMap<DataItem, usize> = HashMap::new();
 
     for value in values {
-      if let PulseValue::Data(data_value) = value {
-        if let Some(target) = data_value.get(&self.by) {
-          match counts.get_mut(target) {
-            Some(count) => count.add_assign(1),
-            None => {
-              counts.insert(target.clone(), 1);
-            }
+      if let Some(target) = value.get(&self.by) {
+        match counts.get_mut(target) {
+          Some(count) => count.add_assign(1),
+          None => {
+            counts.insert(target.clone(), 1);
           }
         }
       }
@@ -164,10 +163,10 @@ impl CountOperator {
     let mut result = Vec::new();
 
     for (var, count) in counts {
-      result.push(PulseValue::Data(DataValue::from_pairs(vec![
+      result.push(DataValue::from_pairs(vec![
         (&self.by, var),
         (&self.output, DataItem::Number(count as f32)),
-      ])));
+      ]));
     }
 
     result
@@ -176,22 +175,21 @@ impl CountOperator {
 
 impl Evaluation for CountOperator {
   fn evaluate_single(&self, single: SinglePulse) -> Pulse {
-    Pulse::single(self.apply(&single.values))
+    Pulse::data(self.apply(&single))
   }
 
   fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
     let values = multi.pulses.iter().fold(Vec::new(), |mut acc, pulse| {
-      acc.extend(self.apply(&pulse.values));
+      acc.extend(self.apply(pulse));
       acc
     });
 
-    Pulse::single(values)
+    Pulse::data(values)
   }
 }
 
 #[cfg(test)]
 mod tests {
-  use crate::graph::PulseValue;
   use crate::spec::transform::group::GroupOperator as GroupOperatorSpec;
   use crate::{
     data::DataValue,
@@ -205,76 +203,52 @@ mod tests {
   #[tokio::test]
   async fn applies_map_single_pulse() {
     let series = vec![
-      PulseValue::Data(DataValue::from_pairs(vec![
-        ("x", (-2.0).into()),
-        ("y", 1.0.into()),
-      ])),
-      PulseValue::Data(DataValue::from_pairs(vec![
-        ("x", 5.0.into()),
-        ("y", 1.0.into()),
-      ])),
-      PulseValue::Data(DataValue::from_pairs(vec![
-        ("x", 10.0.into()),
-        ("y", 1.0.into()),
-      ])),
-      PulseValue::Data(DataValue::from_pairs(vec![
-        ("x", 15.0.into()),
-        ("y", 1.0.into()),
-      ])),
+      DataValue::from_pairs(vec![("x", (-2.0).into()), ("y", 1.0.into())]),
+      DataValue::from_pairs(vec![("x", 5.0.into()), ("y", 1.0.into())]),
+      DataValue::from_pairs(vec![("x", 10.0.into()), ("y", 1.0.into())]),
+      DataValue::from_pairs(vec![("x", 15.0.into()), ("y", 1.0.into())]),
     ];
 
     let operator = MapOperator::new(MapPipe::new("x + 2 * y", "z").unwrap());
 
-    let result = operator.evaluate(Pulse::single(series)).await;
+    let result = operator.evaluate(Pulse::data(series)).await;
 
     assert_eq!(
       result,
-      Pulse::single(vec![
-        PulseValue::Data(DataValue::from_pairs(vec![
+      Pulse::data(vec![
+        DataValue::from_pairs(vec![
           ("x", (-2.0).into()),
           ("y", 1.0.into()),
           ("z", 0.0.into())
-        ])),
-        PulseValue::Data(DataValue::from_pairs(vec![
+        ]),
+        DataValue::from_pairs(vec![
           ("x", 5.0.into()),
           ("y", 1.0.into()),
           ("z", 7.0.into())
-        ])),
-        PulseValue::Data(DataValue::from_pairs(vec![
+        ]),
+        DataValue::from_pairs(vec![
           ("x", 10.0.into()),
           ("y", 1.0.into()),
           ("z", 12.0.into())
-        ])),
-        PulseValue::Data(DataValue::from_pairs(vec![
+        ]),
+        DataValue::from_pairs(vec![
           ("x", 15.0.into()),
           ("y", 1.0.into()),
           ("z", 17.0.into())
-        ])),
+        ]),
       ])
     );
   }
 
   #[tokio::test]
   async fn applies_map_multi_pulse() {
-    let first = SinglePulse::new(vec![
-      PulseValue::Data(DataValue::from_pairs(vec![
-        ("x", (-2.0).into()),
-        ("y", 1.0.into()),
-      ])),
-      PulseValue::Data(DataValue::from_pairs(vec![
-        ("x", 5.0.into()),
-        ("y", 1.0.into()),
-      ])),
+    let first = SinglePulse::Data(vec![
+      DataValue::from_pairs(vec![("x", (-2.0).into()), ("y", 1.0.into())]),
+      DataValue::from_pairs(vec![("x", 5.0.into()), ("y", 1.0.into())]),
     ]);
-    let second = SinglePulse::new(vec![
-      PulseValue::Data(DataValue::from_pairs(vec![
-        ("x", 10.0.into()),
-        ("y", 1.0.into()),
-      ])),
-      PulseValue::Data(DataValue::from_pairs(vec![
-        ("x", 15.0.into()),
-        ("y", 1.0.into()),
-      ])),
+    let second = SinglePulse::Data(vec![
+      DataValue::from_pairs(vec![("x", 10.0.into()), ("y", 1.0.into())]),
+      DataValue::from_pairs(vec![("x", 15.0.into()), ("y", 1.0.into())]),
     ]);
 
     let operator = MapOperator::new(MapPipe::new("x + 2 * y", "z").unwrap());
@@ -283,27 +257,27 @@ mod tests {
 
     assert_eq!(
       result,
-      Pulse::single(vec![
-        PulseValue::Data(DataValue::from_pairs(vec![
+      Pulse::data(vec![
+        DataValue::from_pairs(vec![
           ("x", (-2.0).into()),
           ("y", 1.0.into()),
           ("z", 0.0.into())
-        ])),
-        PulseValue::Data(DataValue::from_pairs(vec![
+        ]),
+        DataValue::from_pairs(vec![
           ("x", 5.0.into()),
           ("y", 1.0.into()),
           ("z", 7.0.into())
-        ])),
-        PulseValue::Data(DataValue::from_pairs(vec![
+        ]),
+        DataValue::from_pairs(vec![
           ("x", 10.0.into()),
           ("y", 1.0.into()),
           ("z", 12.0.into())
-        ])),
-        PulseValue::Data(DataValue::from_pairs(vec![
+        ]),
+        DataValue::from_pairs(vec![
           ("x", 15.0.into()),
           ("y", 1.0.into()),
           ("z", 17.0.into())
-        ])),
+        ]),
       ])
     );
   }
@@ -311,68 +285,35 @@ mod tests {
   #[tokio::test]
   async fn applies_filter_single_pulse() {
     let series = vec![
-      PulseValue::Data(DataValue::from_pairs(vec![
-        ("x", (-2.0).into()),
-        ("y", 1.0.into()),
-      ])),
-      PulseValue::Data(DataValue::from_pairs(vec![
-        ("x", 5.0.into()),
-        ("y", 1.0.into()),
-      ])),
-      PulseValue::Data(DataValue::from_pairs(vec![
-        ("x", 10.0.into()),
-        ("y", 1.0.into()),
-      ])),
-      PulseValue::Data(DataValue::from_pairs(vec![
-        ("x", 15.0.into()),
-        ("y", 1.0.into()),
-      ])),
+      DataValue::from_pairs(vec![("x", (-2.0).into()), ("y", 1.0.into())]),
+      DataValue::from_pairs(vec![("x", 5.0.into()), ("y", 1.0.into())]),
+      DataValue::from_pairs(vec![("x", 10.0.into()), ("y", 1.0.into())]),
+      DataValue::from_pairs(vec![("x", 15.0.into()), ("y", 1.0.into())]),
     ];
 
     let operator = FilterOperator::new(FilterPipe::new("x > y").unwrap());
 
-    let result = operator.evaluate(Pulse::single(series)).await;
+    let result = operator.evaluate(Pulse::data(series)).await;
 
     assert_eq!(
       result,
-      Pulse::single(vec![
-        PulseValue::Data(DataValue::from_pairs(vec![
-          ("x", 5.0.into()),
-          ("y", 1.0.into())
-        ])),
-        PulseValue::Data(DataValue::from_pairs(vec![
-          ("x", 10.0.into()),
-          ("y", 1.0.into())
-        ])),
-        PulseValue::Data(DataValue::from_pairs(vec![
-          ("x", 15.0.into()),
-          ("y", 1.0.into())
-        ])),
+      Pulse::data(vec![
+        DataValue::from_pairs(vec![("x", 5.0.into()), ("y", 1.0.into())]),
+        DataValue::from_pairs(vec![("x", 10.0.into()), ("y", 1.0.into())]),
+        DataValue::from_pairs(vec![("x", 15.0.into()), ("y", 1.0.into())]),
       ])
     );
   }
 
   #[tokio::test]
   async fn applies_filter_multi_pulse() {
-    let first = SinglePulse::new(vec![
-      PulseValue::Data(DataValue::from_pairs(vec![
-        ("x", (-2.0).into()),
-        ("y", 1.0.into()),
-      ])),
-      PulseValue::Data(DataValue::from_pairs(vec![
-        ("x", 5.0.into()),
-        ("y", 1.0.into()),
-      ])),
+    let first = SinglePulse::Data(vec![
+      DataValue::from_pairs(vec![("x", (-2.0).into()), ("y", 1.0.into())]),
+      DataValue::from_pairs(vec![("x", 5.0.into()), ("y", 1.0.into())]),
     ]);
-    let second = SinglePulse::new(vec![
-      PulseValue::Data(DataValue::from_pairs(vec![
-        ("x", 10.0.into()),
-        ("y", 1.0.into()),
-      ])),
-      PulseValue::Data(DataValue::from_pairs(vec![
-        ("x", 15.0.into()),
-        ("y", 1.0.into()),
-      ])),
+    let second = SinglePulse::Data(vec![
+      DataValue::from_pairs(vec![("x", 10.0.into()), ("y", 1.0.into())]),
+      DataValue::from_pairs(vec![("x", 15.0.into()), ("y", 1.0.into())]),
     ]);
 
     let operator = FilterOperator::new(FilterPipe::new("x > y").unwrap());
@@ -381,19 +322,10 @@ mod tests {
 
     assert_eq!(
       result,
-      Pulse::single(vec![
-        PulseValue::Data(DataValue::from_pairs(vec![
-          ("x", 5.0.into()),
-          ("y", 1.0.into())
-        ])),
-        PulseValue::Data(DataValue::from_pairs(vec![
-          ("x", 10.0.into()),
-          ("y", 1.0.into())
-        ])),
-        PulseValue::Data(DataValue::from_pairs(vec![
-          ("x", 15.0.into()),
-          ("y", 1.0.into())
-        ])),
+      Pulse::data(vec![
+        DataValue::from_pairs(vec![("x", 5.0.into()), ("y", 1.0.into())]),
+        DataValue::from_pairs(vec![("x", 10.0.into()), ("y", 1.0.into())]),
+        DataValue::from_pairs(vec![("x", 15.0.into()), ("y", 1.0.into())]),
       ])
     );
   }
@@ -401,26 +333,20 @@ mod tests {
   #[tokio::test]
   async fn applies_group_single_pulse() {
     let series = vec![
-      PulseValue::Data(DataValue::from_pairs(vec![
-        ("a", 1.0.into()),
-        ("b", 2.0.into()),
-      ])),
-      PulseValue::Data(DataValue::from_pairs(vec![
-        ("a", 1.0.into()),
-        ("b", 2.0.into()),
-      ])),
+      DataValue::from_pairs(vec![("a", 1.0.into()), ("b", 2.0.into())]),
+      DataValue::from_pairs(vec![("a", 1.0.into()), ("b", 2.0.into())]),
     ];
 
     let operator = GroupOperator::new(GroupPipe::new("a", GroupOperatorSpec::Count, "count"));
 
-    let result = operator.evaluate(Pulse::single(series)).await;
+    let result = operator.evaluate(Pulse::data(series)).await;
 
     assert_eq!(
       result,
-      Pulse::single(vec![PulseValue::Data(DataValue::from_pairs(vec![
+      Pulse::data(vec![DataValue::from_pairs(vec![
         ("a", 1.0.into()),
         ("count", 2.0.into())
-      ]))])
+      ])])
     );
   }
 }

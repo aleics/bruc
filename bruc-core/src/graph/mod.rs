@@ -298,13 +298,17 @@ impl Pulse {
   }
 
   /// Create a new single `Pulse` with certain values.
-  pub fn single(values: Vec<PulseValue>) -> Self {
-    Pulse::Single(SinglePulse::new(values))
+  pub fn data(values: Vec<DataValue>) -> Self {
+    Pulse::Single(SinglePulse::Data(values))
+  }
+
+  pub fn shapes(values: Vec<SceneItem>) -> Self {
+    Pulse::Single(SinglePulse::Shapes(values))
   }
 
   /// Initialize an empty single `Pulse` instance.
   pub(crate) fn init() -> Self {
-    Pulse::Single(SinglePulse::new(Vec::new()))
+    Pulse::data(Vec::new())
   }
 
   /// Merge a collection of pulses together so that if more than one `SinglePulse` is found,
@@ -320,10 +324,10 @@ impl Pulse {
       .collect();
 
     if single_pulses.is_empty() {
-      Pulse::single(Vec::new())
+      Pulse::data(Vec::new())
     } else if single_pulses.len() == 1 {
       let single_pulse = single_pulses.pop().unwrap();
-      Pulse::single(single_pulse.values)
+      Pulse::Single(single_pulse)
     } else {
       Pulse::multi(single_pulses)
     }
@@ -333,15 +337,9 @@ impl Pulse {
 /// `SinglePulse` represents a type of `Pulse` with a single state instance, represented by a list
 /// of values.
 #[derive(Debug, Clone, PartialEq)]
-pub struct SinglePulse {
-  pub(crate) values: Vec<PulseValue>,
-}
-
-impl SinglePulse {
-  /// Create a new `SinglePulse` instance.
-  pub(crate) fn new(values: Vec<PulseValue>) -> SinglePulse {
-    SinglePulse { values }
-  }
+pub enum SinglePulse {
+  Data(Vec<DataValue>),
+  Shapes(Vec<SceneItem>),
 }
 
 /// `MultiPulse` represents a type of `Pulse` with a number of `SinglePulse` instances.
@@ -364,21 +362,18 @@ impl MultiPulse {
     // Iterate through all the multi pulse instances and fold all the data values into
     // a new pulse value
     for single in &self.pulses {
-      // Extract all data values in pairs
-      let data_values = single
-        .values
-        .iter()
-        .filter_map(|value| value.get_data())
-        .map(DataValue::pairs)
-        .collect();
+      if let SinglePulse::Data(data_values) = single {
+        // Extract all data values in pairs
+        let data_values = data_values.iter().map(DataValue::pairs).collect();
 
-      // Store the data values in the collected pulse values
-      if pulse_pairs.is_empty() {
-        pulse_pairs = data_values;
-      } else {
-        for j in 0..data_values.len() {
-          if let Some(pairs) = pulse_pairs.get_mut(j) {
-            pairs.extend(data_values.get(j).cloned().unwrap());
+        // Store the data values in the collected pulse values
+        if pulse_pairs.is_empty() {
+          pulse_pairs = data_values;
+        } else {
+          for j in 0..data_values.len() {
+            if let Some(pairs) = pulse_pairs.get_mut(j) {
+              pairs.extend(data_values.get(j).cloned().unwrap());
+            }
           }
         }
       }
@@ -387,40 +382,10 @@ impl MultiPulse {
     // Create pulse values from the collected pairs
     let values = pulse_pairs
       .into_iter()
-      .map(|pairs| PulseValue::Data(DataValue::from_pairs(pairs)))
+      .map(|pairs| DataValue::from_pairs(pairs))
       .collect();
 
-    SinglePulse::new(values)
-  }
-}
-
-/// `PulseValue` describes the type of values that are expected to be propagated through the graph
-/// during evaluation.
-#[derive(Debug, Clone, PartialEq)]
-pub enum PulseValue {
-  /// `DataValue` pulse value.
-  Data(DataValue),
-  /// `SceneItem` pulse value.
-  Shapes(SceneItem),
-}
-
-impl PulseValue {
-  /// Get the pulse value as `DataValue`
-  pub(crate) fn get_data(&self) -> Option<&DataValue> {
-    if let PulseValue::Data(data) = &self {
-      Some(data)
-    } else {
-      None
-    }
-  }
-
-  /// Get the pulse value as `SceneItem`
-  pub(crate) fn get_shapes(&self) -> Option<&SceneItem> {
-    if let PulseValue::Shapes(scene) = &self {
-      Some(scene)
-    } else {
-      None
-    }
+    SinglePulse::Data(values)
   }
 }
 
@@ -507,11 +472,11 @@ mod tests {
     assert_eq!(outputs.len(), 1);
     assert_eq!(
       outputs[0].pulse,
-      Pulse::single(vec![PulseValue::Shapes(SceneItem::line(
+      Pulse::shapes(vec![SceneItem::line(
         vec![(5.0, 13.0), (13.0, 5.0)],
         "black".to_string(),
         1.0
-      ))])
+      )])
     );
   }
 
@@ -529,11 +494,11 @@ mod tests {
     assert_eq!(outputs.len(), 1);
     assert_eq!(
       outputs[0].pulse,
-      Pulse::single(vec![PulseValue::Shapes(SceneItem::line(
+      Pulse::shapes(vec![SceneItem::line(
         vec![(5.0, 20.0 - 8.0), (13.0, 20.0 - 16.0), (2.0, 20.0 - 5.0)],
         "black".to_string(),
         1.0
-      ))])
+      )])
     );
   }
 
