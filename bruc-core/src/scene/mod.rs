@@ -1,5 +1,5 @@
 use crate::graph::node::Node;
-use crate::graph::{Pulse, SinglePulse};
+use crate::graph::pulse::{Pulse, SinglePulse};
 use crate::spec::axis::AxisOrientation;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
