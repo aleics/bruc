@@ -6,6 +6,7 @@ use async_std::stream::{Stream, StreamExt};
 use data::DataValue;
 use graph::node::{Node, Operator};
 use graph::Graph;
+use parser::ParseResult;
 
 use crate::parser::Parser;
 use crate::render::SceneRenderer;
@@ -38,12 +39,12 @@ impl View {
       width: spec.dimensions.width,
       height: spec.dimensions.height,
     };
-    let parse_result = Parser.parse(spec);
+    let ParseResult { graph, collection } = Parser.parse(spec);
 
     View {
       state: ViewState {
-        graph: parse_result.graph,
-        data_nodes: parse_result.data_nodes,
+        graph,
+        data_nodes: collection.data,
         dimensions,
       },
       listeners: Vec::new(),

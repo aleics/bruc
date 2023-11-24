@@ -3,13 +3,15 @@ use std::collections::HashMap;
 use crate::data::DataValue;
 use crate::graph::node::shape::SceneWindow;
 use crate::spec::axis::Axis;
-use crate::spec::scale::Scale;
+use crate::spec::scale::linear::LinearScale;
+use crate::spec::scale::range::Range;
+use crate::spec::scale::{Scale, ScaleKind};
 use crate::spec::shape::base::{
   BaseShapeProperties, HEIGHT_FIELD_NAME, WIDTH_FIELD_NAME, X_AXIS_FIELD_NAME, Y_AXIS_FIELD_NAME,
 };
 use crate::spec::shape::line::LineShape;
 use crate::spec::shape::{DataSource, Shape, ShapeKind};
-use crate::spec::{Dimensions, Visual};
+use crate::spec::Dimensions;
 use crate::{
   graph::{node::Operator, Graph},
   spec::data::DataEntry,
@@ -19,7 +21,25 @@ use crate::{
 /// `ParseResult` collects all the data needed after parsing the `Specification`
 pub(crate) struct ParseResult {
   pub(crate) graph: Graph,
-  pub(crate) data_nodes: HashMap<String, usize>,
+  pub(crate) collection: ParsedNodeCollection,
+}
+
+impl ParseResult {
+  fn new() -> Self {
+    ParseResult {
+      graph: Graph::new(),
+      collection: ParsedNodeCollection::default(),
+    }
+  }
+}
+
+#[derive(Default, Debug, PartialEq)]
+pub(crate) struct ParsedNodeCollection {
+  pub(crate) data: HashMap<String, usize>,
+  pub(crate) domain: HashMap<String, usize>,
+  pub(crate) scales: HashMap<String, usize>,
+  pub(crate) axis: HashMap<String, usize>,
+  pub(crate) shapes: Vec<usize>,
 }
 
 /// `Parser` allows to parse a certain `Specification` into a `Graph` representation, where
@@ -29,202 +49,204 @@ pub(crate) struct Parser;
 impl Parser {
   /// Parse a specification instance into a new graph.
   pub(crate) fn parse(&self, specification: Specification) -> ParseResult {
-    let visual_parser = VisualParser::new(&specification.scales, specification.dimensions);
+    let mut result = ParseResult::new();
 
-    let mut graph = Graph::new();
-    let data_nodes = DataParser::parse(specification.data, &mut graph);
-    visual_parser.parse(specification.visual, &data_nodes, &mut graph);
+    self.walk_spec(specification, &mut result);
 
-    ParseResult { graph, data_nodes }
+    result
+  }
+
+  fn walk_spec(&self, specification: Specification, result: &mut ParseResult) {
+    let visitor = Visitor::new(specification.dimensions, &specification.scales);
+
+    for entry in specification.data {
+      visitor.visit_data(entry, result);
+    }
+
+    for shape in specification.visual.shapes {
+      visitor.visit_shape(shape, result);
+    }
+
+    for axis in specification.visual.axes {
+      visitor.visit_axis(axis, result);
+    }
   }
 }
 
-struct DataParser;
-
-impl DataParser {
-  /// Parse the specification data into the graph by adding data and transform nodes.
-  /// Return the leave indices of the nodes in the graph, identified by the data specification name.
-  fn parse(data: Vec<DataEntry>, graph: &mut Graph) -> HashMap<String, usize> {
-    data.into_iter().fold(HashMap::new(), |mut acc, entry| {
-      let (identifier, node) = DataParser::parse_entry(entry, graph);
-      acc.insert(identifier, node);
-      acc
-    })
-  }
-
-  fn parse_entry(entry: DataEntry, graph: &mut Graph) -> (String, usize) {
-    let data_node = graph.add_node(Operator::data(entry.values));
-
-    let node = entry.transform.into_iter().fold(data_node, |acc, pipe| {
-      graph.add(Operator::transform(pipe), vec![acc])
-    });
-
-    (entry.name, node)
-  }
-}
-
-struct VisualParser {
-  scales: HashMap<String, Scale>,
+struct Visitor {
   dimensions: Dimensions,
+  scales: HashMap<String, Scale>,
 }
 
-impl VisualParser {
-  fn new(scales: &[Scale], dimensions: Dimensions) -> Self {
+impl Visitor {
+  fn new(dimensions: Dimensions, scales: &[Scale]) -> Self {
     let scales = scales
       .iter()
       .map(|scale| (scale.name.clone(), scale.clone()))
       .collect::<HashMap<String, Scale>>();
 
-    VisualParser { scales, dimensions }
+    Visitor { dimensions, scales }
   }
 
-  /// Parse the visual specification into the graph by creating shape and scale nodes, which are
-  /// properly connected within each other and the incoming data node.
-  fn parse(
+  fn visit_data(&self, data: DataEntry, result: &mut ParseResult) {
+    let data_node = result.graph.add_node(Operator::data(data.values));
+
+    let node = data.transform.into_iter().fold(data_node, |acc, pipe| {
+      result.graph.add(Operator::transform(pipe), vec![acc])
+    });
+
+    result.collection.data.insert(data.name, node);
+  }
+
+  fn visit_shape(&self, shape: Shape, result: &mut ParseResult) {
+    let Some(data_node) = result.collection.data.get(&shape.from) else {
+      return;
+    };
+
+    match shape.kind {
+      ShapeKind::Line(line) => self.visit_line_shape(line, *data_node, result),
+    };
+  }
+
+  fn visit_line_shape(&self, line: LineShape, data_node: usize, result: &mut ParseResult) {
+    let scale_nodes = self.visit_shape_props(&line.props.base, data_node, result);
+
+    let node = result.graph.add_node(Operator::line(
+      line,
+      SceneWindow::new(self.dimensions.width, self.dimensions.height),
+    ));
+    result.collection.shapes.push(node);
+
+    for scale_node in scale_nodes {
+      result.graph.add_edge(scale_node, node);
+    }
+  }
+
+  fn visit_shape_props(
     &self,
-    visual: Visual,
-    data_nodes: &HashMap<String, usize>,
-    graph: &mut Graph,
+    base: &BaseShapeProperties,
+    data_node: usize,
+    result: &mut ParseResult,
   ) -> Vec<usize> {
     let mut nodes = Vec::new();
 
-    let shape_nodes: Vec<usize> = visual
-      .shapes
-      .into_iter()
-      .filter_map(|shape| {
-        data_nodes
-          .get(&shape.from)
-          .map(|data_node| self.parse_shape(shape, *data_node, graph))
-      })
-      .collect();
-    nodes.extend(shape_nodes);
+    // Parse scale node for the "x" field
+    if let Some(x) = base.x.as_ref() {
+      nodes.push(self.visit_data_source(x, X_AXIS_FIELD_NAME, data_node, result));
+    }
 
-    let axis_nodes: Vec<usize> = visual
-      .axes
-      .into_iter()
-      .filter_map(|axis| {
-        self
-          .scales
-          .get(&axis.scale)
-          .map(|scale| self.parse_axis(axis, scale.clone(), graph))
-      })
-      .collect();
-    nodes.extend(axis_nodes);
+    // Parse scale node for the "y" field
+    if let Some(y) = base.y.as_ref() {
+      nodes.push(self.visit_data_source(y, Y_AXIS_FIELD_NAME, data_node, result));
+    }
+
+    // Parse scale node for the "width" field
+    if let Some(width) = base.width.as_ref() {
+      nodes.push(self.visit_data_source(width, WIDTH_FIELD_NAME, data_node, result));
+    }
+
+    // Parse scale node for the "height" field
+    if let Some(height) = base.height.as_ref() {
+      nodes.push(self.visit_data_source(height, HEIGHT_FIELD_NAME, data_node, result));
+    }
 
     nodes
   }
 
-  /// Parse a single shape by creating the referenced scale nodes and the needed graph edges with
-  /// the data node.
-  fn parse_shape(&self, shape: Shape, data_node: usize, graph: &mut Graph) -> usize {
-    match shape.kind {
-      ShapeKind::Line(line_shape) => self.parse_line_shape(line_shape, data_node, graph),
-    }
-  }
-
-  fn parse_line_shape(&self, shape: LineShape, data_node: usize, graph: &mut Graph) -> usize {
-    let input_nodes = self.parse_shape_base_props(&shape.props.base, data_node, graph);
-
-    let node = graph.add_node(Operator::line(
-      shape,
-      SceneWindow::new(self.dimensions.width, self.dimensions.height),
-    ));
-
-    for input_node in input_nodes {
-      graph.add_edge(input_node, node)
-    }
-
-    node
-  }
-
-  fn parse_shape_base_props(
-    &self,
-    base: &BaseShapeProperties,
-    data_node: usize,
-    graph: &mut Graph,
-  ) -> Vec<usize> {
-    let mut scale_nodes = Vec::new();
-
-    // Parse scale node for the "x" field
-    if let Some(x_scale_node) = base
-      .x
-      .as_ref()
-      .map(|x| self.parse_scale(x, X_AXIS_FIELD_NAME, data_node, graph))
-    {
-      scale_nodes.push(x_scale_node);
-    }
-
-    // Parse scale node for the "y" field
-    if let Some(y_scale_node) = base
-      .y
-      .as_ref()
-      .map(|y| self.parse_scale(y, Y_AXIS_FIELD_NAME, data_node, graph))
-    {
-      scale_nodes.push(y_scale_node);
-    }
-
-    // Parse scale node for the "width" field
-    if let Some(width_scale_node) = base
-      .width
-      .as_ref()
-      .map(|width| self.parse_scale(width, WIDTH_FIELD_NAME, data_node, graph))
-    {
-      scale_nodes.push(width_scale_node);
-    }
-
-    // Parse scale node for the "height" field
-    if let Some(height_scale_node) = base
-      .height
-      .as_ref()
-      .map(|height| self.parse_scale(height, HEIGHT_FIELD_NAME, data_node, graph))
-    {
-      scale_nodes.push(height_scale_node);
-    }
-
-    scale_nodes
-  }
-
-  /// Parse a scale for a certain shape's data source by creating a new scale node in the graph
-  /// and connecting it to the incoming data node.
-  fn parse_scale(
+  fn visit_data_source(
     &self,
     data_source: &DataSource,
     output: &str,
     data_node: usize,
-    graph: &mut Graph,
+    result: &mut ParseResult,
   ) -> usize {
-    let operator = match data_source {
+    match data_source {
       // Create a scale operator, if the shape's data source is from a data field
       DataSource::FieldSource { field, scale } => {
-        let operator = scale
+        if let Some(scale) = scale
           .as_ref()
           .and_then(|scale_name| self.scales.get(scale_name))
-          .cloned()
-          .map(|scale| Operator::scale(scale, field, output))
+        {
+          self.visit_scale(scale.clone(), field, output, data_node, result)
+        } else {
           // If no scale is defined, then we copy the field's value in the output field.
-          .unwrap_or(Operator::identity(field, output));
+          let operator = Operator::identity(field, output);
 
-        operator
+          result.graph.add(operator, vec![data_node])
+        }
       }
       // Create a data operator if the shape's data source is plain data value
       DataSource::ValueSource(value) => {
-        Operator::data(vec![DataValue::from_pairs(vec![(output, value.clone())])])
+        let operator = Operator::data(vec![DataValue::from_pairs(vec![(output, value.clone())])]);
+        result.graph.add(operator, vec![data_node])
       }
-    };
-
-    // Create node in the graph and connect it to the incoming data node.
-    graph.add(operator, vec![data_node])
+    }
   }
 
-  fn parse_axis(&self, axis: Axis, scale: Scale, graph: &mut Graph) -> usize {
-    graph.add(
-      Operator::axis(
-        axis,
-        scale,
-        SceneWindow::new(self.dimensions.width, self.dimensions.height),
+  fn visit_scale(
+    &self,
+    scale: Scale,
+    field: &str,
+    output: &str,
+    data_node: usize,
+    result: &mut ParseResult,
+  ) -> usize {
+    match scale.kind {
+      ScaleKind::Linear(linear) => self.visit_linear(
+        linear,
+        scale.name.to_string(),
+        field,
+        output,
+        data_node,
+        result,
       ),
-      vec![],
-    )
+    }
+  }
+
+  fn visit_linear(
+    &self,
+    linear: LinearScale,
+    name: String,
+    field: &str,
+    output: &str,
+    data_node: usize,
+    result: &mut ParseResult,
+  ) -> usize {
+    let domain_operator = Operator::domain(linear.domain.clone());
+    let domain_node = result.graph.add_node(domain_operator);
+
+    result.graph.add_edge(data_node, domain_node);
+    result.collection.domain.insert(name.clone(), domain_node);
+
+    let Range::Literal(range_min, range_max) = linear.range;
+    let linear_operator = Operator::linear((range_min, range_max), field, output);
+    let linear_node = result.graph.add_node(linear_operator);
+
+    result.graph.add_edge(domain_node, linear_node);
+    result.graph.add_edge(data_node, linear_node);
+    result.collection.scales.insert(name, linear_node);
+
+    linear_node
+  }
+
+  fn visit_axis(&self, axis: Axis, result: &mut ParseResult) {
+    let scale_name = axis.scale.clone();
+
+    let Some(scale) = self.scales.get(&scale_name) else {
+      return;
+    };
+    let Some(domain) = result.collection.domain.get(&scale_name) else {
+      return;
+    };
+
+    let operator = Operator::axis(
+      axis,
+      scale.clone(),
+      SceneWindow::new(self.dimensions.width, self.dimensions.height),
+    );
+
+    let node = result.graph.add(operator, vec![*domain]);
+    result.collection.axis.insert(scale_name, node);
   }
 }
 
@@ -235,7 +257,7 @@ mod tests {
   use crate::graph::node::shape::SceneWindow;
   use crate::graph::node::{Node, Operator};
   use crate::graph::Edge;
-  use crate::parser::ParseResult;
+  use crate::parser::{ParseResult, ParsedNodeCollection};
   use crate::spec::axis::{Axis, AxisOrientation};
   use crate::spec::scale::ScaleKind;
   use crate::spec::shape::line::LinePropertiesBuilder;
@@ -303,7 +325,7 @@ mod tests {
     let parser = Parser;
 
     // when
-    let ParseResult { graph, data_nodes } = parser.parse(spec);
+    let ParseResult { graph, collection } = parser.parse(spec);
 
     // then
     assert_eq!(
@@ -315,16 +337,10 @@ mod tests {
         ])),
         Node::init(Operator::map(MapPipe::new("a - 2", "b").unwrap())),
         Node::init(Operator::filter(FilterPipe::new("b > 2").unwrap())),
-        Node::init(Operator::linear(
-          LinearScale::new(Domain::Literal(0.0, 100.0), Range::Literal(0.0, 20.0)),
-          "a",
-          "x"
-        )),
-        Node::init(Operator::linear(
-          LinearScale::new(Domain::Literal(0.0, 100.0), Range::Literal(0.0, 10.0)),
-          "b",
-          "y"
-        )),
+        Node::init(Operator::domain(Domain::Literal(0.0, 100.0))),
+        Node::init(Operator::linear((0.0, 20.0), "a", "x")),
+        Node::init(Operator::domain(Domain::Literal(0.0, 100.0))),
+        Node::init(Operator::linear((0.0, 10.0), "b", "y")),
         Node::init(Operator::line(
           LineShape::new(
             LinePropertiesBuilder::new()
@@ -364,9 +380,15 @@ mod tests {
         Edge::new(0, 1),
         Edge::new(1, 2),
         Edge::new(2, 3),
+        Edge::new(3, 4),
         Edge::new(2, 4),
-        Edge::new(3, 5),
-        Edge::new(4, 5),
+        Edge::new(2, 5),
+        Edge::new(5, 6),
+        Edge::new(2, 6),
+        Edge::new(4, 7),
+        Edge::new(6, 7),
+        Edge::new(3, 8),
+        Edge::new(5, 9)
       ]
     );
     assert_eq!(
@@ -374,12 +396,14 @@ mod tests {
       BTreeMap::from([
         (0, BTreeSet::from([1])),
         (1, BTreeSet::from([2])),
-        (2, BTreeSet::from([3, 4])),
-        (3, BTreeSet::from([5])),
-        (4, BTreeSet::from([5])),
-        (5, BTreeSet::new()),
-        (6, BTreeSet::new()),
-        (7, BTreeSet::new())
+        (2, BTreeSet::from([3, 4, 5, 6])),
+        (3, BTreeSet::from([4, 8])),
+        (4, BTreeSet::from([7])),
+        (5, BTreeSet::from([6, 9])),
+        (6, BTreeSet::from([7])),
+        (7, BTreeSet::new()),
+        (8, BTreeSet::new()),
+        (9, BTreeSet::new())
       ])
     );
     assert_eq!(
@@ -389,10 +413,12 @@ mod tests {
         (1, BTreeSet::from([0])),
         (2, BTreeSet::from([1])),
         (3, BTreeSet::from([2])),
-        (4, BTreeSet::from([2])),
-        (5, BTreeSet::from([3, 4])),
-        (6, BTreeSet::new()),
-        (7, BTreeSet::new())
+        (4, BTreeSet::from([2, 3])),
+        (5, BTreeSet::from([2])),
+        (6, BTreeSet::from([2, 5])),
+        (7, BTreeSet::from([4, 6])),
+        (8, BTreeSet::from([3])),
+        (9, BTreeSet::from([5]))
       ])
     );
     assert_eq!(
@@ -402,21 +428,32 @@ mod tests {
         (1, 1),
         (2, 1),
         (3, 1),
-        (4, 1),
-        (5, 2),
-        (6, 0),
-        (7, 0)
+        (4, 2),
+        (5, 1),
+        (6, 2),
+        (7, 2),
+        (8, 1),
+        (9, 1)
       ])
     );
     assert_eq!(
       graph.nodes_in_degree,
       BTreeMap::from([
-        (0, BTreeSet::from([0, 6, 7])),
-        (1, BTreeSet::from([1, 2, 3, 4])),
-        (2, BTreeSet::from([5]))
+        (0, BTreeSet::from([0])),
+        (1, BTreeSet::from([1, 2, 3, 5, 8, 9])),
+        (2, BTreeSet::from([4, 6, 7]))
       ])
     );
-    assert_eq!(graph.order, vec![0, 6, 7, 1, 2, 3, 4, 5]);
-    assert_eq!(data_nodes, HashMap::from([("primary".to_string(), 2)]))
+    assert_eq!(graph.order, vec![0, 1, 2, 3, 5, 4, 8, 6, 9, 7]);
+    assert_eq!(
+      collection,
+      ParsedNodeCollection {
+        data: HashMap::from([("primary".to_string(), 2)]),
+        domain: HashMap::from([("vertical".to_string(), 5), ("horizontal".to_string(), 3)]),
+        scales: HashMap::from([("vertical".to_string(), 6), ("horizontal".to_string(), 4)]),
+        axis: HashMap::from([("vertical".to_string(), 9), ("horizontal".to_string(), 8)]),
+        shapes: vec![7]
+      }
+    )
   }
 }

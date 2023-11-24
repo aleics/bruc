@@ -6,9 +6,9 @@ use crate::spec::scale::domain::Domain;
 
 use crate::{
   graph::{Evaluation, MultiPulse, Pulse, SinglePulse},
-  spec::scale::{linear::LinearScale, Scaler},
 };
 
+use super::util::{interpolate, normalize};
 
 #[derive(Debug, PartialEq)]
 pub struct DomainOperator {
@@ -63,20 +63,21 @@ impl Evaluation for DomainOperator {
     self.evaluate_single(multi.aggregate())
   }
 }
+
 /// `LinearOperator` represents an operator of the graph, which linearly scales data values from a
 /// certain `field` reference, and creates a new field in the defined `output` field.
 #[derive(Debug, PartialEq)]
 pub struct LinearOperator {
-  scale: LinearScale,
+  range: (f32, f32),
   field: String,
   output: String,
 }
 
 impl LinearOperator {
   /// Create a new `LinearOperator` instance.
-  pub(crate) fn new(scale: LinearScale, field: &str, output: &str) -> Self {
+  pub(crate) fn new(range: (f32, f32), field: &str, output: &str) -> Self {
     LinearOperator {
-      scale,
+      range,
       field: field.to_string(),
       output: output.to_string(),
     }
@@ -84,19 +85,15 @@ impl LinearOperator {
 
   /// Apply the operator's logic by linearly scaling the referenced `field` and creating a new
   /// `output` field.
-  fn apply(&self, pulse: &SinglePulse) -> Vec<DataValue> {
-    let SinglePulse::Data(values) = pulse else {
-      return Vec::new();
-    };
-
+  fn apply(&self, values: &[DataValue], domain: (f32, f32)) -> Vec<DataValue> {
     let mut result = values.to_vec();
 
     // Iterate over the current series
     for value in &mut result {
       // Apply scale to field
       let scale_result = value
-        .get(&self.field)
-        .and_then(|value| self.scale.scale(value));
+        .get_number(&self.field)
+        .map(|value| interpolate(normalize(*value, domain), self.range));
 
       if let Some(scale_item) = scale_result {
         // Add scale result to value with the scale's name
@@ -110,18 +107,25 @@ impl LinearOperator {
 }
 
 impl Evaluation for LinearOperator {
-  fn evaluate_single(&self, single: SinglePulse) -> Pulse {
-    let values = self.apply(&single);
-    Pulse::data(values)
+  fn evaluate_single(&self, _single: SinglePulse) -> Pulse {
+    panic!("Linear operator requires a multi-pulse with data and a domain values.")
   }
 
   fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
-    let values = multi.pulses.iter().fold(Vec::new(), |mut acc, pulse| {
-      acc.extend(self.apply(pulse));
-      acc
-    });
+    let mut values = Vec::new();
+    let mut domain: Option<(f32, f32)> = None;
 
-    Pulse::data(values)
+    for pulse in multi.pulses {
+      match pulse {
+        SinglePulse::Data(data) => values.extend(data),
+        SinglePulse::Domain(min, max) => domain = Some((min, max)),
+        _ => continue,
+      }
+    }
+
+    let domain = domain.expect("Domain pulse not provided for linear operator");
+
+    Pulse::data(self.apply(&values, domain))
   }
 }
 
@@ -179,17 +183,18 @@ impl Evaluation for IdentityOperator {
 
 #[cfg(test)]
 mod tests {
-  
+
+  use futures::FutureExt;
+
   use crate::{
     data::DataValue,
     graph::{Evaluation, Pulse, SinglePulse},
-    spec::scale::{domain::Domain, linear::LinearScale, range::Range},
   };
 
   use super::LinearOperator;
 
   #[tokio::test]
-  async fn applies_linear_single_pulse() {
+  async fn panics_insufficient_pulse_values() {
     let series = vec![
       DataValue::from_pairs(vec![("a", (-2.0).into()), ("b", 1.0.into())]),
       DataValue::from_pairs(vec![("a", 5.0.into()), ("b", 1.0.into())]),
@@ -197,21 +202,10 @@ mod tests {
       DataValue::from_pairs(vec![("a", 15.0.into()), ("b", 1.0.into())]),
     ];
 
-    let scale = LinearScale::new(Domain::Literal(0.0, 10.0), Range::Literal(0.0, 1.0));
+    let operator = LinearOperator::new((0.0, 1.0), "a", "x");
+    let pulse = operator.evaluate(Pulse::data(series)).catch_unwind().await;
 
-    let operator = LinearOperator::new(scale, "a", "x");
-
-    let pulse = operator.evaluate(Pulse::data(series)).await;
-
-    assert_eq!(
-      pulse,
-      Pulse::data(vec![
-        DataValue::from_pairs(vec![("x", 0.0.into())]),
-        DataValue::from_pairs(vec![("x", 0.5.into())]),
-        DataValue::from_pairs(vec![("x", 1.0.into())]),
-        DataValue::from_pairs(vec![("x", 1.0.into())]),
-      ])
-    );
+    assert!(pulse.is_err());
   }
 
   #[tokio::test]
@@ -225,12 +219,11 @@ mod tests {
       DataValue::from_pairs(vec![("a", 15.0.into()), ("b", 1.0.into())]),
     ]);
 
-    let scale = LinearScale::new(Domain::Literal(0.0, 10.0), Range::Literal(0.0, 1.0));
+    let domain = SinglePulse::Domain(0.0, 10.0);
 
-    let operator = LinearOperator::new(scale, "a", "x");
-
+    let operator = LinearOperator::new((0.0, 1.0), "a", "x");
     let pulse = operator
-      .evaluate(Pulse::multi(vec![first_pulse, second_pulse]))
+      .evaluate(Pulse::multi(vec![first_pulse, second_pulse, domain]))
       .await;
 
     assert_eq!(
@@ -246,17 +239,15 @@ mod tests {
 
   #[tokio::test]
   async fn ignores_boolean_linear() {
-    let series = vec![
+    let data = SinglePulse::Data(vec![
       DataValue::from_pairs(vec![("a", true.into()), ("b", 1.0.into())]),
       DataValue::from_pairs(vec![("a", false.into()), ("b", 1.0.into())]),
       DataValue::from_pairs(vec![("a", 2.0.into()), ("b", 1.0.into())]),
-    ];
+    ]);
+    let domain = SinglePulse::Domain(0.0, 10.0);
 
-    let scale = LinearScale::new(Domain::Literal(0.0, 10.0), Range::Literal(0.0, 1.0));
-
-    let operator = LinearOperator::new(scale, "a", "x");
-
-    let pulse = operator.evaluate(Pulse::data(series)).await;
+    let operator = LinearOperator::new((0.0, 1.0), "a", "x");
+    let pulse = operator.evaluate(Pulse::multi(vec![data, domain])).await;
 
     assert_eq!(
       pulse,

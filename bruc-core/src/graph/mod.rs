@@ -322,22 +322,18 @@ mod tests {
       vec![map],
     );
 
+    let x_domain = graph.add(Operator::domain(Domain::Literal(0.0, 20.0)), vec![filter]);
+
     let x_scale = graph.add(
-      Operator::linear(
-        LinearScale::new(Domain::Literal(0.0, 20.0), Range::Literal(0.0, 20.0)),
-        "a",
-        "x",
-      ),
-      vec![filter],
+      Operator::linear((0.0, 20.0), "a", "x"),
+      vec![filter, x_domain],
     );
 
+    let y_domain = graph.add(Operator::domain(Domain::Literal(0.0, 20.0)), vec![filter]);
+
     let y_scale = graph.add(
-      Operator::linear(
-        LinearScale::new(Domain::Literal(0.0, 20.0), Range::Literal(0.0, 20.0)),
-        "b",
-        "y",
-      ),
-      vec![filter],
+      Operator::linear((0.0, 20.0), "b", "y"),
+      vec![filter, y_domain],
     );
 
     graph.add(
@@ -417,11 +413,7 @@ mod tests {
 
     let data_operator = Operator::data(vec![]);
     let map_operator = Operator::map(MapPipe::new("a + 2", "b").unwrap());
-    let scale_operator = Operator::linear(
-      LinearScale::new(Domain::Literal(0.0, 20.0), Range::Literal(0.0, 20.0)),
-      "a",
-      "x",
-    );
+    let scale_operator = Operator::linear((0.0, 20.0), "a", "x");
     let axis_operator = Operator::axis(
       Axis::new("x", AxisOrientation::Left),
       Scale::new(
@@ -445,11 +437,7 @@ mod tests {
     assert_eq!(
       leave_nodes,
       vec![
-        &Node::init(Operator::linear(
-          LinearScale::new(Domain::Literal(0.0, 20.0), Range::Literal(0.0, 20.0)),
-          "a",
-          "x",
-        )),
+        &Node::init(Operator::linear((0.0, 20.0), "a", "x",)),
         &Node::init(Operator::axis(
           Axis::new("x", AxisOrientation::Left),
           Scale::new(
