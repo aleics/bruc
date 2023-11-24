@@ -25,17 +25,35 @@ async fn main() {
         {
           "type": "linear",
           "name": "horizontal",
-          "domain": [0, 5],
+          "domain": { "data": "primary", "field": "x" },
           "range": [0, 500]
         },
         {
           "type": "linear",
           "name": "vertical",
-          "domain": [0, 50],
+          "domain": { "data": "primary", "field": "y" },
           "range": [0, 200]
         }
       ],
       "visual": {
+        "axes": [
+          {
+            "orientation": "top",
+            "scale": "horizontal"
+          },
+          {
+            "orientation": "bottom",
+            "scale": "horizontal"
+          },
+          {
+            "orientation": "left",
+            "scale": "vertical"
+          },
+          {
+            "orientation": "right",
+            "scale": "vertical"
+          }
+        ],
         "shapes": [
           {
             "from": "primary",

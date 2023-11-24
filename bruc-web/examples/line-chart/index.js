@@ -15,13 +15,13 @@ const spec = `{
     {
       "type": "linear",
       "name": "horizontal",
-      "domain": [0, 200],
+      "domain": { "data": "primary", "field": "x" },
       "range": [0, 1500]
     },
     {
       "type": "linear",
       "name": "vertical",
-      "domain": [0, 50],
+      "domain": { "data": "primary", "field": "y" },
       "range": [0, 300]
     }
   ],
@@ -83,7 +83,7 @@ while(true) {
 
 function randomData() {
   const values = [];
-  for (let i = 0; i <= 200; i++) {
+  for (let i = 0; i <= randomValue(200); i++) {
     values.push({ x: i, y: randomValue(50), k: i, q: randomValue(50) });
   }
   return values;
