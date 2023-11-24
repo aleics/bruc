@@ -287,9 +287,7 @@ mod tests {
   use crate::graph::node::shape::SceneWindow;
   use crate::spec::axis::{Axis, AxisOrientation};
   use crate::spec::scale::domain::Domain;
-  use crate::spec::scale::linear::LinearScale;
-  use crate::spec::scale::range::Range;
-  use crate::spec::scale::{Scale, ScaleKind};
+
   use crate::spec::shape::line::{LinePropertiesBuilder, LineShape};
   use crate::spec::shape::DataSource;
   use crate::{
@@ -416,13 +414,7 @@ mod tests {
     let scale_operator = Operator::linear((0.0, 20.0), "a", "x");
     let axis_operator = Operator::axis(
       Axis::new("x", AxisOrientation::Left),
-      Scale::new(
-        "x",
-        ScaleKind::Linear(LinearScale::new(
-          Domain::Literal(0.0, 100.0),
-          Range::Literal(0.0, 2.0),
-        )),
-      ),
+      (0.0, 2.0),
       SceneWindow::new(500, 200),
     );
 
@@ -440,13 +432,7 @@ mod tests {
         &Node::init(Operator::linear((0.0, 20.0), "a", "x",)),
         &Node::init(Operator::axis(
           Axis::new("x", AxisOrientation::Left),
-          Scale::new(
-            "x",
-            ScaleKind::Linear(LinearScale::new(
-              Domain::Literal(0.0, 100.0),
-              Range::Literal(0.0, 2.0)
-            ))
-          ),
+          (0.0, 2.0),
           SceneWindow::new(500, 200)
         ))
       ]

@@ -2,7 +2,6 @@ use std::{collections::HashMap, ops::AddAssign};
 
 use bruc_expression::data::{DataItem, DataSource};
 
-
 use crate::{
   data::DataValue,
   graph::{Evaluation, MultiPulse, Pulse, SinglePulse},

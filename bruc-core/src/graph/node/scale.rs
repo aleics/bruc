@@ -4,9 +4,7 @@ use crate::data::DataValue;
 
 use crate::spec::scale::domain::Domain;
 
-use crate::{
-  graph::{Evaluation, MultiPulse, Pulse, SinglePulse},
-};
+use crate::graph::{Evaluation, MultiPulse, Pulse, SinglePulse};
 
 use super::util::{interpolate, normalize};
 

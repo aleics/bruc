@@ -3,7 +3,6 @@ use crate::graph::node::shape::{LineOperator, SceneWindow};
 use crate::spec::axis::Axis;
 use crate::spec::scale::domain::Domain;
 
-use crate::spec::scale::Scale;
 use crate::spec::shape::line::LineShape;
 use crate::{
   data::DataValue,
@@ -96,8 +95,8 @@ impl Operator {
     Operator::Line(LineOperator::new(shape, window))
   }
 
-  pub(crate) fn axis(axis: Axis, scale: Scale, window: SceneWindow) -> Self {
-    Operator::Axis(AxisOperator::new(axis, scale, window))
+  pub(crate) fn axis(axis: Axis, range: (f32, f32), window: SceneWindow) -> Self {
+    Operator::Axis(AxisOperator::new(axis, range, window))
   }
 
   /// Create a new identity `Operator` instance.

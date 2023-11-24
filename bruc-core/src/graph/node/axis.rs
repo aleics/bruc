@@ -1,10 +1,7 @@
 use crate::{
   graph::{Evaluation, MultiPulse, Pulse, SinglePulse},
   scene::{SceneAxisRule, SceneAxisTick, SceneItem},
-  spec::{
-    axis::{Axis, AxisOrientation},
-    scale::{linear::LinearScale, range::Range, Scale, ScaleKind},
-  },
+  spec::axis::{Axis, AxisOrientation},
 };
 
 use super::{
@@ -17,42 +14,37 @@ const TICK_COUNT: usize = 10;
 #[derive(Debug, PartialEq)]
 pub struct AxisOperator {
   axis: Axis,
-  scale: Scale,
+  range: (f32, f32),
   window: SceneWindow,
 }
 
 impl AxisOperator {
-  pub(crate) fn new(axis: Axis, scale: Scale, window: SceneWindow) -> Self {
+  pub(crate) fn new(axis: Axis, range: (f32, f32), window: SceneWindow) -> Self {
     AxisOperator {
       axis,
-      scale,
+      range,
       window,
     }
   }
 
   fn apply(&self, domain: (f32, f32)) -> SinglePulse {
-    let scene_item = match &self.scale.kind {
-      ScaleKind::Linear(linear) => self.linear_axis(linear, domain),
-    };
-
+    let scene_item = self.linear_axis(self.range, domain);
     SinglePulse::Shapes(vec![scene_item])
   }
 
-  fn linear_axis(&self, linear: &LinearScale, domain: (f32, f32)) -> SceneItem {
+  fn linear_axis(&self, range: (f32, f32), domain: (f32, f32)) -> SceneItem {
     SceneItem::axis(
-      self.create_ruler(&linear.range),
-      self.create_ticks(linear, domain),
+      self.create_ruler(range),
+      self.create_ticks(range, domain),
       self.axis.orientation,
     )
   }
 
-  fn create_ticks(&self, linear: &LinearScale, domain: (f32, f32)) -> Vec<SceneAxisTick> {
-    let Range::Literal(range_min, range_max) = &linear.range;
-
+  fn create_ticks(&self, range: (f32, f32), domain: (f32, f32)) -> Vec<SceneAxisTick> {
     AxisOperator::create_tick_relative_positions(TICK_COUNT, domain)
       .into_iter()
       .map(|value| {
-        let position = interpolate(normalize(value, domain), (*range_min, *range_max));
+        let position = interpolate(normalize(value, domain), range);
         SceneAxisTick {
           position: self.orientation_position(position),
           label: format!("{:.2}", value),
@@ -66,10 +58,10 @@ impl AxisOperator {
     (0..count + 1).map(|i| step * (i as f32)).collect()
   }
 
-  fn create_ruler(&self, range: &Range) -> SceneAxisRule {
+  fn create_ruler(&self, (from, to): (f32, f32)) -> SceneAxisRule {
     SceneAxisRule {
-      from: self.orientation_position(range.from()),
-      to: self.orientation_position(range.to()),
+      from: self.orientation_position(from),
+      to: self.orientation_position(to),
     }
   }
 
@@ -109,23 +101,14 @@ mod tests {
       Evaluation, Pulse,
     },
     scene::{SceneAxisRule, SceneAxisTick, SceneItem},
-    spec::{
-      axis::{Axis, AxisOrientation},
-      scale::{domain::Domain, linear::LinearScale, range::Range, Scale, ScaleKind},
-    },
+    spec::axis::{Axis, AxisOrientation},
   };
 
   #[tokio::test]
   async fn creates_top_axis() {
     let operator = AxisOperator::new(
       Axis::new("horizontal", AxisOrientation::Top),
-      Scale::new(
-        "horizontal",
-        ScaleKind::Linear(LinearScale::new(
-          Domain::Literal(0.0, 100.0),
-          Range::Literal(0.0, 200.0),
-        )),
-      ),
+      (0.0, 200.0),
       SceneWindow::new(200, 100),
     );
 
@@ -193,13 +176,7 @@ mod tests {
   async fn creates_bottom_axis() {
     let operator = AxisOperator::new(
       Axis::new("horizontal", AxisOrientation::Bottom),
-      Scale::new(
-        "horizontal",
-        ScaleKind::Linear(LinearScale::new(
-          Domain::Literal(0.0, 100.0),
-          Range::Literal(0.0, 200.0),
-        )),
-      ),
+      (0.0, 200.0),
       SceneWindow::new(200, 100),
     );
 
@@ -267,13 +244,7 @@ mod tests {
   async fn creates_left_axis() {
     let operator = AxisOperator::new(
       Axis::new("vertical", AxisOrientation::Left),
-      Scale::new(
-        "vertical",
-        ScaleKind::Linear(LinearScale::new(
-          Domain::Literal(0.0, 100.0),
-          Range::Literal(0.0, 200.0),
-        )),
-      ),
+      (0.0, 200.0),
       SceneWindow::new(200, 100),
     );
 
@@ -341,13 +312,7 @@ mod tests {
   async fn creates_right_axis() {
     let operator = AxisOperator::new(
       Axis::new("vertical", AxisOrientation::Right),
-      Scale::new(
-        "vertical",
-        ScaleKind::Linear(LinearScale::new(
-          Domain::Literal(0.0, 100.0),
-          Range::Literal(0.0, 200.0),
-        )),
-      ),
+      (0.0, 200.0),
       SceneWindow::new(200, 100),
     );
 

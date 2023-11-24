@@ -239,9 +239,12 @@ impl Visitor {
       return;
     };
 
+    let ScaleKind::Linear(linear) = &scale.kind;
+    let Range::Literal(min, max) = linear.range;
+
     let operator = Operator::axis(
       axis,
-      scale.clone(),
+      (min, max),
       SceneWindow::new(self.dimensions.width, self.dimensions.height),
     );
 
@@ -352,24 +355,12 @@ mod tests {
         )),
         Node::init(Operator::axis(
           Axis::new("horizontal", AxisOrientation::Bottom),
-          Scale::new(
-            "horizontal",
-            ScaleKind::Linear(LinearScale::new(
-              Domain::Literal(0.0, 100.0),
-              Range::Literal(0.0, 20.0)
-            ))
-          ),
+          (0.0, 20.0),
           SceneWindow::new(500, 200)
         )),
         Node::init(Operator::axis(
           Axis::new("vertical", AxisOrientation::Left),
-          Scale::new(
-            "vertical",
-            ScaleKind::Linear(LinearScale::new(
-              Domain::Literal(0.0, 100.0),
-              Range::Literal(0.0, 10.0)
-            ))
-          ),
+          (0.0, 10.0),
           SceneWindow::new(500, 200)
         ))
       ]
