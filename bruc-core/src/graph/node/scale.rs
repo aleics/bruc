@@ -2,11 +2,67 @@ use bruc_expression::data::{DataItem, DataSource};
 
 use crate::data::DataValue;
 
+use crate::spec::scale::domain::Domain;
+
 use crate::{
   graph::{Evaluation, MultiPulse, Pulse, SinglePulse},
   spec::scale::{linear::LinearScale, Scaler},
 };
 
+
+#[derive(Debug, PartialEq)]
+pub struct DomainOperator {
+  domain: Domain,
+}
+
+impl DomainOperator {
+  pub(crate) fn new(domain: Domain) -> Self {
+    DomainOperator { domain }
+  }
+
+  fn resolve_domain(&self, values: &[DataValue]) -> (f32, f32) {
+    match &self.domain {
+      Domain::Literal(min, max) => (*min, *max),
+      Domain::DataField { field, .. } => {
+        let mut min: f32 = 0.0;
+        let mut max: f32 = 0.0;
+
+        for value in values {
+          let Some(value) = value.get_number(field).copied() else {
+            break;
+          };
+
+          min = min.min(value);
+          max = max.max(value);
+        }
+
+        (min, max)
+      }
+    }
+  }
+
+  fn apply(&self, pulse: &SinglePulse) -> Option<(f32, f32)> {
+    let SinglePulse::Data(values) = pulse else {
+      return None;
+    };
+
+    Some(self.resolve_domain(values))
+  }
+}
+
+impl Evaluation for DomainOperator {
+  fn evaluate_single(&self, single: SinglePulse) -> Pulse {
+    if let Some((min, max)) = self.apply(&single) {
+      Pulse::domain(min, max)
+    } else {
+      Pulse::data(Vec::new())
+    }
+  }
+
+  fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
+    self.evaluate_single(multi.aggregate())
+  }
+}
 /// `LinearOperator` represents an operator of the graph, which linearly scales data values from a
 /// certain `field` reference, and creates a new field in the defined `output` field.
 #[derive(Debug, PartialEq)]

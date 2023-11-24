@@ -3,6 +3,7 @@
 #[cfg_attr(feature = "serde", serde(untagged))]
 pub enum Domain {
   Literal(f32, f32),
+  DataField { data: String, field: String },
 }
 
 impl Domain {

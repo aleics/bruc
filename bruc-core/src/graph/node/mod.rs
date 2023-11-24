@@ -1,7 +1,7 @@
 use crate::graph::node::scale::{IdentityOperator, LinearOperator};
 use crate::graph::node::shape::{LineOperator, SceneWindow};
 use crate::spec::axis::Axis;
-use crate::spec::scale::linear::LinearScale;
+use crate::spec::scale::domain::Domain;
 use crate::spec::scale::{Scale, ScaleKind};
 use crate::spec::shape::line::LineShape;
 use crate::{
@@ -10,6 +10,7 @@ use crate::{
 };
 
 use self::axis::AxisOperator;
+use self::scale::DomainOperator;
 use self::transform::{FilterOperator, MapOperator};
 use self::{data::DataOperator, transform::GroupOperator};
 
@@ -53,6 +54,7 @@ pub enum Operator {
   Group(GroupOperator),
   Line(LineOperator),
   Axis(AxisOperator),
+  Domain(DomainOperator),
   Linear(LinearOperator),
   Identity(IdentityOperator),
 }
@@ -115,6 +117,10 @@ impl Operator {
     Operator::Linear(LinearOperator::new(scale, field, output))
   }
 
+  pub(crate) fn domain(domain: Domain) -> Self {
+    Operator::Domain(DomainOperator::new(domain))
+  }
+
   /// Evaluate the operator for a certain `Pulse`.
   pub async fn evaluate(&self, pulse: Pulse) -> Pulse {
     match self {
@@ -124,6 +130,7 @@ impl Operator {
       Operator::Group(group) => group.evaluate(pulse).await,
       Operator::Line(line) => line.evaluate(pulse).await,
       Operator::Axis(axis) => axis.evaluate(pulse).await,
+      Operator::Domain(domain) => domain.evaluate(pulse).await,
       Operator::Linear(linear) => linear.evaluate(pulse).await,
       Operator::Identity(identity) => identity.evaluate(pulse).await,
     }
