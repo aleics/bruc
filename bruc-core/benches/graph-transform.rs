@@ -3,7 +3,8 @@ extern crate test;
 
 use bruc_core::data::DataValue;
 use bruc_core::graph::node::Operator;
-use bruc_core::graph::{Graph, Pulse, PulseValue};
+use bruc_core::graph::pulse::Pulse;
+use bruc_core::graph::Graph;
 use bruc_core::spec::transform::filter::FilterPipe;
 use bruc_core::spec::transform::group::{GroupOperator, GroupPipe};
 use bruc_core::spec::transform::map::MapPipe;
@@ -12,10 +13,10 @@ use test::Bencher;
 
 #[bench]
 fn bench_filter_pipe_1(b: &mut Bencher) {
-  let pulse = Pulse::single(vec![PulseValue::Data(DataValue::from_pairs(vec![(
+  let pulse = Pulse::data(vec![DataValue::from_pairs(vec![(
     "a",
     DataItem::Number(1.0),
-  )]))]);
+  )])]);
 
   let operator = Operator::filter(FilterPipe::new("(a > 1) && (a < 4) && (a != 3)").unwrap());
 
@@ -26,27 +27,27 @@ fn bench_filter_pipe_1(b: &mut Bencher) {
 
 #[bench]
 fn bench_filter_pipe_20(b: &mut Bencher) {
-  let pulse = Pulse::single(vec![
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(1.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(2.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(3.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(4.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(5.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(6.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(7.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(8.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(9.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(10.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(11.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(12.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(13.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(14.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(15.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(16.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(17.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(18.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(19.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(20.0))])),
+  let pulse = Pulse::data(vec![
+    DataValue::from_pairs(vec![("a", DataItem::Number(1.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(2.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(3.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(4.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(5.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(6.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(7.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(8.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(9.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(10.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(11.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(12.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(13.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(14.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(15.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(16.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(17.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(18.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(19.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(20.0))]),
   ]);
 
   let operator = Operator::filter(FilterPipe::new("(a > 1) && (a < 4) && (a != 3)").unwrap());
@@ -58,10 +59,10 @@ fn bench_filter_pipe_20(b: &mut Bencher) {
 
 #[bench]
 fn bench_map_pipe_1(b: &mut Bencher) {
-  let pulse = Pulse::single(vec![PulseValue::Data(DataValue::from_pairs(vec![(
+  let pulse = Pulse::data(vec![DataValue::from_pairs(vec![(
     "a",
     DataItem::Number(1.0),
-  )]))]);
+  )])]);
 
   let operator = Operator::map(MapPipe::new("(a + 1) / (a * 4) - (a + 2)", "b").unwrap());
 
@@ -72,27 +73,27 @@ fn bench_map_pipe_1(b: &mut Bencher) {
 
 #[bench]
 fn bench_map_pipe_20(b: &mut Bencher) {
-  let pulse = Pulse::single(vec![
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(1.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(2.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(3.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(4.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(5.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(6.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(7.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(8.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(9.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(10.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(11.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(12.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(13.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(14.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(15.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(16.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(17.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(18.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(19.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(20.0))])),
+  let pulse = Pulse::data(vec![
+    DataValue::from_pairs(vec![("a", DataItem::Number(1.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(2.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(3.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(4.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(5.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(6.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(7.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(8.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(9.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(10.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(11.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(12.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(13.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(14.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(15.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(16.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(17.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(18.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(19.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(20.0))]),
   ]);
 
   let operator = Operator::map(MapPipe::new("(a + 1) / (a * 4) - (a + 2)", "b").unwrap());
@@ -106,10 +107,10 @@ fn bench_map_pipe_20(b: &mut Bencher) {
 fn bench_group_pipe_1(b: &mut Bencher) {
   let operator = Operator::group(GroupPipe::new("a", GroupOperator::Count, "count"));
 
-  let pulse = Pulse::single(vec![PulseValue::Data(DataValue::from_pairs(vec![(
+  let pulse = Pulse::data(vec![DataValue::from_pairs(vec![(
     "a",
     DataItem::Number(1.0),
-  )]))]);
+  )])]);
 
   b.iter(|| {
     futures::executor::block_on(operator.evaluate(pulse.clone()));
@@ -120,27 +121,27 @@ fn bench_group_pipe_1(b: &mut Bencher) {
 fn bench_group_pipe_20(b: &mut Bencher) {
   let operator = Operator::group(GroupPipe::new("a", GroupOperator::Count, "count"));
 
-  let pulse = Pulse::single(vec![
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(1.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(2.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(3.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(4.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(5.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(6.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(7.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(8.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(9.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(10.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(11.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(12.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(13.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(14.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(15.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(16.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(17.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(18.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(19.0))])),
-    PulseValue::Data(DataValue::from_pairs(vec![("a", DataItem::Number(20.0))])),
+  let pulse = Pulse::data(vec![
+    DataValue::from_pairs(vec![("a", DataItem::Number(1.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(2.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(3.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(4.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(5.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(6.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(7.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(8.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(9.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(10.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(11.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(12.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(13.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(14.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(15.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(16.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(17.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(18.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(19.0))]),
+    DataValue::from_pairs(vec![("a", DataItem::Number(20.0))]),
   ]);
 
   b.iter(|| {
