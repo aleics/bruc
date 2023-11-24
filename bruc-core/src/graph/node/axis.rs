@@ -1,15 +1,16 @@
-use bruc_expression::data::DataItem;
-
 use crate::{
   graph::{Evaluation, MultiPulse, Pulse, SinglePulse},
   scene::{SceneAxisRule, SceneAxisTick, SceneItem},
   spec::{
     axis::{Axis, AxisOrientation},
-    scale::{domain::Domain, linear::LinearScale, range::Range, Scale, ScaleKind, Scaler},
+    scale::{linear::LinearScale, range::Range, Scale, ScaleKind},
   },
 };
 
-use super::shape::SceneWindow;
+use super::{
+  shape::SceneWindow,
+  util::{interpolate, normalize},
+};
 
 const TICK_COUNT: usize = 10;
 
@@ -29,43 +30,40 @@ impl AxisOperator {
     }
   }
 
-  fn apply(&self) -> SinglePulse {
+  fn apply(&self, domain: (f32, f32)) -> SinglePulse {
     let scene_item = match &self.scale.kind {
-      ScaleKind::Linear(linear) => self.linear_axis(linear),
+      ScaleKind::Linear(linear) => self.linear_axis(linear, domain),
     };
 
     SinglePulse::Shapes(vec![scene_item])
   }
 
-  fn linear_axis(&self, linear: &LinearScale) -> SceneItem {
+  fn linear_axis(&self, linear: &LinearScale, domain: (f32, f32)) -> SceneItem {
     SceneItem::axis(
       self.create_ruler(&linear.range),
-      self.create_ticks(linear),
+      self.create_ticks(linear, domain),
       self.axis.orientation,
     )
   }
 
-  fn create_ticks(&self, linear: &LinearScale) -> Vec<SceneAxisTick> {
-    AxisOperator::create_tick_relative_positions(TICK_COUNT, &linear.domain)
+  fn create_ticks(&self, linear: &LinearScale, domain: (f32, f32)) -> Vec<SceneAxisTick> {
+    let Range::Literal(range_min, range_max) = &linear.range;
+
+    AxisOperator::create_tick_relative_positions(TICK_COUNT, domain)
       .into_iter()
-      .filter_map(|value| {
-        linear
-          .scale(&DataItem::Number(value))
-          .map(|position| SceneAxisTick {
-            position: self.orientation_position(position),
-            label: format!("{:.2}", value),
-          })
+      .map(|value| {
+        let position = interpolate(normalize(value, domain), (*range_min, *range_max));
+        SceneAxisTick {
+          position: self.orientation_position(position),
+          label: format!("{:.2}", value),
+        }
       })
       .collect()
   }
 
-  fn create_tick_relative_positions(count: usize, domain: &Domain) -> Vec<f32> {
-    match domain {
-      Domain::Literal(from, to) => {
-        let step = (to - from) / (count as f32);
-        (0..count + 1).map(|i| step * (i as f32)).collect()
-      }
-    }
+  fn create_tick_relative_positions(count: usize, (from, to): (f32, f32)) -> Vec<f32> {
+    let step = (to - from) / (count as f32);
+    (0..count + 1).map(|i| step * (i as f32)).collect()
   }
 
   fn create_ruler(&self, range: &Range) -> SceneAxisRule {
@@ -86,12 +84,20 @@ impl AxisOperator {
 }
 
 impl Evaluation for AxisOperator {
-  fn evaluate_single(&self, _single: SinglePulse) -> Pulse {
-    Pulse::Single(self.apply())
+  fn evaluate_single(&self, single: SinglePulse) -> Pulse {
+    match single {
+      SinglePulse::Domain(min, max) => Pulse::Single(self.apply((min, max))),
+      _ => panic!("Axis operator has an incompatible single pulse value"),
+    }
   }
 
-  fn evaluate_multi(&self, _multi: MultiPulse) -> Pulse {
-    Pulse::Single(self.apply())
+  fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
+    for pulse in multi.pulses {
+      if let SinglePulse::Domain(min, max) = pulse {
+        return Pulse::Single(self.apply((min, max)));
+      }
+    }
+    panic!("Axis operator has incompatible multi pulse value")
   }
 }
 
@@ -123,7 +129,7 @@ mod tests {
       SceneWindow::new(200, 100),
     );
 
-    let pulse = operator.evaluate(Pulse::data(vec![])).await;
+    let pulse = operator.evaluate(Pulse::domain(0.0, 100.0)).await;
 
     assert_eq!(
       pulse,
@@ -197,7 +203,7 @@ mod tests {
       SceneWindow::new(200, 100),
     );
 
-    let pulse = operator.evaluate(Pulse::data(vec![])).await;
+    let pulse = operator.evaluate(Pulse::domain(0.0, 100.0)).await;
 
     assert_eq!(
       pulse,
@@ -271,7 +277,7 @@ mod tests {
       SceneWindow::new(200, 100),
     );
 
-    let pulse = operator.evaluate(Pulse::data(vec![])).await;
+    let pulse = operator.evaluate(Pulse::domain(0.0, 100.0)).await;
 
     assert_eq!(
       pulse,
@@ -345,7 +351,7 @@ mod tests {
       SceneWindow::new(200, 100),
     );
 
-    let pulse = operator.evaluate(Pulse::data(vec![])).await;
+    let pulse = operator.evaluate(Pulse::domain(0.0, 100.0)).await;
 
     assert_eq!(
       pulse,
