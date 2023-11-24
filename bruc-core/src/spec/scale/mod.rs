@@ -1,5 +1,4 @@
 use crate::spec::scale::linear::LinearScale;
-use bruc_expression::data::DataItem;
 
 pub mod domain;
 pub mod linear;
@@ -29,11 +28,6 @@ impl Scale {
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub enum ScaleKind {
   Linear(LinearScale),
-}
-
-pub trait Scaler {
-  type Item;
-  fn scale(&self, value: &DataItem) -> Option<Self::Item>;
 }
 
 #[cfg(test)]

@@ -2,7 +2,8 @@ use crate::graph::node::scale::{IdentityOperator, LinearOperator};
 use crate::graph::node::shape::{LineOperator, SceneWindow};
 use crate::spec::axis::Axis;
 use crate::spec::scale::domain::Domain;
-use crate::spec::scale::{Scale, ScaleKind};
+
+use crate::spec::scale::Scale;
 use crate::spec::shape::line::LineShape;
 use crate::{
   data::DataValue,
@@ -21,6 +22,7 @@ pub(crate) mod data;
 pub(crate) mod scale;
 pub(crate) mod shape;
 pub(crate) mod transform;
+mod util;
 
 /// `Node` represents a node in the `Graph` with a certain operator and a `Pulse` instance.
 #[derive(Debug, PartialEq)]
@@ -89,14 +91,6 @@ impl Operator {
     Operator::Group(GroupOperator::new(pipe))
   }
 
-  /// Create a new scale `Operator` instance, for a given `Scale`, data `field` reference and an
-  /// `output` field name.
-  pub(crate) fn scale(scale: Scale, field: &str, output: &str) -> Self {
-    match scale.kind {
-      ScaleKind::Linear(linear) => Operator::linear(linear, field, output),
-    }
-  }
-
   /// Create a new line `Operator` instance.
   pub(crate) fn line(shape: LineShape, window: SceneWindow) -> Self {
     Operator::Line(LineOperator::new(shape, window))
@@ -111,10 +105,10 @@ impl Operator {
     Operator::Identity(IdentityOperator::new(field, output))
   }
 
-  /// Create a new linear scale `Operator` instance, with a given `field` reference and an `output`
+  /// Create a new linear `Operator` instance for a certain `range`, with a given `field` reference and an `output`
   /// field name.
-  pub(crate) fn linear(scale: LinearScale, field: &str, output: &str) -> Self {
-    Operator::Linear(LinearOperator::new(scale, field, output))
+  pub(crate) fn linear(range: (f32, f32), field: &str, output: &str) -> Self {
+    Operator::Linear(LinearOperator::new(range, field, output))
   }
 
   pub(crate) fn domain(domain: Domain) -> Self {
