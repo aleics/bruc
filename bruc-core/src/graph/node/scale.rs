@@ -55,7 +55,7 @@ impl DomainOperator {
 impl Evaluation for DomainOperator {
   fn evaluate_single(&self, single: SinglePulse) -> Pulse {
     if let Some((min, max)) = self.apply(&single) {
-      Pulse::domain(min, max)
+      Pulse::domain(vec![DataItem::Number(min), DataItem::Number(max)])
     } else {
       Pulse::data(Vec::new())
     }
@@ -87,7 +87,15 @@ impl LinearOperator {
 
   /// Apply the operator's logic by linearly scaling the referenced `field` and creating a new
   /// `output` field.
-  fn apply(&self, values: &[DataValue], domain: (f32, f32)) -> Vec<DataValue> {
+  fn apply(&self, values: &[DataValue], domain: Vec<DataItem>) -> Vec<DataValue> {
+    let domain_min = domain[0]
+      .get_number()
+      .expect("Linear operator expects a domain with 2 numeric values. Domain has no values.");
+    let domain_max = domain[1]
+      .get_number()
+      .expect("Linear operator expects a domain with 2 numeric values. Domain has one value only.");
+
+    let domain = (*domain_min, *domain_max);
     let mut result = values.to_vec();
 
     // Iterate over the current series
@@ -115,12 +123,12 @@ impl Evaluation for LinearOperator {
 
   fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
     let mut values = Vec::new();
-    let mut domain: Option<(f32, f32)> = None;
+    let mut domain: Option<Vec<DataItem>> = None;
 
     for pulse in multi.pulses {
       match pulse {
         SinglePulse::Data(data) => values.extend(data),
-        SinglePulse::Domain(min, max) => domain = Some((min, max)),
+        SinglePulse::Domain(values) => domain = Some(values),
         _ => continue,
       }
     }
@@ -263,7 +271,7 @@ mod tests {
       DataValue::from_pairs(vec![("a", 15.0.into()), ("b", 1.0.into())]),
     ]);
 
-    let domain = SinglePulse::Domain(0.0, 10.0);
+    let domain = SinglePulse::Domain(vec![0.0.into(), 10.0.into()]);
 
     let operator = LinearOperator::new((0.0, 1.0), "a", "x");
     let pulse = operator
@@ -288,7 +296,7 @@ mod tests {
       DataValue::from_pairs(vec![("a", false.into()), ("b", 1.0.into())]),
       DataValue::from_pairs(vec![("a", 2.0.into()), ("b", 1.0.into())]),
     ]);
-    let domain = SinglePulse::Domain(0.0, 10.0);
+    let domain = SinglePulse::Domain(vec![0.0.into(), 10.0.into()]);
 
     let operator = LinearOperator::new((0.0, 1.0), "a", "x");
     let pulse = operator.evaluate(Pulse::multi(vec![data, domain])).await;

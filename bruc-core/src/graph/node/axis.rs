@@ -78,15 +78,31 @@ impl AxisOperator {
 impl Evaluation for AxisOperator {
   fn evaluate_single(&self, single: SinglePulse) -> Pulse {
     match single {
-      SinglePulse::Domain(min, max) => Pulse::Single(self.apply((min, max))),
+      SinglePulse::Domain(values) => {
+        let min = values[0]
+          .get_number()
+          .expect("Axis operator expects a pulse with 2 numeric values");
+        let max = values[1]
+          .get_number()
+          .expect("Axis operator expects a pulse with 2 numeric values");
+
+        Pulse::Single(self.apply((*min, *max)))
+      }
       _ => Pulse::shapes(Vec::new()),
     }
   }
 
   fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
     for pulse in multi.pulses {
-      if let SinglePulse::Domain(min, max) = pulse {
-        return Pulse::Single(self.apply((min, max)));
+      if let SinglePulse::Domain(values) = pulse {
+        let min = values[0]
+          .get_number()
+          .expect("Axis operator expects a pulse with 2 numeric values");
+        let max = values[1]
+          .get_number()
+          .expect("Axis operator expects a pulse with 2 numeric values");
+
+        return Pulse::Single(self.apply((*min, *max)));
       }
     }
     Pulse::shapes(Vec::new())
@@ -112,7 +128,9 @@ mod tests {
       SceneWindow::new(200, 100),
     );
 
-    let pulse = operator.evaluate(Pulse::domain(0.0, 100.0)).await;
+    let pulse = operator
+      .evaluate(Pulse::domain(vec![0.0.into(), 100.0.into()]))
+      .await;
 
     assert_eq!(
       pulse,
@@ -180,7 +198,9 @@ mod tests {
       SceneWindow::new(200, 100),
     );
 
-    let pulse = operator.evaluate(Pulse::domain(0.0, 100.0)).await;
+    let pulse = operator
+      .evaluate(Pulse::domain(vec![0.0.into(), 100.0.into()]))
+      .await;
 
     assert_eq!(
       pulse,
@@ -248,7 +268,9 @@ mod tests {
       SceneWindow::new(200, 100),
     );
 
-    let pulse = operator.evaluate(Pulse::domain(0.0, 100.0)).await;
+    let pulse = operator
+      .evaluate(Pulse::domain(vec![0.0.into(), 100.0.into()]))
+      .await;
 
     assert_eq!(
       pulse,
@@ -316,7 +338,9 @@ mod tests {
       SceneWindow::new(200, 100),
     );
 
-    let pulse = operator.evaluate(Pulse::domain(0.0, 100.0)).await;
+    let pulse = operator
+      .evaluate(Pulse::domain(vec![0.0.into(), 100.0.into()]))
+      .await;
 
     assert_eq!(
       pulse,

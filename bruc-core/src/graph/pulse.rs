@@ -1,3 +1,5 @@
+use bruc_expression::data::DataItem;
+
 use crate::{data::DataValue, scene::SceneItem};
 
 /// `Pulse` represents the current state of a node in the graph for a certain evaluation.
@@ -26,8 +28,8 @@ impl Pulse {
     Pulse::Single(SinglePulse::Shapes(values))
   }
 
-  pub fn domain(min: f32, max: f32) -> Self {
-    Pulse::Single(SinglePulse::Domain(min, max))
+  pub fn domain(values: Vec<DataItem>) -> Self {
+    Pulse::Single(SinglePulse::Domain(values))
   }
 
   /// Initialize an empty single `Pulse` instance.
@@ -64,7 +66,7 @@ impl Pulse {
 pub enum SinglePulse {
   Data(Vec<DataValue>),
   Shapes(Vec<SceneItem>),
-  Domain(f32, f32),
+  Domain(Vec<DataItem>),
 }
 
 /// `MultiPulse` represents a type of `Pulse` with a number of `SinglePulse` instances.
