@@ -11,12 +11,6 @@ pub struct LinearScale {
   pub(crate) range: Range,
 }
 
-impl LinearScale {
-  pub fn new(domain: Domain, range: Range) -> LinearScale {
-    LinearScale { domain, range }
-  }
-}
-
 #[cfg(test)]
 #[cfg(feature = "serde")]
 mod serde_tests {
@@ -37,7 +31,10 @@ mod serde_tests {
 
     assert_eq!(
       linear_scale,
-      LinearScale::new(Domain::Literal(0.0, 100.0), Range::Literal(0.0, 1.0))
+      LinearScale {
+        domain: Domain::Literal(0.0, 100.0),
+        range: Range::Literal(0.0, 1.0)
+      }
     )
   }
 
@@ -53,7 +50,10 @@ mod serde_tests {
 
     assert_eq!(
       linear_scale,
-      LinearScale::new(Domain::Literal(0.0, 1.0), Range::Literal(0.0, 1.0))
+      LinearScale {
+        domain: Domain::Literal(0.0, 1.0),
+        range: Range::Literal(0.0, 1.0)
+      }
     )
   }
 
@@ -69,7 +69,10 @@ mod serde_tests {
 
     assert_eq!(
       linear_scale,
-      LinearScale::new(Domain::Literal(0.0, 100.0), Range::Literal(0.0, 1.0))
+      LinearScale {
+        domain: Domain::Literal(0.0, 100.0),
+        range: Range::Literal(0.0, 1.0)
+      }
     )
   }
 }

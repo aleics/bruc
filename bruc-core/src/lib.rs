@@ -124,17 +124,17 @@ mod tests {
       vec![
         Scale::new(
           "horizontal",
-          ScaleKind::Linear(LinearScale::new(
-            Domain::Literal(0.0, 20.0),
-            Range::Literal(0.0, 40.0),
-          )),
+          ScaleKind::Linear(LinearScale {
+            domain: Domain::Literal(0.0, 20.0),
+            range: Range::Literal(0.0, 40.0),
+          }),
         ),
         Scale::new(
           "vertical",
-          ScaleKind::Linear(LinearScale::new(
-            Domain::Literal(0.0, 20.0),
-            Range::Literal(0.0, 20.0),
-          )),
+          ScaleKind::Linear(LinearScale {
+            domain: Domain::Literal(0.0, 20.0),
+            range: Range::Literal(0.0, 20.0),
+          }),
         ),
       ],
       Visual::new(

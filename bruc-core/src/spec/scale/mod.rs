@@ -1,5 +1,8 @@
 use crate::spec::scale::linear::LinearScale;
 
+use self::band::BandScale;
+
+pub mod band;
 pub mod domain;
 pub mod linear;
 pub mod range;
@@ -28,11 +31,13 @@ impl Scale {
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub enum ScaleKind {
   Linear(LinearScale),
+  Band(BandScale),
 }
 
 #[cfg(test)]
 #[cfg(feature = "serde")]
 mod serde_tests {
+  use crate::spec::scale::band::BandScale;
   use crate::spec::scale::domain::Domain;
   use crate::spec::scale::linear::LinearScale;
   use crate::spec::scale::range::Range;
@@ -54,10 +59,35 @@ mod serde_tests {
       scale,
       Scale::new(
         "x",
-        ScaleKind::Linear(LinearScale::new(
-          Domain::Literal(0.0, 100.0),
-          Range::Literal(0.0, 2.0)
-        ))
+        ScaleKind::Linear(LinearScale {
+          domain: Domain::Literal(0.0, 100.0),
+          range: Range::Literal(0.0, 2.0)
+        })
+      )
+    )
+  }
+
+  #[test]
+  fn deserialize_scale_band() {
+    let scale: Scale = serde_json::from_str(
+      r#"{
+        "type": "band",
+        "name": "x",
+        "domain": [0, 100],
+        "range": [0, 2]
+      }"#,
+    )
+    .unwrap();
+
+    assert_eq!(
+      scale,
+      Scale::new(
+        "x",
+        ScaleKind::Band(BandScale {
+          domain: Domain::Literal(0.0, 100.0),
+          range: Range::Literal(0.0, 2.0),
+          padding: 0.0
+        })
       )
     )
   }

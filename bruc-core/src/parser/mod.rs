@@ -200,6 +200,7 @@ impl Visitor {
         data_node,
         result,
       ),
+      ScaleKind::Band(_) => todo!(),
     }
   }
 
@@ -239,7 +240,9 @@ impl Visitor {
       return;
     };
 
-    let ScaleKind::Linear(linear) = &scale.kind;
+    let ScaleKind::Linear(linear) = &scale.kind else {
+      todo!()
+    };
     let Range::Literal(min, max) = linear.range;
 
     let operator = Operator::axis(
@@ -296,17 +299,17 @@ mod tests {
       vec![
         Scale::new(
           "horizontal",
-          ScaleKind::Linear(LinearScale::new(
-            Domain::Literal(0.0, 100.0),
-            Range::Literal(0.0, 20.0),
-          )),
+          ScaleKind::Linear(LinearScale {
+            domain: Domain::Literal(0.0, 100.0),
+            range: Range::Literal(0.0, 20.0),
+          }),
         ),
         Scale::new(
           "vertical",
-          ScaleKind::Linear(LinearScale::new(
-            Domain::Literal(0.0, 100.0),
-            Range::Literal(0.0, 10.0),
-          )),
+          ScaleKind::Linear(LinearScale {
+            domain: Domain::Literal(0.0, 100.0),
+            range: Range::Literal(0.0, 10.0),
+          }),
         ),
       ],
       Visual::new(
