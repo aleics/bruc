@@ -28,8 +28,8 @@ impl Pulse {
     Pulse::Single(SinglePulse::Shapes(values))
   }
 
-  pub fn domain(values: Vec<DataItem>) -> Self {
-    Pulse::Single(SinglePulse::Domain(values))
+  pub fn domain(domain: ResolvedDomain) -> Self {
+    Pulse::Single(SinglePulse::Domain(domain))
   }
 
   /// Initialize an empty single `Pulse` instance.
@@ -66,7 +66,7 @@ impl Pulse {
 pub enum SinglePulse {
   Data(Vec<DataValue>),
   Shapes(Vec<SceneItem>),
-  Domain(Vec<DataItem>),
+  Domain(ResolvedDomain),
 }
 
 /// `MultiPulse` represents a type of `Pulse` with a number of `SinglePulse` instances.
@@ -114,4 +114,10 @@ impl MultiPulse {
 
     SinglePulse::Data(values)
   }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum ResolvedDomain {
+  Interval(f32, f32),
+  Discrete(Vec<DataItem>),
 }

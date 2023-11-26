@@ -10,7 +10,7 @@ use crate::{
 };
 
 use self::axis::AxisOperator;
-use self::scale::{BandOperator, DomainOperator};
+use self::scale::{BandOperator, DomainDiscreteOperator, DomainIntervalOperator};
 use self::transform::{FilterOperator, MapOperator};
 use self::{data::DataOperator, transform::GroupOperator};
 
@@ -55,7 +55,8 @@ pub enum Operator {
   Group(GroupOperator),
   Line(LineOperator),
   Axis(AxisOperator),
-  Domain(DomainOperator),
+  DomainInterval(DomainIntervalOperator),
+  DomainDiscrete(DomainDiscreteOperator),
   Linear(LinearOperator),
   Band(BandOperator),
   Identity(IdentityOperator),
@@ -115,8 +116,12 @@ impl Operator {
     Operator::Band(BandOperator::new(range, field, output))
   }
 
-  pub(crate) fn domain(domain: Domain) -> Self {
-    Operator::Domain(DomainOperator::new(domain))
+  pub(crate) fn domain_interval(domain: Domain) -> Self {
+    Operator::DomainInterval(DomainIntervalOperator::new(domain))
+  }
+
+  pub(crate) fn domain_discrete(domain: Domain) -> Self {
+    Operator::DomainDiscrete(DomainDiscreteOperator::new(domain))
   }
 
   /// Evaluate the operator for a certain `Pulse`.
@@ -128,7 +133,8 @@ impl Operator {
       Operator::Group(group) => group.evaluate(pulse).await,
       Operator::Line(line) => line.evaluate(pulse).await,
       Operator::Axis(axis) => axis.evaluate(pulse).await,
-      Operator::Domain(domain) => domain.evaluate(pulse).await,
+      Operator::DomainInterval(domain_interval) => domain_interval.evaluate(pulse).await,
+      Operator::DomainDiscrete(domain_discrete) => domain_discrete.evaluate(pulse).await,
       Operator::Linear(linear) => linear.evaluate(pulse).await,
       Operator::Band(band) => band.evaluate(pulse).await,
       Operator::Identity(identity) => identity.evaluate(pulse).await,

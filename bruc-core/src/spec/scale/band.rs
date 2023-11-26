@@ -25,7 +25,7 @@ mod serde_tests {
     let band_scale: BandScale = serde_json::from_str(
       r#"{
         "name": "x",
-        "domain": [0, 100],
+        "domain": [0, 50, 100],
         "range": [0, 2],
         "padding": 0.05
       }"#,
@@ -35,7 +35,7 @@ mod serde_tests {
     assert_eq!(
       band_scale,
       BandScale {
-        domain: Domain::Literal(0.0, 100.0),
+        domain: Domain::Literal(vec![0.0, 50.0, 100.0]),
         range: Range::Literal(0.0, 2.0),
         padding: 0.05
       }
@@ -49,7 +49,7 @@ mod serde_tests {
     assert_eq!(
       band_scale,
       BandScale {
-        domain: Domain::Literal(0.0, 1.0),
+        domain: Domain::Literal(vec![0.0, 1.0]),
         range: Range::Literal(0.0, 1.0),
         padding: 0.0
       }

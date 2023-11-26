@@ -213,7 +213,7 @@ impl Visitor {
     data_node: usize,
     result: &mut ParseResult,
   ) -> usize {
-    let domain_operator = Operator::domain(linear.domain.clone());
+    let domain_operator = Operator::domain_interval(linear.domain.clone());
     let domain_node = result.graph.add_node(domain_operator);
 
     result.graph.add_edge(data_node, domain_node);
@@ -300,14 +300,14 @@ mod tests {
         Scale::new(
           "horizontal",
           ScaleKind::Linear(LinearScale {
-            domain: Domain::Literal(0.0, 100.0),
+            domain: Domain::Literal(vec![0.0, 100.0]),
             range: Range::Literal(0.0, 20.0),
           }),
         ),
         Scale::new(
           "vertical",
           ScaleKind::Linear(LinearScale {
-            domain: Domain::Literal(0.0, 100.0),
+            domain: Domain::Literal(vec![0.0, 100.0]),
             range: Range::Literal(0.0, 10.0),
           }),
         ),
@@ -343,9 +343,9 @@ mod tests {
         ])),
         Node::init(Operator::map(MapPipe::new("a - 2", "b").unwrap())),
         Node::init(Operator::filter(FilterPipe::new("b > 2").unwrap())),
-        Node::init(Operator::domain(Domain::Literal(0.0, 100.0))),
+        Node::init(Operator::domain_interval(Domain::Literal(vec![0.0, 100.0]))),
         Node::init(Operator::linear((0.0, 20.0), "a", "x")),
-        Node::init(Operator::domain(Domain::Literal(0.0, 100.0))),
+        Node::init(Operator::domain_interval(Domain::Literal(vec![0.0, 100.0]))),
         Node::init(Operator::linear((0.0, 10.0), "b", "y")),
         Node::init(Operator::line(
           LineShape::new(

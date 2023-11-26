@@ -125,14 +125,14 @@ mod tests {
         Scale::new(
           "horizontal",
           ScaleKind::Linear(LinearScale {
-            domain: Domain::Literal(0.0, 20.0),
+            domain: Domain::Literal(vec![0.0, 20.0]),
             range: Range::Literal(0.0, 40.0),
           }),
         ),
         Scale::new(
           "vertical",
           ScaleKind::Linear(LinearScale {
-            domain: Domain::Literal(0.0, 20.0),
+            domain: Domain::Literal(vec![0.0, 20.0]),
             range: Range::Literal(0.0, 20.0),
           }),
         ),

@@ -60,7 +60,7 @@ mod serde_tests {
       Scale::new(
         "x",
         ScaleKind::Linear(LinearScale {
-          domain: Domain::Literal(0.0, 100.0),
+          domain: Domain::Literal(vec![0.0, 100.0]),
           range: Range::Literal(0.0, 2.0)
         })
       )
@@ -84,7 +84,7 @@ mod serde_tests {
       Scale::new(
         "x",
         ScaleKind::Band(BandScale {
-          domain: Domain::Literal(0.0, 100.0),
+          domain: Domain::Literal(vec![0.0, 100.0]),
           range: Range::Literal(0.0, 2.0),
           padding: 0.0
         })

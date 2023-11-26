@@ -164,7 +164,7 @@ mod serde_tests {
         vec![Scale::new(
           "horizontal",
           ScaleKind::Linear(LinearScale {
-            domain: Domain::Literal(0.0, 100.0),
+            domain: Domain::Literal(vec![0.0, 100.0]),
             range: Range::Literal(0.0, 20.0),
           })
         )],

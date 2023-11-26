@@ -320,14 +320,20 @@ mod tests {
       vec![map],
     );
 
-    let x_domain = graph.add(Operator::domain(Domain::Literal(0.0, 20.0)), vec![filter]);
+    let x_domain = graph.add(
+      Operator::domain_interval(Domain::Literal(vec![0.0, 20.0])),
+      vec![filter],
+    );
 
     let x_scale = graph.add(
       Operator::linear((0.0, 20.0), "a", "x"),
       vec![filter, x_domain],
     );
 
-    let y_domain = graph.add(Operator::domain(Domain::Literal(0.0, 20.0)), vec![filter]);
+    let y_domain = graph.add(
+      Operator::domain_interval(Domain::Literal(vec![0.0, 20.0])),
+      vec![filter],
+    );
 
     let y_scale = graph.add(
       Operator::linear((0.0, 20.0), "b", "y"),

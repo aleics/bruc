@@ -1,5 +1,5 @@
 use crate::{
-  graph::{Evaluation, MultiPulse, Pulse, SinglePulse},
+  graph::{pulse::ResolvedDomain, Evaluation, MultiPulse, Pulse, SinglePulse},
   scene::{SceneAxisRule, SceneAxisTick, SceneItem},
   spec::axis::{Axis, AxisOrientation},
 };
@@ -78,15 +78,8 @@ impl AxisOperator {
 impl Evaluation for AxisOperator {
   fn evaluate_single(&self, single: SinglePulse) -> Pulse {
     match single {
-      SinglePulse::Domain(values) => {
-        let min = values[0]
-          .get_number()
-          .expect("Axis operator expects a pulse with 2 numeric values");
-        let max = values[1]
-          .get_number()
-          .expect("Axis operator expects a pulse with 2 numeric values");
-
-        Pulse::Single(self.apply((*min, *max)))
+      SinglePulse::Domain(ResolvedDomain::Interval(min, max)) => {
+        Pulse::Single(self.apply((min, max)))
       }
       _ => Pulse::shapes(Vec::new()),
     }
@@ -94,15 +87,8 @@ impl Evaluation for AxisOperator {
 
   fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
     for pulse in multi.pulses {
-      if let SinglePulse::Domain(values) = pulse {
-        let min = values[0]
-          .get_number()
-          .expect("Axis operator expects a pulse with 2 numeric values");
-        let max = values[1]
-          .get_number()
-          .expect("Axis operator expects a pulse with 2 numeric values");
-
-        return Pulse::Single(self.apply((*min, *max)));
+      if let SinglePulse::Domain(ResolvedDomain::Interval(min, max)) = pulse {
+        Pulse::Single(self.apply((min, max)));
       }
     }
     Pulse::shapes(Vec::new())
@@ -114,6 +100,7 @@ mod tests {
   use crate::{
     graph::{
       node::{axis::AxisOperator, shape::SceneWindow},
+      pulse::ResolvedDomain,
       Evaluation, Pulse,
     },
     scene::{SceneAxisRule, SceneAxisTick, SceneItem},
@@ -129,7 +116,7 @@ mod tests {
     );
 
     let pulse = operator
-      .evaluate(Pulse::domain(vec![0.0.into(), 100.0.into()]))
+      .evaluate(Pulse::domain(ResolvedDomain::Interval(0.0, 100.0)))
       .await;
 
     assert_eq!(
@@ -199,7 +186,7 @@ mod tests {
     );
 
     let pulse = operator
-      .evaluate(Pulse::domain(vec![0.0.into(), 100.0.into()]))
+      .evaluate(Pulse::domain(ResolvedDomain::Interval(0.0, 100.0)))
       .await;
 
     assert_eq!(
@@ -269,7 +256,7 @@ mod tests {
     );
 
     let pulse = operator
-      .evaluate(Pulse::domain(vec![0.0.into(), 100.0.into()]))
+      .evaluate(Pulse::domain(ResolvedDomain::Interval(0.0, 100.0)))
       .await;
 
     assert_eq!(
@@ -339,7 +326,7 @@ mod tests {
     );
 
     let pulse = operator
-      .evaluate(Pulse::domain(vec![0.0.into(), 100.0.into()]))
+      .evaluate(Pulse::domain(ResolvedDomain::Interval(0.0, 100.0)))
       .await;
 
     assert_eq!(

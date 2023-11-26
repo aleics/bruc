@@ -32,7 +32,7 @@ mod serde_tests {
     assert_eq!(
       linear_scale,
       LinearScale {
-        domain: Domain::Literal(0.0, 100.0),
+        domain: Domain::Literal(vec![0.0, 100.0]),
         range: Range::Literal(0.0, 1.0)
       }
     )
@@ -51,7 +51,7 @@ mod serde_tests {
     assert_eq!(
       linear_scale,
       LinearScale {
-        domain: Domain::Literal(0.0, 1.0),
+        domain: Domain::Literal(vec![0.0, 1.0]),
         range: Range::Literal(0.0, 1.0)
       }
     )
@@ -70,7 +70,7 @@ mod serde_tests {
     assert_eq!(
       linear_scale,
       LinearScale {
-        domain: Domain::Literal(0.0, 100.0),
+        domain: Domain::Literal(vec![0.0, 100.0]),
         range: Range::Literal(0.0, 1.0)
       }
     )
