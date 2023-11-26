@@ -10,7 +10,7 @@ use crate::{
 };
 
 use self::axis::AxisOperator;
-use self::scale::DomainOperator;
+use self::scale::{BandOperator, DomainOperator};
 use self::transform::{FilterOperator, MapOperator};
 use self::{data::DataOperator, transform::GroupOperator};
 
@@ -57,6 +57,7 @@ pub enum Operator {
   Axis(AxisOperator),
   Domain(DomainOperator),
   Linear(LinearOperator),
+  Band(BandOperator),
   Identity(IdentityOperator),
 }
 
@@ -110,6 +111,10 @@ impl Operator {
     Operator::Linear(LinearOperator::new(range, field, output))
   }
 
+  pub(crate) fn band(range: (f32, f32), field: &str, output: &str) -> Self {
+    Operator::Band(BandOperator::new(range, field, output))
+  }
+
   pub(crate) fn domain(domain: Domain) -> Self {
     Operator::Domain(DomainOperator::new(domain))
   }
@@ -125,6 +130,7 @@ impl Operator {
       Operator::Axis(axis) => axis.evaluate(pulse).await,
       Operator::Domain(domain) => domain.evaluate(pulse).await,
       Operator::Linear(linear) => linear.evaluate(pulse).await,
+      Operator::Band(band) => band.evaluate(pulse).await,
       Operator::Identity(identity) => identity.evaluate(pulse).await,
     }
   }

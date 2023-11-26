@@ -96,6 +96,7 @@ impl LinearOperator {
       .expect("Linear operator expects a domain with 2 numeric values. Domain has one value only.");
 
     let domain = (*domain_min, *domain_max);
+
     let mut result = values.to_vec();
 
     // Iterate over the current series
@@ -135,6 +136,77 @@ impl Evaluation for LinearOperator {
 
     if values.is_empty() {
       return Pulse::data(Vec::new());
+    }
+
+    let domain = domain.expect("Domain pulse not provided for linear operator");
+
+    Pulse::data(self.apply(&values, domain))
+  }
+}
+
+/// `BandOperator` represents an operator of the graph, which maps a discrete domain to a
+/// continuous range of values. `field` references the data source and `output` the name
+/// of the new field with the result of the operator.
+#[derive(Debug, PartialEq)]
+pub struct BandOperator {
+  range: (f32, f32),
+  field: String,
+  output: String,
+}
+
+impl BandOperator {
+  /// Create a new `BandOperator` instance.
+  pub(crate) fn new(range: (f32, f32), field: &str, output: &str) -> Self {
+    BandOperator {
+      range,
+      field: field.to_string(),
+      output: output.to_string(),
+    }
+  }
+
+  // Apply the operator's logic to map the discrete domain into the range. The result is assigned
+  // to a variable in the data value with the `output` name.
+  fn apply(&self, values: &[DataValue], domain: Vec<DataItem>) -> Vec<DataValue> {
+    let mut result = values.to_vec();
+    if domain.is_empty() {
+      return result;
+    }
+
+    let length = (domain.len() - 1).max(0) as f32;
+    let step = (self.range.1 - self.range.0) / length;
+
+    for value in &mut result {
+      let scale_result = value
+        .get(&self.field)
+        .and_then(|value| domain.iter().position(|domain_value| domain_value == value))
+        .map(|index| index as f32 * step);
+
+      if let Some(scale_item) = scale_result {
+        // Add scale result to value with the scale's name
+        value.instance.clear();
+        value.insert(&self.output, DataItem::Number(scale_item));
+      }
+    }
+
+    result
+  }
+}
+
+impl Evaluation for BandOperator {
+  fn evaluate_single(&self, _single: SinglePulse) -> Pulse {
+    panic!("Linear operator requires a multi-pulse with data and a domain values.")
+  }
+
+  fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
+    let mut values = Vec::new();
+    let mut domain: Option<Vec<DataItem>> = None;
+
+    for pulse in multi.pulses {
+      match pulse {
+        SinglePulse::Data(data) => values.extend(data),
+        SinglePulse::Domain(values) => domain = Some(values),
+        _ => continue,
+      }
     }
 
     let domain = domain.expect("Domain pulse not provided for linear operator");
@@ -206,7 +278,7 @@ mod tests {
     spec::scale::domain::Domain,
   };
 
-  use super::{DomainOperator, LinearOperator};
+  use super::{BandOperator, DomainOperator, LinearOperator};
 
   #[tokio::test]
   async fn domain_applies_for_literal() {
@@ -319,5 +391,50 @@ mod tests {
       .await;
 
     assert_eq!(pulse, Pulse::data(vec![]));
+  }
+
+  #[tokio::test]
+  async fn band_applies_multi_pulse() {
+    let first_pulse = SinglePulse::Data(vec![
+      DataValue::from_pairs(vec![("a", 0.0.into()), ("b", 5.0.into())]),
+      DataValue::from_pairs(vec![("a", 1.0.into()), ("b", 2.0.into())]),
+    ]);
+    let second_pulse = SinglePulse::Data(vec![
+      DataValue::from_pairs(vec![("a", 2.0.into()), ("b", 3.0.into())]),
+      DataValue::from_pairs(vec![("a", 3.0.into()), ("b", 1.0.into())]),
+    ]);
+
+    let domain = SinglePulse::Domain(vec![0.0.into(), 1.0.into(), 2.0.into(), 3.0.into()]);
+
+    let operator = BandOperator::new((0.0, 1.0), "a", "x");
+    let pulse = operator
+      .evaluate(Pulse::multi(vec![first_pulse, second_pulse, domain]))
+      .await;
+
+    assert_eq!(
+      pulse,
+      Pulse::data(vec![
+        DataValue::from_pairs(vec![("x", 0.0.into())]),
+        DataValue::from_pairs(vec![("x", 0.33333334.into())]),
+        DataValue::from_pairs(vec![("x", 0.66666667.into())]),
+        DataValue::from_pairs(vec![("x", 1.0.into())]),
+      ])
+    )
+  }
+
+  #[tokio::test]
+  async fn band_handles_empty_domain() {
+    let data = SinglePulse::Data(vec![
+      DataValue::from_pairs(vec![("a", 0.0.into()), ("b", 5.0.into())]),
+      DataValue::from_pairs(vec![("a", 1.0.into()), ("b", 2.0.into())]),
+    ]);
+    let domain = SinglePulse::Domain(Vec::new());
+
+    let operator = BandOperator::new((0.0, 1.0), "a", "x");
+    let pulse = operator
+      .evaluate(Pulse::multi(vec![data.clone(), domain]))
+      .await;
+
+    assert_eq!(pulse, Pulse::Single(data))
   }
 }
