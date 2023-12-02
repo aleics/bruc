@@ -18,10 +18,14 @@ impl DomainOperator {
     DomainOperator { domain }
   }
 
-  fn resolve_domain(&self, values: &[DataValue]) -> (f32, f32) {
+  fn resolve_domain(&self, values: &[DataValue]) -> Option<(f32, f32)> {
     match &self.domain {
-      Domain::Literal(min, max) => (*min, *max),
+      Domain::Literal(min, max) => Some((*min, *max)),
       Domain::DataField { field, .. } => {
+        if values.is_empty() {
+          return None;
+        }
+
         let mut min: f32 = 0.0;
         let mut max: f32 = 0.0;
 
@@ -34,7 +38,7 @@ impl DomainOperator {
           max = max.max(value);
         }
 
-        (min, max)
+        Some((min, max))
       }
     }
   }
@@ -44,7 +48,7 @@ impl DomainOperator {
       return None;
     };
 
-    Some(self.resolve_domain(values))
+    self.resolve_domain(values)
   }
 }
 
@@ -121,6 +125,10 @@ impl Evaluation for LinearOperator {
       }
     }
 
+    if values.is_empty() {
+      return Pulse::data(Vec::new());
+    }
+
     let domain = domain.expect("Domain pulse not provided for linear operator");
 
     Pulse::data(self.apply(&values, domain))
@@ -187,12 +195,50 @@ mod tests {
   use crate::{
     data::DataValue,
     graph::{Evaluation, Pulse, SinglePulse},
+    spec::scale::domain::Domain,
   };
 
-  use super::LinearOperator;
+  use super::{DomainOperator, LinearOperator};
 
   #[tokio::test]
-  async fn panics_insufficient_pulse_values() {
+  async fn domain_applies_for_literal() {
+    let operator = DomainOperator::new(Domain::Literal(0.0, 5.0));
+    let pulse = operator.evaluate(Pulse::data(vec![])).await;
+
+    assert_eq!(pulse, Pulse::domain(0.0, 5.0))
+  }
+
+  #[tokio::test]
+  async fn domain_applies_for_data_field() {
+    let series = vec![
+      DataValue::from_pairs(vec![("a", (-2.0).into()), ("b", 1.0.into())]),
+      DataValue::from_pairs(vec![("a", 5.0.into()), ("b", 1.0.into())]),
+      DataValue::from_pairs(vec![("a", 10.0.into()), ("b", 1.0.into())]),
+      DataValue::from_pairs(vec![("a", 15.0.into()), ("b", 1.0.into())]),
+    ];
+
+    let operator = DomainOperator::new(Domain::DataField {
+      data: "primary".to_string(),
+      field: "a".to_string(),
+    });
+    let pulse = operator.evaluate(Pulse::data(series)).await;
+
+    assert_eq!(pulse, Pulse::domain(-2.0, 15.0));
+  }
+
+  #[tokio::test]
+  async fn domain_handles_empty_data() {
+    let operator = DomainOperator::new(Domain::DataField {
+      data: "primary".to_string(),
+      field: "a".to_string(),
+    });
+    let pulse = operator.evaluate(Pulse::data(Vec::new())).await;
+
+    assert_eq!(pulse, Pulse::data(Vec::new()));
+  }
+
+  #[tokio::test]
+  async fn linear_panics_insufficient_pulse_values() {
     let series = vec![
       DataValue::from_pairs(vec![("a", (-2.0).into()), ("b", 1.0.into())]),
       DataValue::from_pairs(vec![("a", 5.0.into()), ("b", 1.0.into())]),
@@ -207,7 +253,7 @@ mod tests {
   }
 
   #[tokio::test]
-  async fn applies_linear_multi_pulse() {
+  async fn linear_applies_multi_pulse() {
     let first_pulse = SinglePulse::Data(vec![
       DataValue::from_pairs(vec![("a", (-2.0).into()), ("b", 1.0.into())]),
       DataValue::from_pairs(vec![("a", 5.0.into()), ("b", 1.0.into())]),
@@ -236,7 +282,7 @@ mod tests {
   }
 
   #[tokio::test]
-  async fn ignores_boolean_linear() {
+  async fn linear_ignores_boolean_linear() {
     let data = SinglePulse::Data(vec![
       DataValue::from_pairs(vec![("a", true.into()), ("b", 1.0.into())]),
       DataValue::from_pairs(vec![("a", false.into()), ("b", 1.0.into())]),
@@ -255,5 +301,15 @@ mod tests {
         DataValue::from_pairs(vec![("x", 0.2.into())]),
       ])
     );
+  }
+
+  #[tokio::test]
+  async fn linear_handles_empty_data() {
+    let operator = LinearOperator::new((0.0, 1.0), "a", "x");
+    let pulse = operator
+      .evaluate(Pulse::multi(vec![SinglePulse::Data(vec![])]))
+      .await;
+
+    assert_eq!(pulse, Pulse::data(vec![]));
   }
 }

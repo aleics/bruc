@@ -79,7 +79,7 @@ impl Evaluation for AxisOperator {
   fn evaluate_single(&self, single: SinglePulse) -> Pulse {
     match single {
       SinglePulse::Domain(min, max) => Pulse::Single(self.apply((min, max))),
-      _ => panic!("Axis operator has an incompatible single pulse value"),
+      _ => Pulse::shapes(Vec::new()),
     }
   }
 
@@ -89,7 +89,7 @@ impl Evaluation for AxisOperator {
         return Pulse::Single(self.apply((min, max)));
       }
     }
-    panic!("Axis operator has incompatible multi pulse value")
+    Pulse::shapes(Vec::new())
   }
 }
 
