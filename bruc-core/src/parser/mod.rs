@@ -3,9 +3,11 @@ use std::collections::HashMap;
 use crate::data::DataValue;
 use crate::graph::node::shape::SceneWindow;
 use crate::spec::axis::Axis;
+use crate::spec::scale::band::BandScale;
 use crate::spec::scale::linear::LinearScale;
 use crate::spec::scale::range::Range;
 use crate::spec::scale::{Scale, ScaleKind};
+use crate::spec::shape::bar::BarShape;
 use crate::spec::shape::base::{
   BaseShapeProperties, HEIGHT_FIELD_NAME, WIDTH_FIELD_NAME, X_AXIS_FIELD_NAME, Y_AXIS_FIELD_NAME,
 };
@@ -105,6 +107,7 @@ impl Visitor {
 
     match shape.kind {
       ShapeKind::Line(line) => self.visit_line_shape(line, *data_node, result),
+      ShapeKind::Bar(bar) => self.visit_bar_shape(bar, *data_node, result),
     };
   }
 
@@ -113,6 +116,20 @@ impl Visitor {
 
     let node = result.graph.add_node(Operator::line(
       line,
+      SceneWindow::new(self.dimensions.width, self.dimensions.height),
+    ));
+    result.collection.shapes.push(node);
+
+    for scale_node in scale_nodes {
+      result.graph.add_edge(scale_node, node);
+    }
+  }
+
+  fn visit_bar_shape(&self, bar: BarShape, data_node: usize, result: &mut ParseResult) {
+    let scale_nodes = self.visit_shape_props(&bar.props.base, data_node, result);
+
+    let node = result.graph.add_node(Operator::bar(
+      bar,
       SceneWindow::new(self.dimensions.width, self.dimensions.height),
     ));
     result.collection.shapes.push(node);
@@ -177,7 +194,7 @@ impl Visitor {
       }
       // Create a data operator if the shape's data source is plain data value
       DataSource::ValueSource(value) => {
-        let operator = Operator::data(vec![DataValue::from_pairs(vec![(output, value.clone())])]);
+        let operator = Operator::constant(DataValue::from_pairs(vec![(output, value.clone())]));
         result.graph.add(operator, vec![data_node])
       }
     }
@@ -200,7 +217,14 @@ impl Visitor {
         data_node,
         result,
       ),
-      ScaleKind::Band(_) => todo!(),
+      ScaleKind::Band(band) => self.visit_band(
+        band,
+        scale.name.to_string(),
+        field,
+        output,
+        data_node,
+        result,
+      ),
     }
   }
 
@@ -230,6 +254,32 @@ impl Visitor {
     linear_node
   }
 
+  fn visit_band(
+    &self,
+    band: BandScale,
+    name: String,
+    field: &str,
+    output: &str,
+    data_node: usize,
+    result: &mut ParseResult,
+  ) -> usize {
+    let domain_operator = Operator::domain_discrete(band.domain.clone());
+    let domain_node = result.graph.add_node(domain_operator);
+
+    result.graph.add_edge(data_node, domain_node);
+    result.collection.domain.insert(name.clone(), domain_node);
+
+    let Range::Literal(range_min, range_max) = band.range;
+    let band_operator = Operator::band((range_min, range_max), field, output);
+    let band_node = result.graph.add_node(band_operator);
+
+    result.graph.add_edge(domain_node, band_node);
+    result.graph.add_edge(data_node, band_node);
+    result.collection.scales.insert(name, band_node);
+
+    band_node
+  }
+
   fn visit_axis(&self, axis: Axis, result: &mut ParseResult) {
     let scale_name = axis.scale.clone();
 
@@ -240,14 +290,10 @@ impl Visitor {
       return;
     };
 
-    let ScaleKind::Linear(linear) = &scale.kind else {
-      todo!()
-    };
-    let Range::Literal(min, max) = linear.range;
-
+    let Range::Literal(min, max) = scale.kind.range();
     let operator = Operator::axis(
       axis,
-      (min, max),
+      (*min, *max),
       SceneWindow::new(self.dimensions.width, self.dimensions.height),
     );
 
@@ -265,7 +311,9 @@ mod tests {
   use crate::graph::Edge;
   use crate::parser::{ParseResult, ParsedNodeCollection};
   use crate::spec::axis::{Axis, AxisOrientation};
+  use crate::spec::scale::band::BandScale;
   use crate::spec::scale::ScaleKind;
+  use crate::spec::shape::bar::{BarPropertiesBuilder, BarShape};
   use crate::spec::shape::line::LinePropertiesBuilder;
   use crate::spec::transform::map::MapPipe;
   use crate::spec::{Dimensions, Visual};
@@ -281,7 +329,7 @@ mod tests {
   use super::Parser;
 
   #[test]
-  fn parses_simple() {
+  fn parses_line_chart() {
     // given
     let spec: Specification = Specification::new(
       Dimensions::default(),
@@ -352,6 +400,181 @@ mod tests {
             LinePropertiesBuilder::new()
               .with_x(DataSource::field("a", Some("horizontal")))
               .with_y(DataSource::field("b", Some("vertical")))
+              .build()
+          ),
+          SceneWindow::new(500, 200),
+        )),
+        Node::init(Operator::axis(
+          Axis::new("horizontal", AxisOrientation::Bottom),
+          (0.0, 20.0),
+          SceneWindow::new(500, 200)
+        )),
+        Node::init(Operator::axis(
+          Axis::new("vertical", AxisOrientation::Left),
+          (0.0, 10.0),
+          SceneWindow::new(500, 200)
+        ))
+      ]
+    );
+    assert_eq!(
+      graph.edges,
+      vec![
+        Edge::new(0, 1),
+        Edge::new(1, 2),
+        Edge::new(2, 3),
+        Edge::new(3, 4),
+        Edge::new(2, 4),
+        Edge::new(2, 5),
+        Edge::new(5, 6),
+        Edge::new(2, 6),
+        Edge::new(4, 7),
+        Edge::new(6, 7),
+        Edge::new(3, 8),
+        Edge::new(5, 9)
+      ]
+    );
+    assert_eq!(
+      graph.targets,
+      BTreeMap::from([
+        (0, BTreeSet::from([1])),
+        (1, BTreeSet::from([2])),
+        (2, BTreeSet::from([3, 4, 5, 6])),
+        (3, BTreeSet::from([4, 8])),
+        (4, BTreeSet::from([7])),
+        (5, BTreeSet::from([6, 9])),
+        (6, BTreeSet::from([7])),
+        (7, BTreeSet::new()),
+        (8, BTreeSet::new()),
+        (9, BTreeSet::new())
+      ])
+    );
+    assert_eq!(
+      graph.sources,
+      BTreeMap::from([
+        (0, BTreeSet::new()),
+        (1, BTreeSet::from([0])),
+        (2, BTreeSet::from([1])),
+        (3, BTreeSet::from([2])),
+        (4, BTreeSet::from([2, 3])),
+        (5, BTreeSet::from([2])),
+        (6, BTreeSet::from([2, 5])),
+        (7, BTreeSet::from([4, 6])),
+        (8, BTreeSet::from([3])),
+        (9, BTreeSet::from([5]))
+      ])
+    );
+    assert_eq!(
+      graph.degrees,
+      BTreeMap::from([
+        (0, 0),
+        (1, 1),
+        (2, 1),
+        (3, 1),
+        (4, 2),
+        (5, 1),
+        (6, 2),
+        (7, 2),
+        (8, 1),
+        (9, 1)
+      ])
+    );
+    assert_eq!(
+      graph.nodes_in_degree,
+      BTreeMap::from([
+        (0, BTreeSet::from([0])),
+        (1, BTreeSet::from([1, 2, 3, 5, 8, 9])),
+        (2, BTreeSet::from([4, 6, 7]))
+      ])
+    );
+    assert_eq!(graph.order, vec![0, 1, 2, 3, 5, 4, 8, 6, 9, 7]);
+    assert_eq!(
+      collection,
+      ParsedNodeCollection {
+        data: HashMap::from([("primary".to_string(), 2)]),
+        domain: HashMap::from([("vertical".to_string(), 5), ("horizontal".to_string(), 3)]),
+        scales: HashMap::from([("vertical".to_string(), 6), ("horizontal".to_string(), 4)]),
+        axis: HashMap::from([("vertical".to_string(), 9), ("horizontal".to_string(), 8)]),
+        shapes: vec![7]
+      }
+    )
+  }
+
+  #[test]
+  fn parses_bar_chart() {
+    // given
+    let spec: Specification = Specification::new(
+      Dimensions::default(),
+      vec![DataEntry::new(
+        "primary",
+        vec![
+          DataValue::from_pairs(vec![("a", 10.0.into())]),
+          DataValue::from_pairs(vec![("a", 5.0.into())]),
+        ],
+        vec![
+          Pipe::Map(MapPipe::new("a - 2", "b").unwrap()),
+          Pipe::Filter(FilterPipe::new("b > 2").unwrap()),
+        ],
+      )],
+      vec![
+        Scale::new(
+          "horizontal",
+          ScaleKind::Band(BandScale {
+            domain: Domain::Literal(vec![0.0, 1.0, 2.0, 3.0, 4.0, 5.0]),
+            range: Range::Literal(0.0, 20.0),
+            padding: 0.0,
+          }),
+        ),
+        Scale::new(
+          "vertical",
+          ScaleKind::Linear(LinearScale {
+            domain: Domain::Literal(vec![0.0, 100.0]),
+            range: Range::Literal(0.0, 10.0),
+          }),
+        ),
+      ],
+      Visual::new(
+        vec![Shape::bar(
+          "primary",
+          BarShape::new(
+            BarPropertiesBuilder::new()
+              .with_x(DataSource::field("a", Some("horizontal")))
+              .with_y(DataSource::field("b", Some("vertical")))
+              .build(),
+          ),
+        )],
+        vec![
+          Axis::new("horizontal", AxisOrientation::Bottom),
+          Axis::new("vertical", AxisOrientation::Left),
+        ],
+      ),
+    );
+    let parser = Parser;
+
+    // when
+    let ParseResult { graph, collection } = parser.parse(spec);
+
+    // then
+    assert_eq!(
+      graph.nodes,
+      vec![
+        Node::init(Operator::data(vec![
+          DataValue::from_pairs(vec![("a", 10.0.into())]),
+          DataValue::from_pairs(vec![("a", 5.0.into())]),
+        ])),
+        Node::init(Operator::map(MapPipe::new("a - 2", "b").unwrap())),
+        Node::init(Operator::filter(FilterPipe::new("b > 2").unwrap())),
+        Node::init(Operator::domain_discrete(Domain::Literal(vec![
+          0.0, 1.0, 2.0, 3.0, 4.0, 5.0
+        ]))),
+        Node::init(Operator::band((0.0, 20.0), "a", "x")),
+        Node::init(Operator::domain_interval(Domain::Literal(vec![0.0, 100.0]))),
+        Node::init(Operator::linear((0.0, 10.0), "b", "y")),
+        Node::init(Operator::bar(
+          BarShape::new(
+            BarPropertiesBuilder::new()
+              .with_x(DataSource::field("a", Some("horizontal")))
+              .with_y(DataSource::field("b", Some("vertical")))
+              .with_fill("black")
               .build()
           ),
           SceneWindow::new(500, 200),
