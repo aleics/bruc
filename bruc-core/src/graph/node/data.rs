@@ -25,3 +25,26 @@ impl Evaluation for DataOperator {
     Pulse::data(self.data.clone())
   }
 }
+
+/// `ConstantOperator` represents an operator of the graph, which has a single `DataValue` as source.
+#[derive(Debug, PartialEq)]
+pub struct ConstantOperator {
+  data: DataValue,
+}
+
+impl ConstantOperator {
+  /// Create a new `ConstantOperator` instance with a value.
+  pub(crate) fn new(data: DataValue) -> Self {
+    ConstantOperator { data }
+  }
+}
+
+impl Evaluation for ConstantOperator {
+  fn evaluate_single(&self, _single: SinglePulse) -> Pulse {
+    Pulse::constant(self.data.clone())
+  }
+
+  fn evaluate_multi(&self, _multi: MultiPulse) -> Pulse {
+    Pulse::constant(self.data.clone())
+  }
+}

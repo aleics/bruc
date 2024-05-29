@@ -10,6 +10,7 @@ use crate::{
 };
 
 use self::axis::AxisOperator;
+use self::data::ConstantOperator;
 use self::scale::{BandOperator, DomainDiscreteOperator, DomainIntervalOperator};
 use self::transform::{FilterOperator, MapOperator};
 use self::{data::DataOperator, transform::GroupOperator};
@@ -50,6 +51,7 @@ impl Node {
 #[derive(Debug, PartialEq)]
 pub enum Operator {
   Data(DataOperator),
+  Constant(ConstantOperator),
   Map(MapOperator),
   Filter(FilterOperator),
   Group(GroupOperator),
@@ -66,6 +68,10 @@ impl Operator {
   /// Create a new data `Operator` instance.
   pub fn data(data: Vec<DataValue>) -> Self {
     Operator::Data(DataOperator::new(data))
+  }
+
+  pub fn constant(data: DataValue) -> Self {
+    Operator::Constant(ConstantOperator::new(data))
   }
 
   /// Create a new `Operator` instance, given a transform `Pipe` definition.
@@ -128,6 +134,7 @@ impl Operator {
   pub async fn evaluate(&self, pulse: Pulse) -> Pulse {
     match self {
       Operator::Data(data) => data.evaluate(pulse).await,
+      Operator::Constant(constant) => constant.evaluate(pulse).await,
       Operator::Map(map) => map.evaluate(pulse).await,
       Operator::Filter(filter) => filter.evaluate(pulse).await,
       Operator::Group(group) => group.evaluate(pulse).await,

@@ -24,6 +24,10 @@ impl Pulse {
     Pulse::Single(SinglePulse::Data(values))
   }
 
+  pub fn constant(value: DataValue) -> Self {
+    Pulse::Single(SinglePulse::Constant(value))
+  }
+
   pub fn shapes(values: Vec<SceneItem>) -> Self {
     Pulse::Single(SinglePulse::Shapes(values))
   }
@@ -64,6 +68,7 @@ impl Pulse {
 /// of values.
 #[derive(Debug, Clone, PartialEq)]
 pub enum SinglePulse {
+  Constant(DataValue),
   Data(Vec<DataValue>),
   Shapes(Vec<SceneItem>),
   Domain(ResolvedDomain),
@@ -84,7 +89,8 @@ impl MultiPulse {
   /// Aggregate the incoming multi pulse into a single pulse, by collecting all the needed data
   /// into a new single pulse.
   pub fn aggregate(&self) -> SinglePulse {
-    let mut pulse_pairs = Vec::new();
+    let mut data_pairs = Vec::new();
+    let mut constant_pairs = Vec::new();
 
     // Iterate through all the multi pulse instances and fold all the data values into
     // a new pulse value
@@ -94,20 +100,27 @@ impl MultiPulse {
         let data_values = data_values.iter().map(DataValue::pairs).collect();
 
         // Store the data values in the collected pulse values
-        if pulse_pairs.is_empty() {
-          pulse_pairs = data_values;
+        if data_pairs.is_empty() {
+          data_pairs = data_values;
         } else {
           for j in 0..data_values.len() {
-            if let Some(pairs) = pulse_pairs.get_mut(j) {
+            if let Some(pairs) = data_pairs.get_mut(j) {
               pairs.extend(data_values.get(j).cloned().unwrap());
             }
           }
         }
+      } else if let SinglePulse::Constant(value) = single {
+        constant_pairs.extend(value.pairs())
       }
     }
 
+    // Attach constant data values to all the data pairs
+    for pairs in &mut data_pairs {
+      pairs.extend(constant_pairs.clone());
+    }
+
     // Create pulse values from the collected pairs
-    let values = pulse_pairs
+    let values = data_pairs
       .into_iter()
       .map(|pairs| DataValue::from_pairs(pairs))
       .collect();

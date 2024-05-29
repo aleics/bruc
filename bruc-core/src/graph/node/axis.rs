@@ -3,6 +3,7 @@ use crate::{
   scene::{SceneAxisRule, SceneAxisTick, SceneItem},
   spec::axis::{Axis, AxisOrientation},
 };
+use bruc_expression::data::DataItem;
 
 use super::{
   shape::SceneWindow,
@@ -27,21 +28,68 @@ impl AxisOperator {
     }
   }
 
-  fn apply(&self, domain: (f32, f32)) -> SinglePulse {
+  fn apply_interval(&self, domain: (f32, f32)) -> SinglePulse {
     let scene_item = self.linear_axis(self.range, domain);
     SinglePulse::Shapes(vec![scene_item])
+  }
+
+  fn apply_discrete(&self, values: Vec<DataItem>) -> SinglePulse {
+    let mut points = Vec::new();
+    let mut domain = (f32::MAX, 0.0);
+
+    for value in values {
+      if let Some(num) = value.get_number().copied() {
+        if num < domain.0 {
+          domain.0 = num;
+        }
+
+        if num > domain.1 {
+          domain.1 = num;
+        }
+
+        points.push(num);
+      }
+    }
+
+    if points.is_empty() {
+      return SinglePulse::Shapes(Vec::new());
+    }
+
+    SinglePulse::Shapes(vec![self.discrete_axis(points, domain)])
   }
 
   fn linear_axis(&self, range: (f32, f32), domain: (f32, f32)) -> SceneItem {
     SceneItem::axis(
       self.create_ruler(range),
-      self.create_ticks(range, domain),
+      self.create_ticks_linear_interval(range, domain),
       self.axis.orientation,
     )
   }
 
-  fn create_ticks(&self, range: (f32, f32), domain: (f32, f32)) -> Vec<SceneAxisTick> {
-    AxisOperator::create_tick_relative_positions(TICK_COUNT, domain)
+  fn discrete_axis(&self, points: Vec<f32>, domain: (f32, f32)) -> SceneItem {
+    SceneItem::axis(
+      self.create_ruler(self.range),
+      self.create_ticks(points, self.range, domain),
+      self.axis.orientation,
+    )
+  }
+
+  fn create_ticks_linear_interval(
+    &self,
+    range: (f32, f32),
+    domain: (f32, f32),
+  ) -> Vec<SceneAxisTick> {
+    let positions = AxisOperator::create_tick_relative_positions(TICK_COUNT, domain);
+    self.create_ticks(positions, range, domain)
+  }
+
+  fn create_ticks(
+    &self,
+    ticks: Vec<f32>,
+    range: (f32, f32),
+    domain: (f32, f32),
+  ) -> Vec<SceneAxisTick> {
+    ticks
       .into_iter()
       .map(|value| {
         let position = interpolate(normalize(value, domain), range);
@@ -79,7 +127,10 @@ impl Evaluation for AxisOperator {
   fn evaluate_single(&self, single: SinglePulse) -> Pulse {
     match single {
       SinglePulse::Domain(ResolvedDomain::Interval(min, max)) => {
-        Pulse::Single(self.apply((min, max)))
+        Pulse::Single(self.apply_interval((min, max)))
+      }
+      SinglePulse::Domain(ResolvedDomain::Discrete(values)) => {
+        Pulse::Single(self.apply_discrete(values))
       }
       _ => Pulse::shapes(Vec::new()),
     }
@@ -88,7 +139,7 @@ impl Evaluation for AxisOperator {
   fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
     for pulse in multi.pulses {
       if let SinglePulse::Domain(ResolvedDomain::Interval(min, max)) = pulse {
-        Pulse::Single(self.apply((min, max)));
+        Pulse::Single(self.apply_interval((min, max)));
       }
     }
     Pulse::shapes(Vec::new())
