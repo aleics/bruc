@@ -1,7 +1,7 @@
 use crate::{
   scene::{
-    SceneAxis, SceneAxisTick, SceneDimensions, SceneGroup, SceneItem, SceneLine, SceneRoot,
-    Scenegraph,
+    SceneAxis, SceneAxisTick, SceneDimensions, SceneGroup, SceneItem, SceneLine, SceneRect,
+    SceneRoot, Scenegraph,
   },
   spec::axis::AxisOrientation,
 };
@@ -80,6 +80,7 @@ impl ItemRenderer for SceneItem {
     match self {
       SceneItem::Group(group) => group.render(dimensions),
       SceneItem::Line(line) => line.render(dimensions),
+      SceneItem::Rect(rect) => rect.render(dimensions),
       SceneItem::Axis(axis) => axis.render(dimensions),
     }
   }
@@ -245,6 +246,28 @@ fn render_axis_ruler(axis: &SceneAxis, dimensions: &SceneDimensions) -> String {
       y1 = dimensions.height as f32 - axis.rule.from.1,
       y2 = dimensions.height as f32 - axis.rule.to.1
     )
+}
+
+impl ItemRenderer for SceneRect {
+  type RenderResult = SvgRenderResult;
+
+  fn render(&self, _dimensions: &SceneDimensions) -> Self::RenderResult {
+    let content = format!(
+      "<rect x=\"{x}\" y=\"{y}\" width=\"{width}\" height=\"{height}\" fill=\"{fill}\" />",
+      x = self.x,
+      y = self.y,
+      width = self.width,
+      height = self.height,
+      fill = self.fill
+    );
+
+    SvgRenderResult {
+      content,
+      d_width: 0.0,
+      d_height: 0.0,
+      margin: (0.0, 0.0),
+    }
+  }
 }
 
 #[cfg(test)]
