@@ -27,7 +27,7 @@ impl DomainIntervalOperator {
           return None;
         }
 
-        let mut min: f32 = 0.0;
+        let mut min: f32 = f32::MAX;
         let mut max: f32 = 0.0;
 
         for value in values {

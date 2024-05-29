@@ -1,6 +1,6 @@
 use crate::spec::scale::linear::LinearScale;
 
-use self::band::BandScale;
+use self::{band::BandScale, range::Range};
 
 pub mod band;
 pub mod domain;
@@ -32,6 +32,15 @@ impl Scale {
 pub enum ScaleKind {
   Linear(LinearScale),
   Band(BandScale),
+}
+
+impl ScaleKind {
+  pub(crate) fn range(&self) -> &Range {
+    match self {
+      ScaleKind::Linear(linear) => &linear.range,
+      ScaleKind::Band(band) => &band.range,
+    }
+  }
 }
 
 #[cfg(test)]

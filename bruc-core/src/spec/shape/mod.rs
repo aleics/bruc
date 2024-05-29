@@ -1,6 +1,9 @@
 use crate::spec::shape::line::LineShape;
 use bruc_expression::data::DataItem;
 
+use self::bar::BarShape;
+
+pub(crate) mod bar;
 pub(crate) mod base;
 pub(crate) mod line;
 
@@ -13,10 +16,17 @@ pub struct Shape {
 }
 
 impl Shape {
-  pub(crate) fn line(from: &str, line: LineShape) -> Shape {
+  pub(crate) fn line(from: &str, line: LineShape) -> Self {
     Shape {
       from: from.to_string(),
       kind: ShapeKind::Line(line),
+    }
+  }
+
+  pub(crate) fn bar(from: &str, bar: BarShape) -> Self {
+    Shape {
+      from: from.to_string(),
+      kind: ShapeKind::Bar(bar),
     }
   }
 }
@@ -27,6 +37,7 @@ impl Shape {
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub enum ShapeKind {
   Line(LineShape),
+  Bar(BarShape),
 }
 
 #[derive(Debug, PartialEq)]

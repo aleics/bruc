@@ -3,6 +3,7 @@ use crate::graph::node::shape::{LineOperator, SceneWindow};
 use crate::spec::axis::Axis;
 use crate::spec::scale::domain::Domain;
 
+use crate::spec::shape::bar::BarShape;
 use crate::spec::shape::line::LineShape;
 use crate::{
   data::DataValue,
@@ -12,6 +13,7 @@ use crate::{
 use self::axis::AxisOperator;
 use self::data::ConstantOperator;
 use self::scale::{BandOperator, DomainDiscreteOperator, DomainIntervalOperator};
+use self::shape::BarOperator;
 use self::transform::{FilterOperator, MapOperator};
 use self::{data::DataOperator, transform::GroupOperator};
 
@@ -56,6 +58,7 @@ pub enum Operator {
   Filter(FilterOperator),
   Group(GroupOperator),
   Line(LineOperator),
+  Bar(BarOperator),
   Axis(AxisOperator),
   DomainInterval(DomainIntervalOperator),
   DomainDiscrete(DomainDiscreteOperator),
@@ -103,6 +106,12 @@ impl Operator {
     Operator::Line(LineOperator::new(shape, window))
   }
 
+  /// Create a new bar `Operator` instance
+  pub(crate) fn bar(shape: BarShape, window: SceneWindow) -> Self {
+    Operator::Bar(BarOperator::new(shape, window))
+  }
+
+  /// Create a new axis `Operator` instance
   pub(crate) fn axis(axis: Axis, range: (f32, f32), window: SceneWindow) -> Self {
     Operator::Axis(AxisOperator::new(axis, range, window))
   }
@@ -139,6 +148,7 @@ impl Operator {
       Operator::Filter(filter) => filter.evaluate(pulse).await,
       Operator::Group(group) => group.evaluate(pulse).await,
       Operator::Line(line) => line.evaluate(pulse).await,
+      Operator::Bar(bar) => bar.evaluate(pulse).await,
       Operator::Axis(axis) => axis.evaluate(pulse).await,
       Operator::DomainInterval(domain_interval) => domain_interval.evaluate(pulse).await,
       Operator::DomainDiscrete(domain_discrete) => domain_discrete.evaluate(pulse).await,

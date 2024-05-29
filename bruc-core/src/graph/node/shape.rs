@@ -1,7 +1,10 @@
 use crate::data::DataValue;
 use crate::graph::{Evaluation, MultiPulse, Pulse, SinglePulse};
 use crate::scene::SceneItem;
-use crate::spec::shape::base::{X_AXIS_FIELD_NAME, Y_AXIS_FIELD_NAME};
+use crate::spec::shape::bar::BarShape;
+use crate::spec::shape::base::{
+  HEIGHT_FIELD_NAME, WIDTH_FIELD_NAME, X_AXIS_FIELD_NAME, Y_AXIS_FIELD_NAME,
+};
 use crate::spec::shape::line::LineShape;
 
 #[derive(Debug, PartialEq)]
@@ -87,13 +90,60 @@ impl Evaluation for LineOperator {
   }
 }
 
+#[derive(Debug, PartialEq)]
+pub struct BarOperator {
+  shape: BarShape,
+  window: SceneWindow,
+}
+
+impl BarOperator {
+  /// Create a new `BarOperator` instance with a certain bar shape.
+  pub(crate) fn new(shape: BarShape, window: SceneWindow) -> Self {
+    BarOperator { shape, window }
+  }
+
+  /// Apply the operator's logic by generating bar shapes from the incoming already encoded pulse.
+  /// values.
+  fn apply(&self, pulse: &SinglePulse) -> Vec<SceneItem> {
+    let SinglePulse::Data(values) = pulse else {
+      return Vec::new();
+    };
+
+    values.iter().map(|value| self.read_rect(value)).collect()
+  }
+
+  fn read_rect(&self, value: &DataValue) -> SceneItem {
+    let x = value.get_number(X_AXIS_FIELD_NAME).copied().unwrap_or(0.0);
+    let y = value.get_number(Y_AXIS_FIELD_NAME).copied().unwrap_or(0.0);
+    let width = value.get_number(WIDTH_FIELD_NAME).copied().unwrap_or(0.0);
+    let height = value.get_number(HEIGHT_FIELD_NAME).copied().unwrap_or(0.0);
+    let fill = self.shape.props.fill.clone();
+
+    let y = (self.window.height - y - height).max(0.0);
+
+    SceneItem::rect(width, height, x, y, fill)
+  }
+}
+
+impl Evaluation for BarOperator {
+  fn evaluate_single(&self, single: SinglePulse) -> Pulse {
+    Pulse::shapes(self.apply(&single))
+  }
+
+  fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
+    self.evaluate_single(multi.aggregate())
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use crate::data::DataValue;
-  use crate::graph::node::shape::{LineOperator, SceneWindow};
+  use crate::graph::node::shape::{BarOperator, LineOperator, SceneWindow};
   use crate::graph::{Evaluation, Pulse, SinglePulse};
   use crate::scene::SceneItem;
+  use crate::spec::shape::bar::{BarPropertiesBuilder, BarShape};
   use crate::spec::shape::line::{LinePropertiesBuilder, LineShape};
+  use crate::spec::shape::DataSource;
 
   #[tokio::test]
   async fn computes_line() {
@@ -132,5 +182,46 @@ mod tests {
         2.0
       )])
     );
+  }
+
+  #[tokio::test]
+  async fn computes_bar() {
+    let pulse = SinglePulse::Data(vec![
+      DataValue::from_pairs(vec![
+        ("x", 0.0.into()),
+        ("y", 0.0.into()),
+        ("width", 5.0.into()),
+        ("height", 3.0.into()),
+      ]),
+      DataValue::from_pairs(vec![
+        ("x", 20.0.into()),
+        ("y", 0.0.into()),
+        ("width", 5.0.into()),
+        ("height", 7.0.into()),
+      ]),
+    ]);
+
+    let operator = BarOperator::new(
+      BarShape::new(
+        BarPropertiesBuilder::new()
+          .with_width(DataSource::field("x", Some("xscale")))
+          .with_height(DataSource::field("y", Some("yscale")))
+          .with_x(DataSource::value(5.0.into()))
+          .with_y(DataSource::value(0.0.into()))
+          .with_fill("red")
+          .build(),
+      ),
+      SceneWindow::new(20, 2),
+    );
+
+    let result = operator.evaluate(Pulse::Single(pulse)).await;
+
+    assert_eq!(
+      result,
+      Pulse::shapes(vec![
+        SceneItem::rect(5.0, 3.0, 0.0, 0.0, "red".to_string()),
+        SceneItem::rect(5.0, 7.0, 15.0, 0.0, "red".to_string())
+      ])
+    )
   }
 }
