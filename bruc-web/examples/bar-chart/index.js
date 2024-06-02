@@ -8,34 +8,7 @@ const spec = `{
   "data": [
     {
       "name": "primary",
-      "values": [
-        { "x": 0, "y": 14 },
-        { "x": 1, "y": 18 },
-        { "x": 2, "y": 48 },
-        { "x": 3, "y": 44 },
-        { "x": 4, "y": 27 },
-        { "x": 5, "y": 26 },
-        { "x": 6, "y": 12 },
-        { "x": 7, "y": 31 },
-        { "x": 8, "y": 22 },
-        { "x": 9, "y": 4 },
-        { "x": 10, "y": 2 },
-        { "x": 11, "y": 37 },
-        { "x": 12, "y": 48 },
-        { "x": 13, "y": 22 },
-        { "x": 14, "y": 8 },
-        { "x": 15, "y": 2 },
-        { "x": 16, "y": 27 },
-        { "x": 17, "y": 26 },
-        { "x": 18, "y": 24 },
-        { "x": 19, "y": 6 },
-        { "x": 20, "y": 44 },
-        { "x": 21, "y": 48 },
-        { "x": 22, "y": 1 },
-        { "x": 23, "y": 49 },
-        { "x": 24, "y": 33 },
-        { "x": 25, "y": 2 }
-       ]
+      "values": []
     }
   ],
   "scales": [
@@ -77,9 +50,19 @@ const spec = `{
         "type": "bar",
         "properties": {
           "x": { "field": "x", "scale": "horizontal" },
-          "width": 50.0,
+          "width": 30.0,
           "height": { "field": "y", "scale": "vertical" },
           "fill": "blue"
+        }
+      },
+      {
+        "from": "primary",
+        "type": "bar",
+        "properties": {
+          "x": { "field": "k", "scale": "horizontal" },
+          "width": 30.0,
+          "height": { "field": "q", "scale": "vertical" },
+          "fill": "red"
         }
       }
     ]
@@ -90,18 +73,18 @@ const bruc = Bruc.build(spec);
 
 await bruc.renderAsSvg("#first");
 
-/*while(true) {
+while(true) {
   const data = randomData();
-  console.log(JSON.stringify(data));
   await bruc.setData("primary", data);
 
   await delay(1000);
-}*/
+}
 
 function randomData() {
   const values = [];
   for (let i = 0; i <= 25; i++) {
-    values.push({ x: i, y: randomValue(50) });
+    const y = randomValue(50);
+    values.push({ x: i, y, k: i, q: Math.max(y - randomValue(20), 0) });
   }
   return values;
 }
