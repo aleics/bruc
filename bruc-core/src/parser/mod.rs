@@ -263,7 +263,7 @@ impl Visitor {
     data_node: usize,
     result: &mut ParseResult,
   ) -> usize {
-    let domain_operator = Operator::domain_discrete(band.domain.clone());
+    let domain_operator = Operator::domain_discrete(band.domain.clone(), true);
     let domain_node = result.graph.add_node(domain_operator);
 
     result.graph.add_edge(data_node, domain_node);
@@ -563,9 +563,10 @@ mod tests {
         ])),
         Node::init(Operator::map(MapPipe::new("a - 2", "b").unwrap())),
         Node::init(Operator::filter(FilterPipe::new("b > 2").unwrap())),
-        Node::init(Operator::domain_discrete(Domain::Literal(vec![
-          0.0, 1.0, 2.0, 3.0, 4.0, 5.0
-        ]))),
+        Node::init(Operator::domain_discrete(
+          Domain::Literal(vec![0.0, 1.0, 2.0, 3.0, 4.0, 5.0]),
+          true
+        )),
         Node::init(Operator::band((0.0, 20.0), "a", "x")),
         Node::init(Operator::domain_interval(Domain::Literal(vec![0.0, 100.0]))),
         Node::init(Operator::linear((0.0, 10.0), "b", "y")),

@@ -33,20 +33,16 @@ impl AxisOperator {
     SinglePulse::Shapes(vec![scene_item])
   }
 
-  fn apply_discrete(&self, values: Vec<DataItem>) -> SinglePulse {
+  fn apply_discrete(
+    &self,
+    domain: (f32, f32),
+    values: Vec<DataItem>,
+    outer_padding: bool,
+  ) -> SinglePulse {
     let mut points = Vec::new();
-    let mut domain = (f32::MAX, 0.0);
 
     for value in values {
       if let Some(num) = value.get_number().copied() {
-        if num < domain.0 {
-          domain.0 = num;
-        }
-
-        if num > domain.1 {
-          domain.1 = num;
-        }
-
         points.push(num);
       }
     }
@@ -55,7 +51,7 @@ impl AxisOperator {
       return SinglePulse::Shapes(Vec::new());
     }
 
-    SinglePulse::Shapes(vec![self.discrete_axis(points, domain)])
+    SinglePulse::Shapes(vec![self.discrete_axis(points, domain, outer_padding)])
   }
 
   fn linear_axis(&self, range: (f32, f32), domain: (f32, f32)) -> SceneItem {
@@ -66,10 +62,18 @@ impl AxisOperator {
     )
   }
 
-  fn discrete_axis(&self, points: Vec<f32>, domain: (f32, f32)) -> SceneItem {
+  fn discrete_axis(&self, points: Vec<f32>, domain: (f32, f32), outer_padding: bool) -> SceneItem {
+    let ticks_range = if outer_padding {
+      let step = (self.range.1 - self.range.0) / (points.len() as f32);
+      let padding = step / 2.0;
+      (self.range.0 + padding, self.range.1 - padding)
+    } else {
+      self.range
+    };
+
     SceneItem::axis(
       self.create_ruler(self.range),
-      self.create_ticks(points, self.range, domain),
+      self.create_ticks(points, ticks_range, domain),
       self.axis.orientation,
     )
   }
@@ -126,11 +130,20 @@ impl AxisOperator {
 impl Evaluation for AxisOperator {
   fn evaluate_single(&self, single: SinglePulse) -> Pulse {
     match single {
-      SinglePulse::Domain(ResolvedDomain::Interval(min, max)) => {
-        Pulse::Single(self.apply_interval((min, max)))
-      }
-      SinglePulse::Domain(ResolvedDomain::Discrete(values)) => {
-        Pulse::Single(self.apply_discrete(values))
+      SinglePulse::Domain(domain) => {
+        let Some(interval) = domain.interval() else {
+          return Pulse::shapes(Vec::new());
+        };
+
+        let pulse = match domain {
+          ResolvedDomain::Interval(_, _) => self.apply_interval(interval),
+          ResolvedDomain::Discrete {
+            values,
+            outer_padding,
+          } => self.apply_discrete(interval, values, outer_padding),
+        };
+
+        Pulse::Single(pulse)
       }
       _ => Pulse::shapes(Vec::new()),
     }
@@ -139,7 +152,7 @@ impl Evaluation for AxisOperator {
   fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
     for pulse in multi.pulses {
       if let SinglePulse::Domain(ResolvedDomain::Interval(min, max)) = pulse {
-        Pulse::Single(self.apply_interval((min, max)));
+        return Pulse::Single(self.apply_interval((min, max)));
       }
     }
     Pulse::shapes(Vec::new())

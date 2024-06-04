@@ -70,11 +70,15 @@ impl Evaluation for DomainIntervalOperator {
 #[derive(Debug, PartialEq)]
 pub struct DomainDiscreteOperator {
   domain: Domain,
+  outer_padding: bool,
 }
 
 impl DomainDiscreteOperator {
-  pub(crate) fn new(domain: Domain) -> Self {
-    DomainDiscreteOperator { domain }
+  pub(crate) fn new(domain: Domain, outer_padding: bool) -> Self {
+    DomainDiscreteOperator {
+      domain,
+      outer_padding,
+    }
   }
 
   fn resolve_domain(&self, values: &[DataValue]) -> Vec<DataItem> {
@@ -102,7 +106,10 @@ impl DomainDiscreteOperator {
 
 impl Evaluation for DomainDiscreteOperator {
   fn evaluate_single(&self, single: SinglePulse) -> Pulse {
-    Pulse::domain(ResolvedDomain::Discrete(self.apply(&single)))
+    Pulse::domain(ResolvedDomain::Discrete {
+      values: self.apply(&single),
+      outer_padding: self.outer_padding,
+    })
   }
 
   fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
@@ -201,20 +208,18 @@ impl BandOperator {
 
   // Apply the operator's logic to map the discrete domain into the range. The result is assigned
   // to a variable in the data value with the `output` name.
-  fn apply(&self, values: &[DataValue], domain: Vec<DataItem>) -> Vec<DataValue> {
+  fn apply(&self, values: &[DataValue], domain: (f32, f32)) -> Vec<DataValue> {
     let mut result = values.to_vec();
-    if domain.is_empty() {
-      return result;
-    }
 
-    let length = (domain.len() - 1).max(0) as f32;
-    let step = (self.range.1 - self.range.0) / length;
+    let step = (self.range.1 - self.range.0) / (values.len() as f32);
+    let padding = step / 4.0;
+    let range = (padding + self.range.0, padding + self.range.1 - step);
 
     for value in &mut result {
       let scale_result = value
         .get(&self.field)
-        .and_then(|value| domain.iter().position(|domain_value| domain_value == value))
-        .map(|index| index as f32 * step);
+        .and_then(|value| value.get_number())
+        .map(|value| interpolate(normalize(*value, domain), range));
 
       if let Some(scale_item) = scale_result {
         // Add scale result to value with the scale's name
@@ -234,17 +239,19 @@ impl Evaluation for BandOperator {
 
   fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
     let mut values = Vec::new();
-    let mut domain: Option<Vec<DataItem>> = None;
+    let mut interval: Option<(f32, f32)> = None;
 
     for pulse in multi.pulses {
       match pulse {
         SinglePulse::Data(data) => values.extend(data),
-        SinglePulse::Domain(ResolvedDomain::Discrete(values)) => domain = Some(values),
+        SinglePulse::Domain(domain) => interval = domain.interval(),
         _ => continue,
       }
     }
 
-    let domain = domain.expect("Domain pulse not provided for linear operator");
+    let Some(domain) = interval else {
+      return Pulse::data(values);
+    };
 
     Pulse::data(self.apply(&values, domain))
   }
@@ -439,12 +446,10 @@ mod tests {
       DataValue::from_pairs(vec![("a", 3.0.into()), ("b", 1.0.into())]),
     ]);
 
-    let domain = SinglePulse::Domain(ResolvedDomain::Discrete(vec![
-      0.0.into(),
-      1.0.into(),
-      2.0.into(),
-      3.0.into(),
-    ]));
+    let domain = SinglePulse::Domain(ResolvedDomain::Discrete {
+      values: vec![0.0.into(), 1.0.into(), 2.0.into(), 3.0.into()],
+      outer_padding: true,
+    });
 
     let operator = BandOperator::new((0.0, 1.0), "a", "x");
     let pulse = operator
@@ -454,10 +459,10 @@ mod tests {
     assert_eq!(
       pulse,
       Pulse::data(vec![
-        DataValue::from_pairs(vec![("x", 0.0.into())]),
-        DataValue::from_pairs(vec![("x", 0.33333334.into())]),
-        DataValue::from_pairs(vec![("x", 0.66666667.into())]),
-        DataValue::from_pairs(vec![("x", 1.0.into())]),
+        DataValue::from_pairs(vec![("x", 0.0625.into())]),
+        DataValue::from_pairs(vec![("x", 0.3125.into())]),
+        DataValue::from_pairs(vec![("x", 0.5625.into())]),
+        DataValue::from_pairs(vec![("x", 0.8125.into())]),
       ])
     )
   }
@@ -468,7 +473,10 @@ mod tests {
       DataValue::from_pairs(vec![("a", 0.0.into()), ("b", 5.0.into())]),
       DataValue::from_pairs(vec![("a", 1.0.into()), ("b", 2.0.into())]),
     ]);
-    let domain = SinglePulse::Domain(ResolvedDomain::Discrete(Vec::new()));
+    let domain = SinglePulse::Domain(ResolvedDomain::Discrete {
+      values: Vec::new(),
+      outer_padding: false,
+    });
 
     let operator = BandOperator::new((0.0, 1.0), "a", "x");
     let pulse = operator

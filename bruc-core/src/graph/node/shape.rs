@@ -220,7 +220,7 @@ mod tests {
       result,
       Pulse::shapes(vec![
         SceneItem::rect(5.0, 3.0, 0.0, 0.0, "red".to_string()),
-        SceneItem::rect(5.0, 7.0, 15.0, 0.0, "red".to_string())
+        SceneItem::rect(5.0, 7.0, 20.0, 0.0, "red".to_string())
       ])
     )
   }

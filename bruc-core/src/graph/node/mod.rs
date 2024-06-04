@@ -135,8 +135,8 @@ impl Operator {
     Operator::DomainInterval(DomainIntervalOperator::new(domain))
   }
 
-  pub(crate) fn domain_discrete(domain: Domain) -> Self {
-    Operator::DomainDiscrete(DomainDiscreteOperator::new(domain))
+  pub(crate) fn domain_discrete(domain: Domain, outer_padding: bool) -> Self {
+    Operator::DomainDiscrete(DomainDiscreteOperator::new(domain, outer_padding))
   }
 
   /// Evaluate the operator for a certain `Pulse`.

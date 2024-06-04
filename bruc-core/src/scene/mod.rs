@@ -83,7 +83,7 @@ impl SceneItem {
   }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Default, Clone, PartialEq)]
 pub struct SceneGroup {
   pub(crate) items: Vec<SceneItem>,
 }
@@ -95,12 +95,6 @@ impl SceneGroup {
 
   pub fn with_items(items: Vec<SceneItem>) -> Self {
     SceneGroup { items }
-  }
-}
-
-impl Default for SceneGroup {
-  fn default() -> Self {
-    Self::new()
   }
 }
 

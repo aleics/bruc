@@ -132,5 +132,37 @@ impl MultiPulse {
 #[derive(Debug, Clone, PartialEq)]
 pub enum ResolvedDomain {
   Interval(f32, f32),
-  Discrete(Vec<DataItem>),
+  Discrete {
+    values: Vec<DataItem>,
+    outer_padding: bool,
+  },
+}
+
+impl ResolvedDomain {
+  pub(crate) fn interval(&self) -> Option<(f32, f32)> {
+    match self {
+      ResolvedDomain::Interval(min, max) => Some((*min, *max)),
+      ResolvedDomain::Discrete { values, .. } => {
+        if values.is_empty() {
+          return None;
+        }
+
+        let mut domain = (f32::MAX, 0.0);
+
+        for value in values {
+          if let Some(num) = value.get_number().copied() {
+            if num < domain.0 {
+              domain.0 = num;
+            }
+
+            if num > domain.1 {
+              domain.1 = num;
+            }
+          }
+        }
+
+        Some(domain)
+      }
+    }
+  }
 }
