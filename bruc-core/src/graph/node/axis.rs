@@ -107,7 +107,7 @@ impl AxisOperator {
 
   fn create_tick_relative_positions(count: usize, (from, to): (f32, f32)) -> Vec<f32> {
     let step = (to - from) / (count as f32);
-    (0..count + 1).map(|i| step * (i as f32)).collect()
+    (0..count + 1).map(|i| from + step * (i as f32)).collect()
   }
 
   fn create_ruler(&self, (from, to): (f32, f32)) -> SceneAxisRule {
@@ -440,6 +440,76 @@ mod tests {
           SceneAxisTick {
             position: (200.0, 180.0),
             label: "90.00".to_string()
+          },
+          SceneAxisTick {
+            position: (200.0, 200.0),
+            label: "100.00".to_string()
+          }
+        ],
+        AxisOrientation::Right
+      )])
+    )
+  }
+
+  #[tokio::test]
+  async fn creates_axis_with_positive_min() {
+    let operator = AxisOperator::new(
+      Axis::new("vertical", AxisOrientation::Right),
+      (100.0, 200.0),
+      SceneWindow::new(200, 100),
+    );
+
+    let pulse = operator
+      .evaluate(Pulse::domain(ResolvedDomain::Interval(20.0, 100.0)))
+      .await;
+
+    assert_eq!(
+      pulse,
+      Pulse::shapes(vec![SceneItem::axis(
+        SceneAxisRule {
+          from: (200.0, 100.0),
+          to: (200.0, 200.0)
+        },
+        vec![
+          SceneAxisTick {
+            position: (200.0, 100.0),
+            label: "20.00".to_string()
+          },
+          SceneAxisTick {
+            position: (200.0, 110.0),
+            label: "28.00".to_string()
+          },
+          SceneAxisTick {
+            position: (200.0, 120.0),
+            label: "36.00".to_string()
+          },
+          SceneAxisTick {
+            position: (200.0, 130.0),
+            label: "44.00".to_string()
+          },
+          SceneAxisTick {
+            position: (200.0, 140.0),
+            label: "52.00".to_string()
+          },
+          SceneAxisTick {
+            position: (200.0, 150.0),
+            label: "60.00".to_string()
+          },
+          SceneAxisTick {
+            position: (200.0, 160.0),
+            label: "68.00".to_string()
+          },
+          SceneAxisTick {
+            position: (200.0, 170.0),
+            label: "76.00".to_string()
+          },
+          SceneAxisTick {
+            position: (200.0, 180.0),
+            label: "84.00".to_string()
+          },
+          SceneAxisTick {
+            position: (200.0, 190.0),
+            label: "92.00".to_string()
           },
           SceneAxisTick {
             position: (200.0, 200.0),
