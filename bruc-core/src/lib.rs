@@ -107,7 +107,7 @@ mod tests {
   use crate::spec::{Dimensions, Specification, Visual};
   use crate::View;
 
-  fn specification() -> Specification {
+  fn line_chart_spec() -> Specification {
     Specification::new(
       Dimensions::new(40, 20),
       vec![DataEntry::new(
@@ -155,10 +155,72 @@ mod tests {
     )
   }
 
+  fn bar_chart_spec() -> Specification {
+    let spec = r#"
+      {
+        "dimensions": {
+          "width": 1500,
+          "height": 300
+        },
+        "data": [
+          {
+            "name": "primary",
+            "values": [
+              { "x":0, "y":33 },
+              { "x":1, "y":15 },
+              { "x":2, "y":21 },
+              { "x":3, "y":6 }
+            ]
+          }
+        ],
+        "scales": [
+          {
+            "type": "band",
+            "name": "horizontal",
+            "domain": { "data": "primary", "field": "x" },
+            "range": [0, 1500]
+          },
+          {
+            "type": "linear",
+            "name": "vertical",
+            "domain": { "data": "primary", "field": "y" },
+            "range": [0, 300]
+          }
+        ],
+        "visual": {
+          "axes": [
+            {
+              "orientation": "bottom",
+              "scale": "horizontal"
+            },
+            {
+              "orientation": "left",
+              "scale": "vertical"
+            }
+          ],
+          "shapes": [
+            {
+              "from": "primary",
+              "type": "bar",
+              "properties": {
+                "x": { "field": "x", "scale": "horizontal" },
+                "width": 150.0,
+                "height": { "field": "y", "scale": "vertical" },
+                "fill": "blue"
+              }
+            }
+          ]
+        }
+      }
+    "#;
+
+    serde_json::from_str(spec).unwrap()
+  }
+
   #[test]
   fn builds_specification() {
     // when
-    let view = View::build(specification());
+    let view = View::build(line_chart_spec());
 
     // then
     assert_eq!(
@@ -175,9 +237,9 @@ mod tests {
   }
 
   #[tokio::test]
-  async fn renders() {
+  async fn renders_line() {
     // given
-    let mut view = View::build(specification());
+    let mut view = View::build(line_chart_spec());
 
     // when
     let mut result = view.render(DebugRenderer).await;
@@ -191,9 +253,25 @@ mod tests {
   }
 
   #[tokio::test]
+  async fn renders_bar() {
+    // given
+    let mut view = View::build(bar_chart_spec());
+
+    // when
+    let mut result = view.render(DebugRenderer).await;
+    let content = result.next().await;
+
+    // then
+    assert_eq!(
+      content.unwrap(),
+      "Scenegraph { root: SceneRoot { items: [Group(SceneGroup { items: [Rect(SceneRect { width: 150.0, height: 300.0, x: 93.75, y: 0.0, fill: \"blue\" }), Rect(SceneRect { width: 150.0, height: 100.0, x: 468.75, y: 200.0, fill: \"blue\" }), Rect(SceneRect { width: 150.0, height: 166.66667, x: 843.75, y: 133.33333, fill: \"blue\" }), Rect(SceneRect { width: 150.0, height: 0.0, x: 1218.75, y: 300.0, fill: \"blue\" })] }), Axis(SceneAxis { rule: SceneAxisRule { from: (0.0, 0.0), to: (1500.0, 0.0) }, ticks: [SceneAxisTick { position: (187.5, 0.0), label: \"0.00\" }, SceneAxisTick { position: (562.5, 0.0), label: \"1.00\" }, SceneAxisTick { position: (937.5, 0.0), label: \"2.00\" }, SceneAxisTick { position: (1312.5, 0.0), label: \"3.00\" }], orientation: Bottom }), Axis(SceneAxis { rule: SceneAxisRule { from: (0.0, 0.0), to: (0.0, 300.0) }, ticks: [SceneAxisTick { position: (0.0, 0.0), label: \"6.00\" }, SceneAxisTick { position: (0.0, 29.999998), label: \"8.70\" }, SceneAxisTick { position: (0.0, 59.999996), label: \"11.40\" }, SceneAxisTick { position: (0.0, 90.0), label: \"14.10\" }, SceneAxisTick { position: (0.0, 119.99999), label: \"16.80\" }, SceneAxisTick { position: (0.0, 150.0), label: \"19.50\" }, SceneAxisTick { position: (0.0, 180.0), label: \"22.20\" }, SceneAxisTick { position: (0.0, 210.0), label: \"24.90\" }, SceneAxisTick { position: (0.0, 240.0), label: \"27.60\" }, SceneAxisTick { position: (0.0, 270.0), label: \"30.30\" }, SceneAxisTick { position: (0.0, 300.0), label: \"33.00\" }], orientation: Left })], dimensions: SceneDimensions { width: 1500, height: 300 } } }"
+    )
+  }
+
+  #[tokio::test]
   async fn renders_after_set_data() {
     // given
-    let mut view = View::build(specification());
+    let mut view = View::build(line_chart_spec());
 
     // when
     let mut result = view.render(DebugRenderer).await;
