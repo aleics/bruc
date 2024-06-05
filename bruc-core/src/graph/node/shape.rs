@@ -1,4 +1,5 @@
 use crate::data::DataValue;
+use crate::graph::node::scale::SCALE_BAND_BANDWIDTH_FIELD_NAME;
 use crate::graph::{Evaluation, MultiPulse, Pulse, SinglePulse};
 use crate::scene::SceneItem;
 use crate::spec::shape::bar::BarShape;
@@ -115,13 +116,28 @@ impl BarOperator {
   fn read_rect(&self, value: &DataValue) -> SceneItem {
     let x = value.get_number(X_AXIS_FIELD_NAME).copied().unwrap_or(0.0);
     let y = value.get_number(Y_AXIS_FIELD_NAME).copied().unwrap_or(0.0);
-    let width = value.get_number(WIDTH_FIELD_NAME).copied().unwrap_or(0.0);
+    let width = value.get_number(WIDTH_FIELD_NAME).copied();
     let height = value.get_number(HEIGHT_FIELD_NAME).copied().unwrap_or(0.0);
+
+    let horizontal_bandwidth_name =
+      format!("{}_{}", X_AXIS_FIELD_NAME, SCALE_BAND_BANDWIDTH_FIELD_NAME);
+    let x_bandwidth = value.get_number(&horizontal_bandwidth_name).copied();
+
     let fill = self.shape.props.fill.clone();
 
+    let width = Self::calculate_dimension_with_bandwidth(width, x_bandwidth);
     let y = (self.window.height - y - height).max(0.0);
 
     SceneItem::rect(width, height, x, y, fill)
+  }
+
+  fn calculate_dimension_with_bandwidth(dimension: Option<f32>, bandwidth: Option<f32>) -> f32 {
+    match (dimension, bandwidth) {
+      (Some(dimension), Some(bandwidth)) => dimension.min(bandwidth),
+      (Some(dimension), None) => dimension,
+      (None, Some(bandwidth)) => bandwidth,
+      (None, None) => 0.0,
+    }
   }
 }
 

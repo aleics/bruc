@@ -50,7 +50,6 @@ const spec = `{
         "type": "bar",
         "properties": {
           "x": { "field": "x", "scale": "horizontal" },
-          "width": 30.0,
           "height": { "field": "y", "scale": "vertical" },
           "fill": "blue"
         }
@@ -60,7 +59,6 @@ const spec = `{
         "type": "bar",
         "properties": {
           "x": { "field": "k", "scale": "horizontal" },
-          "width": 30.0,
           "height": { "field": "q", "scale": "vertical" },
           "fill": "red"
         }
@@ -82,7 +80,7 @@ while(true) {
 
 function randomData() {
   const values = [];
-  for (let i = 0; i <= 25; i++) {
+  for (let i = 0; i < 30; i++) {
     const y = randomValue(50);
     values.push({ x: i, y, k: i, q: Math.max(y - randomValue(20), 0) });
   }

@@ -9,6 +9,8 @@ use crate::graph::{Evaluation, MultiPulse, Pulse, SinglePulse};
 
 use super::util::{interpolate, normalize};
 
+pub(crate) const SCALE_BAND_BANDWIDTH_FIELD_NAME: &str = "bandwidth";
+
 #[derive(Debug, PartialEq)]
 pub struct DomainIntervalOperator {
   domain: Domain,
@@ -213,6 +215,9 @@ impl BandOperator {
 
     let step = (self.range.1 - self.range.0) / (values.len() as f32);
     let padding = step / 4.0;
+    let bandwidth = step - (padding * 2.0);
+    let bandwidth_name = format!("{}_{}", &self.output, &SCALE_BAND_BANDWIDTH_FIELD_NAME);
+
     let range = (padding + self.range.0, padding + self.range.1 - step);
 
     for value in &mut result {
@@ -225,6 +230,7 @@ impl BandOperator {
         // Add scale result to value with the scale's name
         value.instance.clear();
         value.insert(&self.output, DataItem::Number(scale_item));
+        value.insert(&bandwidth_name, DataItem::Number(bandwidth));
       }
     }
 
@@ -459,10 +465,10 @@ mod tests {
     assert_eq!(
       pulse,
       Pulse::data(vec![
-        DataValue::from_pairs(vec![("x", 0.0625.into())]),
-        DataValue::from_pairs(vec![("x", 0.3125.into())]),
-        DataValue::from_pairs(vec![("x", 0.5625.into())]),
-        DataValue::from_pairs(vec![("x", 0.8125.into())]),
+        DataValue::from_pairs(vec![("x", 0.0625.into()), ("x_bandwidth", 0.125.into())]),
+        DataValue::from_pairs(vec![("x", 0.3125.into()), ("x_bandwidth", 0.125.into())]),
+        DataValue::from_pairs(vec![("x", 0.5625.into()), ("x_bandwidth", 0.125.into())]),
+        DataValue::from_pairs(vec![("x", 0.8125.into()), ("x_bandwidth", 0.125.into())]),
       ])
     )
   }
