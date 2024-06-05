@@ -117,15 +117,19 @@ impl BarOperator {
     let x = value.get_number(X_AXIS_FIELD_NAME).copied().unwrap_or(0.0);
     let y = value.get_number(Y_AXIS_FIELD_NAME).copied().unwrap_or(0.0);
     let width = value.get_number(WIDTH_FIELD_NAME).copied();
-    let height = value.get_number(HEIGHT_FIELD_NAME).copied().unwrap_or(0.0);
+    let height = value.get_number(HEIGHT_FIELD_NAME).copied();
+    let fill = self.shape.props.fill.clone();
 
     let horizontal_bandwidth_name =
       format!("{}_{}", X_AXIS_FIELD_NAME, SCALE_BAND_BANDWIDTH_FIELD_NAME);
     let x_bandwidth = value.get_number(&horizontal_bandwidth_name).copied();
 
-    let fill = self.shape.props.fill.clone();
+    let vertical_bandwidth_name =
+      format!("{}_{}", Y_AXIS_FIELD_NAME, SCALE_BAND_BANDWIDTH_FIELD_NAME);
+    let y_bandwidth = value.get_number(&vertical_bandwidth_name).copied();
 
     let width = Self::calculate_dimension_with_bandwidth(width, x_bandwidth);
+    let height = Self::calculate_dimension_with_bandwidth(height, y_bandwidth);
     let y = (self.window.height - y - height).max(0.0);
 
     SceneItem::rect(width, height, x, y, fill)
