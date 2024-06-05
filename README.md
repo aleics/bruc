@@ -49,77 +49,8 @@ how those elements, named also _primitives_, should interact together. There's t
 `bruc` supports at the moment only SVG as a render artifact. This can be extended in the future to other type of
 renderers
 
-### Basic example
-Following, there's an example on how to define a specification for a simple line chart, and how to use `bruc` to visualize in
-the web:
-
-```ts
-const spec = `{
-  "dimensions": {
-    "width": 1500,
-    "height": 300
-  },
-  "data": [
-    {
-      "name": "primary",
-      "values": [
-        { "x": 0, "y": 14 },
-        { "x": 1, "y": 18 },
-        { "x": 2, "y": 48 },
-        { "x": 3, "y": 44 },
-        { "x": 4, "y": 27 },
-        { "x": 5, "y": 26 },
-        { "x": 6, "y": 12 },
-        { "x": 7, "y": 31 },
-        { "x": 8, "y": 22 },
-        { "x": 9, "y": 4 }
-      ]
-    }
-  ],
-  "scales": [
-    {
-      "type": "linear",
-      "name": "horizontal",
-      "domain": { "data": "primary", "field": "x" },
-      "range": [0, 1500]
-    },
-    {
-      "type": "linear",
-      "name": "vertical",
-      "domain": { "data": "primary", "field": "y" },
-      "range": [0, 300]
-    }
-  ],
-  "visual": {
-    "axes": [
-      {
-        "orientation": "bottom",
-        "scale": "horizontal"
-      },
-      {
-        "orientation": "left",
-        "scale": "vertical"
-      }
-    ],
-    "shapes": [
-      {
-        "from": "primary",
-        "type": "line",
-        "properties": {
-          "x": { "field": "x", "scale": "horizontal" },
-          "y": { "field": "y", "scale": "vertical" },
-          "stroke": "red",
-          "strokeWidth": 2
-        }
-      }
-    ]
-  }
-}`
-
-// Parse and validate the specification and build the internal View
-const bruc = Bruc.build(spec);
-
-// Render the visualization by running the input data over the View
-// Once the SVG is rendered, attached to the dom element identified by the selector
-await bruc.renderAsSvg("#first");
-```
+### Charts
+`bruc` currently supports only simple visualization possibilities. As more primitives are added into the library, more
+type of charts will be possible. Currently the following are supported and examples demonstrated possible usage:
+ - [Line chart](https://github.com/aleics/bruc/tree/main/bruc-web/examples/line-chart)
+ - [Bar chart](https://github.com/aleics/bruc/tree/main/bruc-web/examples/bar-chart)
