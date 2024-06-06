@@ -82,12 +82,12 @@ impl LineOperator {
 }
 
 impl Evaluation for LineOperator {
-  fn evaluate_single(&self, single: SinglePulse) -> Pulse {
+  async fn evaluate_single(&self, single: SinglePulse) -> Pulse {
     Pulse::shapes(self.apply(&single))
   }
 
-  fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
-    self.evaluate_single(multi.aggregate())
+  async fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
+    self.evaluate_single(multi.aggregate()).await
   }
 }
 
@@ -146,12 +146,12 @@ impl BarOperator {
 }
 
 impl Evaluation for BarOperator {
-  fn evaluate_single(&self, single: SinglePulse) -> Pulse {
+  async fn evaluate_single(&self, single: SinglePulse) -> Pulse {
     Pulse::shapes(self.apply(&single))
   }
 
-  fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
-    self.evaluate_single(multi.aggregate())
+  async fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
+    self.evaluate_single(multi.aggregate()).await
   }
 }
 

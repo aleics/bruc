@@ -56,7 +56,7 @@ impl DomainIntervalOperator {
 }
 
 impl Evaluation for DomainIntervalOperator {
-  fn evaluate_single(&self, single: SinglePulse) -> Pulse {
+  async fn evaluate_single(&self, single: SinglePulse) -> Pulse {
     if let Some((min, max)) = self.apply(&single) {
       Pulse::domain(ResolvedDomain::Interval(min, max))
     } else {
@@ -64,8 +64,8 @@ impl Evaluation for DomainIntervalOperator {
     }
   }
 
-  fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
-    self.evaluate_single(multi.aggregate())
+  async fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
+    self.evaluate_single(multi.aggregate()).await
   }
 }
 
@@ -107,15 +107,15 @@ impl DomainDiscreteOperator {
 }
 
 impl Evaluation for DomainDiscreteOperator {
-  fn evaluate_single(&self, single: SinglePulse) -> Pulse {
+  async fn evaluate_single(&self, single: SinglePulse) -> Pulse {
     Pulse::domain(ResolvedDomain::Discrete {
       values: self.apply(&single),
       outer_padding: self.outer_padding,
     })
   }
 
-  fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
-    self.evaluate_single(multi.aggregate())
+  async fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
+    self.evaluate_single(multi.aggregate()).await
   }
 }
 
@@ -162,11 +162,11 @@ impl LinearOperator {
 }
 
 impl Evaluation for LinearOperator {
-  fn evaluate_single(&self, _single: SinglePulse) -> Pulse {
+  async fn evaluate_single(&self, _single: SinglePulse) -> Pulse {
     panic!("Linear operator requires a multi-pulse with data and a domain values.")
   }
 
-  fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
+  async fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
     let mut values = Vec::new();
     let mut domain: Option<(f32, f32)> = None;
 
@@ -239,11 +239,11 @@ impl BandOperator {
 }
 
 impl Evaluation for BandOperator {
-  fn evaluate_single(&self, _single: SinglePulse) -> Pulse {
+  async fn evaluate_single(&self, _single: SinglePulse) -> Pulse {
     panic!("Linear operator requires a multi-pulse with data and a domain values.")
   }
 
-  fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
+  async fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
     let mut values = Vec::new();
     let mut interval: Option<(f32, f32)> = None;
 
@@ -301,11 +301,11 @@ impl IdentityOperator {
 }
 
 impl Evaluation for IdentityOperator {
-  fn evaluate_single(&self, single: SinglePulse) -> Pulse {
+  async fn evaluate_single(&self, single: SinglePulse) -> Pulse {
     Pulse::data(self.apply(&single))
   }
 
-  fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
+  async fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
     let values = multi.pulses.iter().fold(Vec::new(), |mut acc, pulse| {
       acc.extend(self.apply(pulse));
       acc

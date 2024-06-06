@@ -17,11 +17,11 @@ impl DataOperator {
 }
 
 impl Evaluation for DataOperator {
-  fn evaluate_single(&self, _single: SinglePulse) -> Pulse {
+  async fn evaluate_single(&self, _single: SinglePulse) -> Pulse {
     Pulse::data(self.data.clone())
   }
 
-  fn evaluate_multi(&self, _multi: MultiPulse) -> Pulse {
+  async fn evaluate_multi(&self, _multi: MultiPulse) -> Pulse {
     Pulse::data(self.data.clone())
   }
 }
@@ -40,11 +40,11 @@ impl ConstantOperator {
 }
 
 impl Evaluation for ConstantOperator {
-  fn evaluate_single(&self, _single: SinglePulse) -> Pulse {
+  async fn evaluate_single(&self, _single: SinglePulse) -> Pulse {
     Pulse::constant(self.data.clone())
   }
 
-  fn evaluate_multi(&self, _multi: MultiPulse) -> Pulse {
+  async fn evaluate_multi(&self, _multi: MultiPulse) -> Pulse {
     Pulse::constant(self.data.clone())
   }
 }

@@ -39,11 +39,11 @@ impl MapOperator {
 }
 
 impl Evaluation for MapOperator {
-  fn evaluate_single(&self, single: SinglePulse) -> Pulse {
+  async fn evaluate_single(&self, single: SinglePulse) -> Pulse {
     Pulse::data(self.apply(&single))
   }
 
-  fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
+  async fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
     let values = multi.pulses.iter().fold(Vec::new(), |mut acc, pulse| {
       acc.extend(self.apply(pulse));
       acc
@@ -81,11 +81,11 @@ impl FilterOperator {
 }
 
 impl Evaluation for FilterOperator {
-  fn evaluate_single(&self, single: SinglePulse) -> Pulse {
+  async fn evaluate_single(&self, single: SinglePulse) -> Pulse {
     Pulse::data(self.apply(&single))
   }
 
-  fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
+  async fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
     let values = multi.pulses.iter().fold(Vec::new(), |mut acc, pulse| {
       acc.extend(self.apply(pulse));
       acc
@@ -112,15 +112,15 @@ impl GroupOperator {
 }
 
 impl Evaluation for GroupOperator {
-  fn evaluate_single(&self, single: SinglePulse) -> Pulse {
+  async fn evaluate_single(&self, single: SinglePulse) -> Pulse {
     match self {
-      GroupOperator::Count(count) => count.evaluate_single(single),
+      GroupOperator::Count(count) => count.evaluate_single(single).await,
     }
   }
 
-  fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
+  async fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
     match self {
-      GroupOperator::Count(count) => count.evaluate_multi(multi),
+      GroupOperator::Count(count) => count.evaluate_multi(multi).await,
     }
   }
 }
@@ -173,11 +173,11 @@ impl CountOperator {
 }
 
 impl Evaluation for CountOperator {
-  fn evaluate_single(&self, single: SinglePulse) -> Pulse {
+  async fn evaluate_single(&self, single: SinglePulse) -> Pulse {
     Pulse::data(self.apply(&single))
   }
 
-  fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
+  async fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
     let values = multi.pulses.iter().fold(Vec::new(), |mut acc, pulse| {
       acc.extend(self.apply(pulse));
       acc

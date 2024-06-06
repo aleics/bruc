@@ -256,16 +256,16 @@ trait Evaluation {
   /// Evaluates a `Pulse` instance.
   async fn evaluate(&self, pulse: Pulse) -> Pulse {
     match pulse {
-      Pulse::Single(single) => self.evaluate_single(single),
-      Pulse::Multi(multi) => self.evaluate_multi(multi),
+      Pulse::Single(single) => self.evaluate_single(single).await,
+      Pulse::Multi(multi) => self.evaluate_multi(multi).await,
     }
   }
 
   /// Evaluates a single `Pulse` instance
-  fn evaluate_single(&self, single: SinglePulse) -> Pulse;
+  async fn evaluate_single(&self, single: SinglePulse) -> Pulse;
 
   /// Evaluates a multi `Pulse` instance.
-  fn evaluate_multi(&self, multi: MultiPulse) -> Pulse;
+  async fn evaluate_multi(&self, multi: MultiPulse) -> Pulse;
 }
 
 /// `Edge` represents an edge between two nodes in the graph

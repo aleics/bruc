@@ -128,7 +128,7 @@ impl AxisOperator {
 }
 
 impl Evaluation for AxisOperator {
-  fn evaluate_single(&self, single: SinglePulse) -> Pulse {
+  async fn evaluate_single(&self, single: SinglePulse) -> Pulse {
     match single {
       SinglePulse::Domain(domain) => {
         let Some(interval) = domain.interval() else {
@@ -149,7 +149,7 @@ impl Evaluation for AxisOperator {
     }
   }
 
-  fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
+  async fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
     for pulse in multi.pulses {
       if let SinglePulse::Domain(ResolvedDomain::Interval(min, max)) = pulse {
         return Pulse::Single(self.apply_interval((min, max)));
