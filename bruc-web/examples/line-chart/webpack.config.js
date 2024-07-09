@@ -1,5 +1,5 @@
 const CopyPlugin = require("copy-webpack-plugin");
-const path = require('path');
+const path = require("path");
 
 module.exports = {
   entry: "./index.js",
@@ -10,10 +10,11 @@ module.exports = {
   mode: "development",
   plugins: [
     new CopyPlugin({
-        patterns: ["index.html"]
-    })
+      patterns: ["index.html"],
+    }),
   ],
   experiments: {
-    topLevelAwait: true
-  }
+    topLevelAwait: true,
+    asyncWebAssembly: true,
+  },
 };
