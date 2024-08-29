@@ -210,23 +210,12 @@ impl PieOperator {
 
   fn create_arcs(&self, angles: Vec<(f32, f32)>) -> Vec<SceneItem> {
     let radius = self.window.width / 2.0;
+    let colors = super::color::generate_colors(angles.len());
 
     angles
       .into_iter()
       .enumerate()
-      .map(|(i, (start, end))| {
-        SceneItem::arc(
-          start,
-          end,
-          radius,
-          // TODO: use some better colors
-          if i % 2 == 0 {
-            "red".to_string()
-          } else {
-            "blue".to_string()
-          },
-        )
-      })
+      .map(|(i, (start, end))| SceneItem::arc(start, end, radius, colors[i].to_string()))
       .collect()
   }
 }

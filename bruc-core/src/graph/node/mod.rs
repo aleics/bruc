@@ -23,6 +23,7 @@ use self::{data::DataOperator, transform::GroupOperator};
 use super::{Evaluation, Pulse};
 
 pub(crate) mod axis;
+pub(crate) mod color;
 pub(crate) mod data;
 pub(crate) mod scale;
 pub(crate) mod shape;
