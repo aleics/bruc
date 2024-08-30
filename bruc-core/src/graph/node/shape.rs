@@ -1,3 +1,5 @@
+use core::f32;
+
 use crate::data::DataValue;
 use crate::graph::node::scale::SCALE_BAND_BANDWIDTH_FIELD_NAME;
 use crate::graph::{Evaluation, MultiPulse, Pulse, SinglePulse};
@@ -7,6 +9,7 @@ use crate::spec::shape::base::{
   HEIGHT_FIELD_NAME, WIDTH_FIELD_NAME, X_AXIS_FIELD_NAME, Y_AXIS_FIELD_NAME,
 };
 use crate::spec::shape::line::LineShape;
+use crate::spec::shape::pie::PieShape;
 
 #[derive(Debug, PartialEq)]
 pub(crate) struct SceneWindow {
@@ -155,14 +158,98 @@ impl Evaluation for BarOperator {
   }
 }
 
+pub(crate) const PIE_VALUE_FIELD_NAME: &str = "__pie_value";
+
+#[derive(Debug, PartialEq)]
+pub struct PieOperator {
+  shape: PieShape,
+  field: String,
+  window: SceneWindow,
+}
+
+impl PieOperator {
+  pub(crate) fn new(shape: PieShape, field: &str, window: SceneWindow) -> Self {
+    PieOperator {
+      shape,
+      field: field.to_string(),
+      window,
+    }
+  }
+
+  fn apply(&self, pulse: &SinglePulse) -> Vec<SceneItem> {
+    let SinglePulse::Data(values) = pulse else {
+      return Vec::new();
+    };
+
+    let angles = self.calculate_angles(values);
+    self.create_arcs(angles)
+  }
+
+  fn calculate_angles(&self, values: &[DataValue]) -> Vec<(f32, f32)> {
+    let values: Vec<f32> = values
+      .iter()
+      .filter_map(|value| value.get_number(&self.field).copied())
+      .collect();
+
+    let total: f32 = values.iter().sum();
+
+    let mut angles: Vec<(f32, f32)> = Vec::with_capacity(values.len());
+    let mut previous = 0.0;
+
+    for value in values {
+      let degree = (value / total) * 360.0;
+      let start = previous;
+      let end = start + degree;
+
+      angles.push((previous, end));
+      previous = end;
+    }
+
+    angles
+  }
+
+  fn create_arcs(&self, angles: Vec<(f32, f32)>) -> Vec<SceneItem> {
+    let radius = self.window.width / 2.0;
+
+    angles
+      .into_iter()
+      .enumerate()
+      .map(|(i, (start, end))| {
+        SceneItem::arc(
+          start,
+          end,
+          radius,
+          // TODO: use some better colors
+          if i % 2 == 0 {
+            "red".to_string()
+          } else {
+            "blue".to_string()
+          },
+        )
+      })
+      .collect()
+  }
+}
+
+impl Evaluation for PieOperator {
+  async fn evaluate_single(&self, single: SinglePulse) -> Pulse {
+    Pulse::shapes(self.apply(&single))
+  }
+
+  async fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
+    self.evaluate_single(multi.aggregate()).await
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use crate::data::DataValue;
-  use crate::graph::node::shape::{BarOperator, LineOperator, SceneWindow};
+  use crate::graph::node::shape::{BarOperator, LineOperator, PieOperator, SceneWindow};
   use crate::graph::{Evaluation, Pulse, SinglePulse};
   use crate::scene::SceneItem;
   use crate::spec::shape::bar::{BarPropertiesBuilder, BarShape};
   use crate::spec::shape::line::{LinePropertiesBuilder, LineShape};
+  use crate::spec::shape::pie::{PiePropertiesBuilder, PieShape};
   use crate::spec::shape::DataSource;
 
   #[tokio::test]
@@ -241,6 +328,34 @@ mod tests {
       Pulse::shapes(vec![
         SceneItem::rect(5.0, 3.0, 0.0, 0.0, "red".to_string()),
         SceneItem::rect(5.0, 7.0, 20.0, 0.0, "red".to_string())
+      ])
+    )
+  }
+
+  #[tokio::test]
+  async fn computes_pie() {
+    let pulse = SinglePulse::Data(vec![
+      DataValue::from_pairs(vec![("x", 0.0.into()), ("y", 0.0.into())]),
+      DataValue::from_pairs(vec![("x", 1.0.into()), ("y", 1.0.into())]),
+      DataValue::from_pairs(vec![("x", 2.0.into()), ("y", 6.0.into())]),
+      DataValue::from_pairs(vec![("x", 3.0.into()), ("y", 3.0.into())]),
+    ]);
+
+    let operator = PieOperator::new(
+      PieShape::new(PiePropertiesBuilder::new(DataSource::field("y", None)).build()),
+      "y",
+      SceneWindow::new(20, 2),
+    );
+
+    let result = operator.evaluate(Pulse::Single(pulse)).await;
+
+    assert_eq!(
+      result,
+      Pulse::shapes(vec![
+        SceneItem::arc(0.0, 0.0, 10.0, "#1F77B4".to_string()),
+        SceneItem::arc(0.0, 36.0, 10.0, "#FF7F0E".to_string()),
+        SceneItem::arc(36.0, 252.00002, 10.0, "#2CA02C".to_string()),
+        SceneItem::arc(252.00002, 360.00003, 10.0, "#D62728".to_string()),
       ])
     )
   }

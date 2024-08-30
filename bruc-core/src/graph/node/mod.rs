@@ -1,3 +1,5 @@
+use shape::PieOperator;
+
 use crate::graph::node::scale::{IdentityOperator, LinearOperator};
 use crate::graph::node::shape::{LineOperator, SceneWindow};
 use crate::spec::axis::Axis;
@@ -5,6 +7,7 @@ use crate::spec::scale::domain::Domain;
 
 use crate::spec::shape::bar::BarShape;
 use crate::spec::shape::line::LineShape;
+use crate::spec::shape::pie::PieShape;
 use crate::{
   data::DataValue,
   spec::transform::{filter::FilterPipe, group::GroupPipe, map::MapPipe, pipe::Pipe},
@@ -59,6 +62,7 @@ pub enum Operator {
   Group(GroupOperator),
   Line(LineOperator),
   Bar(BarOperator),
+  Pie(PieOperator),
   Axis(AxisOperator),
   DomainInterval(DomainIntervalOperator),
   DomainDiscrete(DomainDiscreteOperator),
@@ -111,6 +115,11 @@ impl Operator {
     Operator::Bar(BarOperator::new(shape, window))
   }
 
+  /// Create a new pie `Operator` instance
+  pub(crate) fn pie(pie: PieShape, field: &str, window: SceneWindow) -> Operator {
+    Operator::Pie(PieOperator::new(pie, field, window))
+  }
+
   /// Create a new axis `Operator` instance
   pub(crate) fn axis(axis: Axis, range: (f32, f32), window: SceneWindow) -> Self {
     Operator::Axis(AxisOperator::new(axis, range, window))
@@ -149,6 +158,7 @@ impl Operator {
       Operator::Group(group) => group.evaluate(pulse).await,
       Operator::Line(line) => line.evaluate(pulse).await,
       Operator::Bar(bar) => bar.evaluate(pulse).await,
+      Operator::Pie(pie) => pie.evaluate(pulse).await,
       Operator::Axis(axis) => axis.evaluate(pulse).await,
       Operator::DomainInterval(domain_interval) => domain_interval.evaluate(pulse).await,
       Operator::DomainDiscrete(domain_discrete) => domain_discrete.evaluate(pulse).await,
