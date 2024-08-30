@@ -1,7 +1,9 @@
 use std::collections::HashMap;
 
+use bruc_expression::data::DataItem;
+
 use crate::data::DataValue;
-use crate::graph::node::shape::SceneWindow;
+use crate::graph::node::shape::{SceneWindow, PIE_VALUE_FIELD_NAME};
 use crate::spec::axis::Axis;
 use crate::spec::scale::band::BandScale;
 use crate::spec::scale::linear::LinearScale;
@@ -101,13 +103,14 @@ impl Visitor {
   }
 
   fn visit_shape(&self, shape: Shape, result: &mut ParseResult) {
-    let Some(data_node) = result.collection.data.get(&shape.from) else {
+    let Some(data_node) = result.collection.data.get(&shape.from).copied() else {
       return;
     };
 
     match shape.kind {
-      ShapeKind::Line(line) => self.visit_line_shape(line, *data_node, result),
-      ShapeKind::Bar(bar) => self.visit_bar_shape(bar, *data_node, result),
+      ShapeKind::Line(line) => self.visit_line_shape(line, data_node, result),
+      ShapeKind::Bar(bar) => self.visit_bar_shape(bar, data_node, result),
+      ShapeKind::Pie(pie) => self.visit_pie_shape(pie, data_node, result),
     };
   }
 
@@ -137,6 +140,32 @@ impl Visitor {
     for scale_node in scale_nodes {
       result.graph.add_edge(scale_node, node);
     }
+  }
+
+  fn visit_pie_shape(
+    &self,
+    pie: crate::spec::shape::pie::PieShape,
+    data_node: usize,
+    result: &mut ParseResult,
+  ) {
+    let field = match &pie.props.value {
+      DataSource::FieldSource { field, .. } => field.to_string(),
+      DataSource::ValueSource(_) => PIE_VALUE_FIELD_NAME.to_string(),
+    };
+
+    let data_node = match &pie.props.value {
+      DataSource::FieldSource { .. } => data_node,
+      DataSource::ValueSource(value) => self.visit_value_source(&field, value, data_node, result),
+    };
+
+    let node = result.graph.add_node(Operator::pie(
+      pie,
+      &field,
+      SceneWindow::new(self.dimensions.width, self.dimensions.height),
+    ));
+
+    result.collection.shapes.push(node);
+    result.graph.add_edge(data_node, node);
   }
 
   fn visit_shape_props(
@@ -188,16 +217,23 @@ impl Visitor {
         } else {
           // If no scale is defined, then we copy the field's value in the output field.
           let operator = Operator::identity(field, output);
-
           result.graph.add(operator, vec![data_node])
         }
       }
       // Create a data operator if the shape's data source is plain data value
-      DataSource::ValueSource(value) => {
-        let operator = Operator::constant(DataValue::from_pairs(vec![(output, value.clone())]));
-        result.graph.add(operator, vec![data_node])
-      }
+      DataSource::ValueSource(value) => self.visit_value_source(output, value, data_node, result),
     }
+  }
+
+  fn visit_value_source(
+    &self,
+    output: &str,
+    value: &DataItem,
+    data_node: usize,
+    result: &mut ParseResult,
+  ) -> usize {
+    let operator = Operator::constant(DataValue::from_pairs(vec![(output, value.clone())]));
+    result.graph.add(operator, vec![data_node])
   }
 
   fn visit_scale(
@@ -315,6 +351,7 @@ mod tests {
   use crate::spec::scale::ScaleKind;
   use crate::spec::shape::bar::{BarPropertiesBuilder, BarShape};
   use crate::spec::shape::line::LinePropertiesBuilder;
+  use crate::spec::shape::pie::{PiePropertiesBuilder, PieShape};
   use crate::spec::transform::map::MapPipe;
   use crate::spec::{Dimensions, Visual};
   use crate::{
@@ -671,6 +708,88 @@ mod tests {
         scales: HashMap::from([("vertical".to_string(), 6), ("horizontal".to_string(), 4)]),
         axis: HashMap::from([("vertical".to_string(), 9), ("horizontal".to_string(), 8)]),
         shapes: vec![7]
+      }
+    )
+  }
+
+  #[test]
+  fn parses_pie_chart() {
+    // given
+    let spec: Specification = Specification::new(
+      Dimensions::default(),
+      vec![DataEntry::new(
+        "primary",
+        vec![
+          DataValue::from_pairs(vec![("y", 0.1.into())]),
+          DataValue::from_pairs(vec![("y", 0.3.into())]),
+          DataValue::from_pairs(vec![("y", 0.5.into())]),
+          DataValue::from_pairs(vec![("y", 0.1.into())]),
+        ],
+        vec![Pipe::Map(MapPipe::new("y + 10", "value").unwrap())],
+      )],
+      vec![],
+      Visual::new(
+        vec![Shape::pie(
+          "primary",
+          PieShape::new(PiePropertiesBuilder::new(DataSource::field("value", None)).build()),
+        )],
+        vec![],
+      ),
+    );
+    let parser = Parser;
+
+    // when
+    let ParseResult { graph, collection } = parser.parse(spec);
+
+    // then
+    assert_eq!(
+      graph.nodes,
+      vec![
+        Node::init(Operator::data(vec![
+          DataValue::from_pairs(vec![("y", 0.1.into())]),
+          DataValue::from_pairs(vec![("y", 0.3.into())]),
+          DataValue::from_pairs(vec![("y", 0.5.into())]),
+          DataValue::from_pairs(vec![("y", 0.1.into())]),
+        ])),
+        Node::init(Operator::map(MapPipe::new("y + 10", "value").unwrap())),
+        Node::init(Operator::pie(
+          PieShape::new(PiePropertiesBuilder::new(DataSource::field("value", None)).build()),
+          "value",
+          SceneWindow::new(500, 200),
+        ))
+      ]
+    );
+    assert_eq!(graph.edges, vec![Edge::new(0, 1), Edge::new(1, 2)]);
+    assert_eq!(
+      graph.targets,
+      BTreeMap::from([
+        (0, BTreeSet::from([1])),
+        (1, BTreeSet::from([2])),
+        (2, BTreeSet::from([]))
+      ])
+    );
+    assert_eq!(
+      graph.sources,
+      BTreeMap::from([
+        (0, BTreeSet::new()),
+        (1, BTreeSet::from([0])),
+        (2, BTreeSet::from([1]))
+      ])
+    );
+    assert_eq!(graph.degrees, BTreeMap::from([(0, 0), (1, 1), (2, 1)]));
+    assert_eq!(
+      graph.nodes_in_degree,
+      BTreeMap::from([(0, BTreeSet::from([0])), (1, BTreeSet::from([1, 2]))])
+    );
+    assert_eq!(graph.order, vec![0, 1]);
+    assert_eq!(
+      collection,
+      ParsedNodeCollection {
+        data: HashMap::from([("primary".to_string(), 1)]),
+        domain: HashMap::new(),
+        scales: HashMap::new(),
+        axis: HashMap::new(),
+        shapes: vec![2]
       }
     )
   }
