@@ -20,7 +20,8 @@ const spec = `{
         "from": "primary",
         "type": "pie",
         "properties": {
-          "value": { "field": "value" }
+          "value": { "field": "value" },
+          "padAngle": 0.02
         }
       }
     ]

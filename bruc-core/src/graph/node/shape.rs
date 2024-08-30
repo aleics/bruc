@@ -11,6 +11,8 @@ use crate::spec::shape::base::{
 use crate::spec::shape::line::LineShape;
 use crate::spec::shape::pie::PieShape;
 
+use super::util::radians_to_degrees;
+
 #[derive(Debug, PartialEq)]
 pub(crate) struct SceneWindow {
   pub(crate) width: f32,
@@ -196,13 +198,20 @@ impl PieOperator {
     let mut angles: Vec<(f32, f32)> = Vec::with_capacity(values.len());
     let mut previous = 0.0;
 
+    let pad_angle = radians_to_degrees(self.shape.props.pad_angle);
+
     for value in values {
       let degree = (value / total) * 360.0;
-      let start = previous;
-      let end = start + degree;
 
-      angles.push((previous, end));
-      previous = end;
+      if degree > 0.0 {
+        let start = previous;
+        let end = start + degree;
+
+        angles.push((start + pad_angle, end - pad_angle));
+        previous = end;
+      } else {
+        angles.push((previous, previous));
+      }
     }
 
     angles
@@ -345,6 +354,38 @@ mod tests {
         SceneItem::arc(0.0, 36.0, 10.0, "#FF7F0E".to_string()),
         SceneItem::arc(36.0, 252.00002, 10.0, "#2CA02C".to_string()),
         SceneItem::arc(252.00002, 360.00003, 10.0, "#D62728".to_string()),
+      ])
+    )
+  }
+
+  #[tokio::test]
+  async fn computes_pie_with_pad_angle() {
+    let pulse = SinglePulse::Data(vec![
+      DataValue::from_pairs(vec![("x", 0.0.into()), ("y", 0.0.into())]),
+      DataValue::from_pairs(vec![("x", 1.0.into()), ("y", 1.0.into())]),
+      DataValue::from_pairs(vec![("x", 2.0.into()), ("y", 6.0.into())]),
+      DataValue::from_pairs(vec![("x", 3.0.into()), ("y", 3.0.into())]),
+    ]);
+
+    let operator = PieOperator::new(
+      PieShape::new(
+        PiePropertiesBuilder::new(DataSource::field("y", None))
+          .with_pad_angle(0.17453292519943295) // 10 degrees
+          .build(),
+      ),
+      "y",
+      SceneWindow::new(20, 2),
+    );
+
+    let result = operator.evaluate(Pulse::Single(pulse)).await;
+
+    assert_eq!(
+      result,
+      Pulse::shapes(vec![
+        SceneItem::arc(0.0, 0.0, 10.0, "#1F77B4".to_string()),
+        SceneItem::arc(10.0, 26.0, 10.0, "#FF7F0E".to_string()),
+        SceneItem::arc(46.0, 242.00002, 10.0, "#2CA02C".to_string()),
+        SceneItem::arc(262.0, 350.00003, 10.0, "#D62728".to_string()),
       ])
     )
   }
