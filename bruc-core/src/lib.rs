@@ -307,6 +307,22 @@ mod tests {
   }
 
   #[tokio::test]
+  async fn renders_pie() {
+    // given
+    let mut view = View::build(pie_chart_spec());
+
+    // when
+    let mut result = view.render(DebugRenderer).await;
+    let content = result.next().await;
+
+    // then
+    assert_eq!(
+      content.unwrap(),
+      "Scenegraph { root: SceneRoot { items: [Group(SceneGroup { items: [Arc(SceneArc { start_angle: 0.0, end_angle: 158.4, radius: 750.0, fill: \"#1F77B4\" }), Arc(SceneArc { start_angle: 158.4, end_angle: 230.4, radius: 750.0, fill: \"#FF7F0E\" }), Arc(SceneArc { start_angle: 230.4, end_angle: 331.2, radius: 750.0, fill: \"#2CA02C\" }), Arc(SceneArc { start_angle: 331.2, end_angle: 360.0, radius: 750.0, fill: \"#D62728\" })] })], dimensions: SceneDimensions { width: 1500, height: 300 } } }"
+    )
+  }
+
+  #[tokio::test]
   async fn renders_after_set_data() {
     // given
     let mut view = View::build(line_chart_spec());
