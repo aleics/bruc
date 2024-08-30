@@ -1,7 +1,9 @@
+use core::f32;
+
 use crate::{
   scene::{
-    SceneAxis, SceneAxisTick, SceneDimensions, SceneGroup, SceneItem, SceneLine, SceneRect,
-    SceneRoot, Scenegraph,
+    SceneArc, SceneAxis, SceneAxisTick, SceneDimensions, SceneGroup, SceneItem, SceneLine,
+    SceneRect, SceneRoot, Scenegraph,
   },
   spec::axis::AxisOrientation,
 };
@@ -82,6 +84,7 @@ impl ItemRenderer for SceneItem {
       SceneItem::Line(line) => line.render(dimensions),
       SceneItem::Rect(rect) => rect.render(dimensions),
       SceneItem::Axis(axis) => axis.render(dimensions),
+      SceneItem::Arc(arc) => arc.render(dimensions),
     }
   }
 }
@@ -135,6 +138,52 @@ impl ItemRenderer for SceneLine {
       margin: (0.0, 0.0)
     }
   }
+}
+
+impl ItemRenderer for SceneArc {
+  type RenderResult = SvgRenderResult;
+
+  fn render(&self, _dimensions: &SceneDimensions) -> Self::RenderResult {
+    let start = polar_to_cartesian(self.radius, self.start_angle);
+    let end = polar_to_cartesian(self.radius, self.end_angle);
+
+    let large_arc_flag = if (self.end_angle - self.start_angle) <= 180.0 {
+      0
+    } else {
+      1
+    };
+
+    let path = format!(
+      "M {} {} A {} {} 0 {} 1 {} {} L {} {} L {} {} Z",
+      start.0,
+      start.1,
+      self.radius,
+      self.radius,
+      large_arc_flag,
+      end.0,
+      end.1,
+      self.radius,
+      self.radius,
+      start.0,
+      start.1
+    );
+
+    let fill = &self.fill;
+    SvgRenderResult {
+      content: format!("<path d=\"{path}\" fill=\"{fill}\"/>"),
+      d_width: 0.0,
+      d_height: 0.0,
+      margin: (0.0, 0.0),
+    }
+  }
+}
+
+fn polar_to_cartesian(radius: f32, angle_in_degres: f32) -> (f32, f32) {
+  let radians = (angle_in_degres - 90.0) * f32::consts::PI / 180.0;
+  (
+    radius + (radius * f32::cos(radians)),
+    radius + (radius * f32::sin(radians)),
+  )
 }
 
 impl ItemRenderer for SceneAxis {
@@ -447,6 +496,31 @@ mod tests {
     assert_eq!(
             result,
       "<svg width=\"545\" height=\"220\"><g transform=\"translate(10, 10)\"><g><g><line x1=\"0\" x2=\"5\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(5, 200)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"1.2em\" dy=\"0em\">0.00</tspan></text></g><g><line x1=\"20\" x2=\"25\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(25, 200)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"1.5em\" dy=\"0em\">10.00</tspan></text></g><g><line x1=\"40\" x2=\"45\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(45, 200)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"1.5em\" dy=\"0em\">20.00</tspan></text></g><line x1=\"0\" x2=\"40\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /></g></g></svg>"
+    )
+  }
+
+  #[test]
+  fn render_svg_arcs() {
+    let scenegraph = Scenegraph::new(SceneRoot::new(
+      vec![
+        SceneItem::arc(0.0, 60.0, 250.0, "blue".to_string()),
+        SceneItem::arc(60.0, 120.0, 250.0, "red".to_string()),
+        SceneItem::arc(120.0, 180.0, 250.0, "yellow".to_string()),
+        SceneItem::arc(180.0, 240.0, 250.0, "green".to_string()),
+        SceneItem::arc(240.0, 300.0, 250.0, "pink".to_string()),
+        SceneItem::arc(300.0, 360.0, 250.0, "black".to_string()),
+      ],
+      SceneDimensions {
+        width: 500,
+        height: 500,
+      },
+    ));
+
+    let result = SvgRenderer.render(&scenegraph);
+
+    assert_eq!(
+        result,
+        "<svg width=\"520\" height=\"520\"><g transform=\"translate(10, 10)\"><path d=\"M 249.99998 0 A 250 250 0 0 1 466.50635 125 L 250 250 L 249.99998 0 Z\" fill=\"blue\"/><path d=\"M 466.50635 125 A 250 250 0 0 1 466.50635 375 L 250 250 L 466.50635 125 Z\" fill=\"red\"/><path d=\"M 466.50635 375 A 250 250 0 0 1 249.99998 500 L 250 250 L 466.50635 375 Z\" fill=\"yellow\"/><path d=\"M 249.99998 500 A 250 250 0 0 1 33.49362 374.99994 L 250 250 L 249.99998 500 Z\" fill=\"green\"/><path d=\"M 33.49362 374.99994 A 250 250 0 0 1 33.493683 124.999954 L 250 250 L 33.49362 374.99994 Z\" fill=\"pink\"/><path d=\"M 33.493683 124.999954 A 250 250 0 0 1 250 0 L 250 250 L 33.493683 124.999954 Z\" fill=\"black\"/></g></svg>"
     )
   }
 }

@@ -36,6 +36,7 @@ pub enum SceneItem {
   Group(Box<SceneGroup>),
   Line(Box<SceneLine>),
   Rect(Box<SceneRect>),
+  Arc(Box<SceneArc>),
   Axis(Box<SceneAxis>),
 }
 
@@ -54,6 +55,15 @@ impl SceneItem {
       height,
       x,
       y,
+      fill,
+    }))
+  }
+
+  pub fn arc(start_angle: f32, end_angle: f32, radius: f32, fill: String) -> Self {
+    SceneItem::Arc(Box::new(SceneArc {
+      start_angle,
+      end_angle,
+      radius,
       fill,
     }))
   }
@@ -121,6 +131,14 @@ pub struct SceneRect {
   pub(crate) height: f32,
   pub(crate) x: f32,
   pub(crate) y: f32,
+  pub(crate) fill: String,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct SceneArc {
+  pub(crate) start_angle: f32,
+  pub(crate) end_angle: f32,
+  pub(crate) radius: f32,
   pub(crate) fill: String,
 }
 
