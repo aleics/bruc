@@ -217,6 +217,44 @@ mod tests {
     serde_json::from_str(spec).unwrap()
   }
 
+  fn pie_chart_spec() -> Specification {
+    let spec = r#"
+      {
+        "dimensions": {
+          "width": 1500,
+          "height": 300
+        },
+        "data": [
+          {
+            "name": "primary",
+            "values": [
+              { "x":0, "y":33 },
+              { "x":1, "y":15 },
+              { "x":2, "y":21 },
+              { "x":3, "y":6 }
+            ]
+          }
+        ],
+        "visual": {
+          "shapes": [
+            {
+              "from": "primary",
+              "type": "pie",
+              "properties": {
+                "value": { "field": "y" },
+                "padAngle": 0.1,
+                "innerRadius": 50,
+                "cornerRadius": 50
+              }
+            }
+          ]
+        }
+      }
+    "#;
+
+    serde_json::from_str(spec).unwrap()
+  }
+
   #[test]
   fn builds_specification() {
     // when

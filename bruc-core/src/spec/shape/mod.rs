@@ -1,11 +1,13 @@
 use crate::spec::shape::line::LineShape;
 use bruc_expression::data::DataItem;
+use pie::PieShape;
 
 use self::bar::BarShape;
 
 pub(crate) mod bar;
 pub(crate) mod base;
 pub(crate) mod line;
+pub(crate) mod pie;
 
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
@@ -29,6 +31,13 @@ impl Shape {
       kind: ShapeKind::Bar(bar),
     }
   }
+
+  pub(crate) fn pie(from: &str, pie: PieShape) -> Self {
+    Shape {
+      from: from.to_string(),
+      kind: ShapeKind::Pie(pie),
+    }
+  }
 }
 
 #[derive(Debug, PartialEq)]
@@ -38,6 +47,7 @@ impl Shape {
 pub enum ShapeKind {
   Line(LineShape),
   Bar(BarShape),
+  Pie(PieShape),
 }
 
 #[derive(Debug, PartialEq)]

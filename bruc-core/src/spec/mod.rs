@@ -15,6 +15,7 @@ pub struct Specification {
   #[cfg_attr(feature = "serde", serde(default))]
   pub(crate) dimensions: Dimensions,
   pub(crate) data: Vec<DataEntry>,
+  #[cfg_attr(feature = "serde", serde(default))]
   pub(crate) scales: Vec<Scale>,
   #[cfg_attr(feature = "serde", serde(default))]
   pub(crate) visual: Visual,
