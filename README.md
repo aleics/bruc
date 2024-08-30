@@ -54,3 +54,4 @@ renderers
 type of charts will be possible. Currently the following are supported and examples demonstrated possible usage:
  - [Line chart](https://github.com/aleics/bruc/tree/main/bruc-web/examples/line-chart)
  - [Bar chart](https://github.com/aleics/bruc/tree/main/bruc-web/examples/bar-chart)
+ - [Pie chart](https://github.com/aleics/bruc/tree/main/bruc-web/examples/pie-chart)
