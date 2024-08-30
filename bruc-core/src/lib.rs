@@ -6,7 +6,7 @@ use async_std::stream::{Stream, StreamExt};
 use data::DataValue;
 use graph::node::{Node, Operator};
 use graph::Graph;
-use parser::ParseResult;
+use parser::{DataNode, ParseResult};
 
 use crate::parser::Parser;
 use crate::render::SceneRenderer;
@@ -23,7 +23,7 @@ pub mod spec;
 #[derive(Debug)]
 struct ViewState {
   graph: Graph,
-  data_nodes: HashMap<String, usize>,
+  data_nodes: HashMap<String, DataNode>,
   dimensions: SceneDimensions,
 }
 
@@ -52,13 +52,13 @@ impl View {
   }
 
   pub async fn set_data(&mut self, name: &str, values: Vec<DataValue>) {
-    if let Some(node) = self.state.data_nodes.get(name).copied() {
+    if let Some(node) = self.state.data_nodes.get(name) {
       self
         .state
         .graph
-        .replace_node(node, Node::init(Operator::data(values)));
+        .replace_node(node.source, Node::init(Operator::data(values)));
 
-      let items = self.state.graph.build_tree(node).await;
+      let items = self.state.graph.build_tree(node.source).await;
       let scene = Scenegraph::new(SceneRoot::new(items, self.state.dimensions));
 
       self.notify_listeners(scene).await;
@@ -91,6 +91,7 @@ mod tests {
   use async_std::stream::StreamExt;
 
   use crate::data::DataValue;
+  use crate::parser::DataNode;
   use crate::render::DebugRenderer;
   use crate::scene::SceneDimensions;
   use crate::spec::axis::{Axis, AxisOrientation};
@@ -270,7 +271,7 @@ mod tests {
     );
     assert_eq!(
       view.state.data_nodes,
-      HashMap::from([("primary".to_string(), 2)])
+      HashMap::from([("primary".to_string(), DataNode::new(0, 2))])
     );
   }
 
@@ -350,7 +351,7 @@ mod tests {
     );
     assert_eq!(
       second.unwrap(),
-      "Scenegraph { root: SceneRoot { items: [Line(SceneLine { stroke: \"black\", stroke_width: 1.0, points: [(20.0, 20.0), (16.0, 20.0)] }), Axis(SceneAxis { rule: SceneAxisRule { from: (0.0, 0.0), to: (40.0, 0.0) }, ticks: [SceneAxisTick { position: (0.0, 0.0), label: \"0.00\" }, SceneAxisTick { position: (4.0, 0.0), label: \"2.00\" }, SceneAxisTick { position: (8.0, 0.0), label: \"4.00\" }, SceneAxisTick { position: (12.0, 0.0), label: \"6.00\" }, SceneAxisTick { position: (16.0, 0.0), label: \"8.00\" }, SceneAxisTick { position: (20.0, 0.0), label: \"10.00\" }, SceneAxisTick { position: (24.0, 0.0), label: \"12.00\" }, SceneAxisTick { position: (28.0, 0.0), label: \"14.00\" }, SceneAxisTick { position: (32.0, 0.0), label: \"16.00\" }, SceneAxisTick { position: (36.0, 0.0), label: \"18.00\" }, SceneAxisTick { position: (40.0, 0.0), label: \"20.00\" }], orientation: Bottom }), Axis(SceneAxis { rule: SceneAxisRule { from: (0.0, 0.0), to: (0.0, 20.0) }, ticks: [SceneAxisTick { position: (0.0, 0.0), label: \"0.00\" }, SceneAxisTick { position: (0.0, 2.0), label: \"2.00\" }, SceneAxisTick { position: (0.0, 4.0), label: \"4.00\" }, SceneAxisTick { position: (0.0, 6.0), label: \"6.00\" }, SceneAxisTick { position: (0.0, 8.0), label: \"8.00\" }, SceneAxisTick { position: (0.0, 10.0), label: \"10.00\" }, SceneAxisTick { position: (0.0, 12.0), label: \"12.00\" }, SceneAxisTick { position: (0.0, 14.0), label: \"14.00\" }, SceneAxisTick { position: (0.0, 16.0), label: \"16.00\" }, SceneAxisTick { position: (0.0, 18.0), label: \"18.00\" }, SceneAxisTick { position: (0.0, 20.0), label: \"20.00\" }], orientation: Left })], dimensions: SceneDimensions { width: 40, height: 20 } } }"
+      "Scenegraph { root: SceneRoot { items: [Line(SceneLine { stroke: \"black\", stroke_width: 1.0, points: [(20.0, 8.0), (16.0, 10.0)] }), Axis(SceneAxis { rule: SceneAxisRule { from: (0.0, 0.0), to: (40.0, 0.0) }, ticks: [SceneAxisTick { position: (0.0, 0.0), label: \"0.00\" }, SceneAxisTick { position: (4.0, 0.0), label: \"2.00\" }, SceneAxisTick { position: (8.0, 0.0), label: \"4.00\" }, SceneAxisTick { position: (12.0, 0.0), label: \"6.00\" }, SceneAxisTick { position: (16.0, 0.0), label: \"8.00\" }, SceneAxisTick { position: (20.0, 0.0), label: \"10.00\" }, SceneAxisTick { position: (24.0, 0.0), label: \"12.00\" }, SceneAxisTick { position: (28.0, 0.0), label: \"14.00\" }, SceneAxisTick { position: (32.0, 0.0), label: \"16.00\" }, SceneAxisTick { position: (36.0, 0.0), label: \"18.00\" }, SceneAxisTick { position: (40.0, 0.0), label: \"20.00\" }], orientation: Bottom }), Axis(SceneAxis { rule: SceneAxisRule { from: (0.0, 0.0), to: (0.0, 20.0) }, ticks: [SceneAxisTick { position: (0.0, 0.0), label: \"0.00\" }, SceneAxisTick { position: (0.0, 2.0), label: \"2.00\" }, SceneAxisTick { position: (0.0, 4.0), label: \"4.00\" }, SceneAxisTick { position: (0.0, 6.0), label: \"6.00\" }, SceneAxisTick { position: (0.0, 8.0), label: \"8.00\" }, SceneAxisTick { position: (0.0, 10.0), label: \"10.00\" }, SceneAxisTick { position: (0.0, 12.0), label: \"12.00\" }, SceneAxisTick { position: (0.0, 14.0), label: \"14.00\" }, SceneAxisTick { position: (0.0, 16.0), label: \"16.00\" }, SceneAxisTick { position: (0.0, 18.0), label: \"18.00\" }, SceneAxisTick { position: (0.0, 20.0), label: \"20.00\" }], orientation: Left })], dimensions: SceneDimensions { width: 40, height: 20 } } }"
     );
   }
 }

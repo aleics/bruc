@@ -39,11 +39,23 @@ impl ParseResult {
 
 #[derive(Default, Debug, PartialEq)]
 pub(crate) struct ParsedNodeCollection {
-  pub(crate) data: HashMap<String, usize>,
+  pub(crate) data: HashMap<String, DataNode>,
   pub(crate) domain: HashMap<String, usize>,
   pub(crate) scales: HashMap<String, usize>,
   pub(crate) axis: HashMap<String, usize>,
   pub(crate) shapes: Vec<usize>,
+}
+
+#[derive(Default, Debug, PartialEq)]
+pub(crate) struct DataNode {
+  pub(crate) source: usize,
+  pub(crate) out: usize,
+}
+
+impl DataNode {
+  pub(crate) fn new(source: usize, out: usize) -> Self {
+    DataNode { source, out }
+  }
 }
 
 /// `Parser` allows to parse a certain `Specification` into a `Graph` representation, where
@@ -95,22 +107,25 @@ impl Visitor {
   fn visit_data(&self, data: DataEntry, result: &mut ParseResult) {
     let data_node = result.graph.add_node(Operator::data(data.values));
 
-    let node = data.transform.into_iter().fold(data_node, |acc, pipe| {
+    let out_node = data.transform.into_iter().fold(data_node, |acc, pipe| {
       result.graph.add(Operator::transform(pipe), vec![acc])
     });
 
-    result.collection.data.insert(data.name, node);
+    result
+      .collection
+      .data
+      .insert(data.name, DataNode::new(data_node, out_node));
   }
 
   fn visit_shape(&self, shape: Shape, result: &mut ParseResult) {
-    let Some(data_node) = result.collection.data.get(&shape.from).copied() else {
+    let Some(data_node) = result.collection.data.get(&shape.from) else {
       return;
     };
 
     match shape.kind {
-      ShapeKind::Line(line) => self.visit_line_shape(line, data_node, result),
-      ShapeKind::Bar(bar) => self.visit_bar_shape(bar, data_node, result),
-      ShapeKind::Pie(pie) => self.visit_pie_shape(pie, data_node, result),
+      ShapeKind::Line(line) => self.visit_line_shape(line, data_node.out, result),
+      ShapeKind::Bar(bar) => self.visit_bar_shape(bar, data_node.out, result),
+      ShapeKind::Pie(pie) => self.visit_pie_shape(pie, data_node.out, result),
     };
   }
 
@@ -345,7 +360,7 @@ mod tests {
   use crate::graph::node::shape::SceneWindow;
   use crate::graph::node::{Node, Operator};
   use crate::graph::Edge;
-  use crate::parser::{ParseResult, ParsedNodeCollection};
+  use crate::parser::{DataNode, ParseResult, ParsedNodeCollection};
   use crate::spec::axis::{Axis, AxisOrientation};
   use crate::spec::scale::band::BandScale;
   use crate::spec::scale::ScaleKind;
@@ -527,7 +542,7 @@ mod tests {
     assert_eq!(
       collection,
       ParsedNodeCollection {
-        data: HashMap::from([("primary".to_string(), 2)]),
+        data: HashMap::from([("primary".to_string(), DataNode::new(0, 2))]),
         domain: HashMap::from([("vertical".to_string(), 5), ("horizontal".to_string(), 3)]),
         scales: HashMap::from([("vertical".to_string(), 6), ("horizontal".to_string(), 4)]),
         axis: HashMap::from([("vertical".to_string(), 9), ("horizontal".to_string(), 8)]),
@@ -703,7 +718,7 @@ mod tests {
     assert_eq!(
       collection,
       ParsedNodeCollection {
-        data: HashMap::from([("primary".to_string(), 2)]),
+        data: HashMap::from([("primary".to_string(), DataNode::new(0, 2))]),
         domain: HashMap::from([("vertical".to_string(), 5), ("horizontal".to_string(), 3)]),
         scales: HashMap::from([("vertical".to_string(), 6), ("horizontal".to_string(), 4)]),
         axis: HashMap::from([("vertical".to_string(), 9), ("horizontal".to_string(), 8)]),
@@ -785,7 +800,7 @@ mod tests {
     assert_eq!(
       collection,
       ParsedNodeCollection {
-        data: HashMap::from([("primary".to_string(), 1)]),
+        data: HashMap::from([("primary".to_string(), DataNode::new(0, 1))]),
         domain: HashMap::new(),
         scales: HashMap::new(),
         axis: HashMap::new(),
