@@ -4,7 +4,6 @@ pub(crate) struct PiePropertiesBuilder {
   value: DataSource,
   pad_angle: Option<f32>,
   inner_radius: Option<f32>,
-  corner_radius: Option<f32>,
 }
 
 impl PiePropertiesBuilder {
@@ -13,7 +12,6 @@ impl PiePropertiesBuilder {
       value,
       pad_angle: None,
       inner_radius: None,
-      corner_radius: None,
     }
   }
 
@@ -27,17 +25,11 @@ impl PiePropertiesBuilder {
     self
   }
 
-  pub(crate) fn with_corner_radius(mut self, corner_radius: f32) -> Self {
-    self.corner_radius = Some(corner_radius);
-    self
-  }
-
   pub(crate) fn build(self) -> PieProperties {
     PieProperties {
       value: self.value,
       pad_angle: self.pad_angle.unwrap_or_default(),
-      inner_radius: self.inner_radius.unwrap_or_default(),
-      corner_radius: self.corner_radius.unwrap_or_default(),
+      inner_radius: self.inner_radius.unwrap_or_default()
     }
   }
 }
@@ -66,9 +58,7 @@ pub(crate) struct PieProperties {
   #[cfg_attr(feature = "serde", serde(default))]
   pub(crate) pad_angle: f32,
   #[cfg_attr(feature = "serde", serde(default))]
-  pub(crate) inner_radius: f32,
-  #[cfg_attr(feature = "serde", serde(default))]
-  pub(crate) corner_radius: f32,
+  pub(crate) inner_radius: f32
 }
 
 #[cfg(test)]
@@ -103,8 +93,7 @@ mod serde_tests {
         "properties": {
           "value": { "field": "y" },
           "padAngle": 0.1,
-          "innerRadius": 50,
-          "cornerRadius": 50
+          "innerRadius": 50
         }
       }"#,
     )
@@ -116,7 +105,6 @@ mod serde_tests {
         PiePropertiesBuilder::new(DataSource::field("y", None))
           .with_pad_angle(0.1)
           .with_inner_radius(50.0)
-          .with_corner_radius(50.0)
           .build()
       )
     )
@@ -140,8 +128,7 @@ mod serde_tests {
       r#"{
         "value": { "field": "y" },
         "padAngle": 0.1,
-        "innerRadius": 50,
-        "cornerRadius": 50
+        "innerRadius": 50
       }"#,
     )
     .unwrap();
@@ -150,7 +137,6 @@ mod serde_tests {
       PiePropertiesBuilder::new(DataSource::field("y", None))
         .with_pad_angle(0.1)
         .with_inner_radius(50.0)
-        .with_corner_radius(50.0)
         .build()
     );
   }

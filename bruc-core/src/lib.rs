@@ -244,8 +244,7 @@ mod tests {
               "properties": {
                 "value": { "field": "y" },
                 "padAngle": 0.1,
-                "innerRadius": 50,
-                "cornerRadius": 50
+                "innerRadius": 50
               }
             }
           ]
