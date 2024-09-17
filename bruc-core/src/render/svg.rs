@@ -144,28 +144,59 @@ impl ItemRenderer for SceneArc {
   type RenderResult = SvgRenderResult;
 
   fn render(&self, _dimensions: &SceneDimensions) -> Self::RenderResult {
-    let start = polar_to_cartesian(self.radius, self.start_angle);
-    let end = polar_to_cartesian(self.radius, self.end_angle);
+    let a0 = angle_to_radians(self.start_angle);
+    let a1 = angle_to_radians(self.end_angle);
 
-    let large_arc_flag = if (self.end_angle - self.start_angle) <= 180.0 {
-      0
-    } else {
+    let x0 = f32::cos(a0);
+    let y0 = f32::sin(a0);
+
+    let x1 = f32::cos(a1);
+    let y1 = f32::sin(a1);
+
+    let large_arc = if (self.end_angle - self.start_angle) > 180.0 {
       1
+    } else {
+      0
     };
 
+    let bottom_left = (
+      self.outer_radius + self.inner_radius * x0,
+      self.outer_radius + self.inner_radius * y0,
+    );
+
+    let top_left = (
+      self.outer_radius + self.outer_radius * x0,
+      self.outer_radius + self.outer_radius * y0,
+    );
+
+    let top_right = (
+      self.outer_radius + self.outer_radius * x1,
+      self.outer_radius + self.outer_radius * y1,
+    );
+
+    let bottom_right = (
+      self.outer_radius + self.inner_radius * x1,
+      self.outer_radius + self.inner_radius * y1,
+    );
+
     let path = format!(
-      "M {} {} A {} {} 0 {} 1 {} {} L {} {} L {} {} Z",
-      start.0,
-      start.1,
-      self.radius,
-      self.radius,
-      large_arc_flag,
-      end.0,
-      end.1,
-      self.radius,
-      self.radius,
-      start.0,
-      start.1
+      "M {} {} L {}, {} A {} {} 0 {} 1 {} {} L {} {} A {} {} 0 {} 0 {} {}",
+      bottom_left.0,
+      bottom_left.1,
+      top_left.0,
+      top_left.1,
+      self.outer_radius,
+      self.outer_radius,
+      large_arc,
+      top_right.0,
+      top_right.1,
+      bottom_right.0,
+      bottom_right.1,
+      self.inner_radius,
+      self.inner_radius,
+      large_arc,
+      bottom_left.0,
+      bottom_left.1
     );
 
     let fill = &self.fill;
@@ -178,12 +209,8 @@ impl ItemRenderer for SceneArc {
   }
 }
 
-fn polar_to_cartesian(radius: f32, angle_in_degres: f32) -> (f32, f32) {
-  let radians = (angle_in_degres - 90.0) * f32::consts::PI / 180.0;
-  (
-    radius + (radius * f32::cos(radians)),
-    radius + (radius * f32::sin(radians)),
-  )
+fn angle_to_radians(angle: f32) -> f32 {
+  (angle - 90.0) * f32::consts::PI / 180.0
 }
 
 impl ItemRenderer for SceneAxis {
@@ -503,12 +530,12 @@ mod tests {
   fn render_svg_arcs() {
     let scenegraph = Scenegraph::new(SceneRoot::new(
       vec![
-        SceneItem::arc(0.0, 60.0, 250.0, "blue".to_string()),
-        SceneItem::arc(60.0, 120.0, 250.0, "red".to_string()),
-        SceneItem::arc(120.0, 180.0, 250.0, "yellow".to_string()),
-        SceneItem::arc(180.0, 240.0, 250.0, "green".to_string()),
-        SceneItem::arc(240.0, 300.0, 250.0, "pink".to_string()),
-        SceneItem::arc(300.0, 360.0, 250.0, "black".to_string()),
+        SceneItem::arc(0.0, 60.0, 0.0, 250.0, "blue".to_string()),
+        SceneItem::arc(60.0, 120.0, 0.0, 250.0, "red".to_string()),
+        SceneItem::arc(120.0, 180.0, 0.0, 250.0, "yellow".to_string()),
+        SceneItem::arc(180.0, 240.0, 0.0, 250.0, "green".to_string()),
+        SceneItem::arc(240.0, 300.0, 0.0, 250.0, "pink".to_string()),
+        SceneItem::arc(300.0, 360.0, 0.0, 250.0, "black".to_string()),
       ],
       SceneDimensions {
         width: 500,
@@ -520,7 +547,7 @@ mod tests {
 
     assert_eq!(
         result,
-        "<svg width=\"520\" height=\"520\"><g transform=\"translate(10, 10)\"><path d=\"M 249.99998 0 A 250 250 0 0 1 466.50635 125 L 250 250 L 249.99998 0 Z\" fill=\"blue\"/><path d=\"M 466.50635 125 A 250 250 0 0 1 466.50635 375 L 250 250 L 466.50635 125 Z\" fill=\"red\"/><path d=\"M 466.50635 375 A 250 250 0 0 1 249.99998 500 L 250 250 L 466.50635 375 Z\" fill=\"yellow\"/><path d=\"M 249.99998 500 A 250 250 0 0 1 33.49362 374.99994 L 250 250 L 249.99998 500 Z\" fill=\"green\"/><path d=\"M 33.49362 374.99994 A 250 250 0 0 1 33.493683 124.999954 L 250 250 L 33.49362 374.99994 Z\" fill=\"pink\"/><path d=\"M 33.493683 124.999954 A 250 250 0 0 1 250 0 L 250 250 L 33.493683 124.999954 Z\" fill=\"black\"/></g></svg>"
+        "<svg width=\"520\" height=\"520\"><g transform=\"translate(10, 10)\"><path d=\"M 250 250 L 249.99998, 0 A 250 250 0 0 1 466.50635 125 L 250 250 A 0 0 0 0 0 250 250\" fill=\"blue\"/><path d=\"M 250 250 L 466.50635, 125 A 250 250 0 0 1 466.50635 375 L 250 250 A 0 0 0 0 0 250 250\" fill=\"red\"/><path d=\"M 250 250 L 466.50635, 375 A 250 250 0 0 1 249.99998 500 L 250 250 A 0 0 0 0 0 250 250\" fill=\"yellow\"/><path d=\"M 250 250 L 249.99998, 500 A 250 250 0 0 1 33.49362 374.99994 L 250 250 A 0 0 0 0 0 250 250\" fill=\"green\"/><path d=\"M 250 250 L 33.49362, 374.99994 A 250 250 0 0 1 33.493683 124.999954 L 250 250 A 0 0 0 0 0 250 250\" fill=\"pink\"/><path d=\"M 250 250 L 33.493683, 124.999954 A 250 250 0 0 1 250 0 L 250 250 A 0 0 0 0 0 250 250\" fill=\"black\"/></g></svg>"
     )
   }
 }

@@ -224,7 +224,15 @@ impl PieOperator {
     angles
       .into_iter()
       .enumerate()
-      .map(|(i, (start, end))| SceneItem::arc(start, end, radius, colors[i].to_string()))
+      .map(|(i, (start, end))| {
+        SceneItem::arc(
+          start,
+          end,
+          self.shape.props.inner_radius,
+          radius,
+          colors[i].to_string(),
+        )
+      })
       .collect()
   }
 }
@@ -350,10 +358,10 @@ mod tests {
     assert_eq!(
       result,
       Pulse::shapes(vec![
-        SceneItem::arc(0.0, 0.0, 10.0, "#1F77B4".to_string()),
-        SceneItem::arc(0.0, 36.0, 10.0, "#FF7F0E".to_string()),
-        SceneItem::arc(36.0, 252.00002, 10.0, "#2CA02C".to_string()),
-        SceneItem::arc(252.00002, 360.00003, 10.0, "#D62728".to_string()),
+        SceneItem::arc(0.0, 0.0, 0.0, 10.0, "#1F77B4".to_string()),
+        SceneItem::arc(0.0, 36.0, 0.0, 10.0, "#FF7F0E".to_string()),
+        SceneItem::arc(36.0, 252.00002, 0.0, 10.0, "#2CA02C".to_string()),
+        SceneItem::arc(252.00002, 360.00003, 0.0, 10.0, "#D62728".to_string()),
       ])
     )
   }
@@ -382,10 +390,10 @@ mod tests {
     assert_eq!(
       result,
       Pulse::shapes(vec![
-        SceneItem::arc(0.0, 0.0, 10.0, "#1F77B4".to_string()),
-        SceneItem::arc(10.0, 26.0, 10.0, "#FF7F0E".to_string()),
-        SceneItem::arc(46.0, 242.00002, 10.0, "#2CA02C".to_string()),
-        SceneItem::arc(262.0, 350.00003, 10.0, "#D62728".to_string()),
+        SceneItem::arc(0.0, 0.0, 0.0, 10.0, "#1F77B4".to_string()),
+        SceneItem::arc(10.0, 26.0, 0.0, 10.0, "#FF7F0E".to_string()),
+        SceneItem::arc(46.0, 242.00002, 0.0, 10.0, "#2CA02C".to_string()),
+        SceneItem::arc(262.0, 350.00003, 0.0, 10.0, "#D62728".to_string()),
       ])
     )
   }

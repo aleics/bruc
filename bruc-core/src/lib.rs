@@ -319,7 +319,7 @@ mod tests {
     // then
     assert_eq!(
       content.unwrap(),
-      "Scenegraph { root: SceneRoot { items: [Group(SceneGroup { items: [Arc(SceneArc { start_angle: 5.729578, end_angle: 152.67041, radius: 750.0, fill: \"#1F77B4\" }), Arc(SceneArc { start_angle: 164.12958, end_angle: 224.67041, radius: 750.0, fill: \"#FF7F0E\" }), Arc(SceneArc { start_angle: 236.12958, end_angle: 325.47043, radius: 750.0, fill: \"#2CA02C\" }), Arc(SceneArc { start_angle: 336.9296, end_angle: 354.27042, radius: 750.0, fill: \"#D62728\" })] })], dimensions: SceneDimensions { width: 1500, height: 300 } } }"
+      "Scenegraph { root: SceneRoot { items: [Group(SceneGroup { items: [Arc(SceneArc { start_angle: 5.729578, end_angle: 152.67041, outer_radius: 750.0, inner_radius: 50.0, fill: \"#1F77B4\" }), Arc(SceneArc { start_angle: 164.12958, end_angle: 224.67041, outer_radius: 750.0, inner_radius: 50.0, fill: \"#FF7F0E\" }), Arc(SceneArc { start_angle: 236.12958, end_angle: 325.47043, outer_radius: 750.0, inner_radius: 50.0, fill: \"#2CA02C\" }), Arc(SceneArc { start_angle: 336.9296, end_angle: 354.27042, outer_radius: 750.0, inner_radius: 50.0, fill: \"#D62728\" })] })], dimensions: SceneDimensions { width: 1500, height: 300 } } }"
     )
   }
 

@@ -1,7 +1,24 @@
 <!doctype html>
 <html>
+    <head>
+        <style>
+            .wrapper {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .wrapper > div {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+        </style>
+    </head>
     <body>
-        <div id="first"></div>
+        <div class="wrapper">
+            <div id="pie"></div>
+            <div id="donut"></div>
+        </div>
         <noscript
             >This page contains webassembly and javascript content, please
             enable javascript in your browser.</noscript
