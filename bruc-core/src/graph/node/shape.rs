@@ -161,6 +161,18 @@ impl Evaluation for BarOperator {
 }
 
 pub(crate) const PIE_VALUE_FIELD_NAME: &str = "__pie_value";
+pub(crate) const PIE_OUTER_RADIUS_FIELD_NAME: &str = "__pie_outer_radius";
+
+struct ArcDataValue {
+  value: f32,
+  outer_radius: Option<f32>,
+}
+
+struct ArcPosition {
+  start: f32,
+  end: f32,
+  outer_radius: Option<f32>,
+}
 
 #[derive(Debug, PartialEq)]
 pub struct PieOperator {
@@ -183,53 +195,72 @@ impl PieOperator {
       return Vec::new();
     };
 
-    let angles = self.calculate_angles(values);
-    self.create_arcs(angles)
+    let positions = self.calculate_arc_positions(values);
+    self.create_arcs(positions)
   }
 
-  fn calculate_angles(&self, values: &[DataValue]) -> Vec<(f32, f32)> {
-    let values: Vec<f32> = values
+  fn calculate_arc_positions(&self, values: &[DataValue]) -> Vec<ArcPosition> {
+    let arc_values: Vec<ArcDataValue> = values
       .iter()
-      .filter_map(|value| value.get_number(&self.field).copied())
+      .filter_map(|value| {
+        let outer_radius = value.get_number(PIE_OUTER_RADIUS_FIELD_NAME).copied();
+
+        value
+          .get_number(&self.field)
+          .copied()
+          .map(|value| ArcDataValue {
+            value,
+            outer_radius,
+          })
+      })
       .collect();
 
-    let total: f32 = values.iter().sum();
+    let total: f32 = arc_values.iter().map(|arc_value| arc_value.value).sum();
 
-    let mut angles: Vec<(f32, f32)> = Vec::with_capacity(values.len());
+    let mut angles: Vec<ArcPosition> = Vec::with_capacity(values.len());
     let mut previous = 0.0;
 
     let pad_angle = radians_to_degrees(self.shape.props.pad_angle);
 
-    for value in values {
-      let degree = (value / total) * 360.0;
+    for arc_value in arc_values {
+      let degree = (arc_value.value / total) * 360.0;
 
       if degree > 0.0 {
         let start = previous;
         let end = start + degree;
 
-        angles.push((start + pad_angle, end - pad_angle));
+        angles.push(ArcPosition {
+          start: start + pad_angle,
+          end: end - pad_angle,
+          outer_radius: arc_value.outer_radius,
+        });
         previous = end;
       } else {
-        angles.push((previous, previous));
+        angles.push(ArcPosition {
+          start: previous,
+          end: previous,
+          outer_radius: arc_value.outer_radius,
+        });
       }
     }
 
     angles
   }
 
-  fn create_arcs(&self, angles: Vec<(f32, f32)>) -> Vec<SceneItem> {
+  fn create_arcs(&self, positions: Vec<ArcPosition>) -> Vec<SceneItem> {
     let radius = self.window.width / 2.0;
-    let colors = super::color::generate_colors(angles.len());
+    let colors = super::color::generate_colors(positions.len());
 
-    angles
+    positions
       .into_iter()
       .enumerate()
-      .map(|(i, (start, end))| {
+      .map(|(i, position)| {
         SceneItem::arc(
-          start,
-          end,
-          self.shape.props.inner_radius,
+          position.start,
+          position.end,
           radius,
+          self.shape.props.inner_radius,
+          position.outer_radius,
           colors[i].to_string(),
         )
       })
@@ -250,7 +281,9 @@ impl Evaluation for PieOperator {
 #[cfg(test)]
 mod tests {
   use crate::data::DataValue;
-  use crate::graph::node::shape::{BarOperator, LineOperator, PieOperator, SceneWindow};
+  use crate::graph::node::shape::{
+    BarOperator, LineOperator, PieOperator, SceneWindow, PIE_OUTER_RADIUS_FIELD_NAME,
+  };
   use crate::graph::{Evaluation, Pulse, SinglePulse};
   use crate::scene::SceneItem;
   use crate::spec::shape::bar::{BarPropertiesBuilder, BarShape};
@@ -358,10 +391,10 @@ mod tests {
     assert_eq!(
       result,
       Pulse::shapes(vec![
-        SceneItem::arc(0.0, 0.0, 0.0, 10.0, "#1F77B4".to_string()),
-        SceneItem::arc(0.0, 36.0, 0.0, 10.0, "#FF7F0E".to_string()),
-        SceneItem::arc(36.0, 252.00002, 0.0, 10.0, "#2CA02C".to_string()),
-        SceneItem::arc(252.00002, 360.00003, 0.0, 10.0, "#D62728".to_string()),
+        SceneItem::arc(0.0, 0.0, 10.0, 0.0, None, "#1F77B4".to_string()),
+        SceneItem::arc(0.0, 36.0, 10.0, 0.0, None, "#FF7F0E".to_string()),
+        SceneItem::arc(36.0, 252.00002, 10.0, 0.0, None, "#2CA02C".to_string()),
+        SceneItem::arc(252.00002, 360.00003, 10.0, 0.0, None, "#D62728".to_string()),
       ])
     )
   }
@@ -390,10 +423,97 @@ mod tests {
     assert_eq!(
       result,
       Pulse::shapes(vec![
-        SceneItem::arc(0.0, 0.0, 0.0, 10.0, "#1F77B4".to_string()),
-        SceneItem::arc(10.0, 26.0, 0.0, 10.0, "#FF7F0E".to_string()),
-        SceneItem::arc(46.0, 242.00002, 0.0, 10.0, "#2CA02C".to_string()),
-        SceneItem::arc(262.0, 350.00003, 0.0, 10.0, "#D62728".to_string()),
+        SceneItem::arc(0.0, 0.0, 10.0, 0.0, None, "#1F77B4".to_string()),
+        SceneItem::arc(10.0, 26.0, 10.0, 0.0, None, "#FF7F0E".to_string()),
+        SceneItem::arc(46.0, 242.00002, 10.0, 0.0, None, "#2CA02C".to_string()),
+        SceneItem::arc(262.0, 350.00003, 10.0, 0.0, None, "#D62728".to_string()),
+      ])
+    )
+  }
+
+  #[tokio::test]
+  async fn computes_pie_with_inner_radius() {
+    let pulse = SinglePulse::Data(vec![
+      DataValue::from_pairs(vec![("x", 0.0.into()), ("y", 0.0.into())]),
+      DataValue::from_pairs(vec![("x", 1.0.into()), ("y", 1.0.into())]),
+      DataValue::from_pairs(vec![("x", 2.0.into()), ("y", 6.0.into())]),
+      DataValue::from_pairs(vec![("x", 3.0.into()), ("y", 3.0.into())]),
+    ]);
+
+    let operator = PieOperator::new(
+      PieShape::new(
+        PiePropertiesBuilder::new(DataSource::field("y", None))
+          .with_inner_radius(2.0)
+          .build(),
+      ),
+      "y",
+      SceneWindow::new(20, 2),
+    );
+
+    let result = operator.evaluate(Pulse::Single(pulse)).await;
+
+    assert_eq!(
+      result,
+      Pulse::shapes(vec![
+        SceneItem::arc(0.0, 0.0, 10.0, 2.0, None, "#1F77B4".to_string()),
+        SceneItem::arc(0.0, 36.0, 10.0, 2.0, None, "#FF7F0E".to_string()),
+        SceneItem::arc(36.0, 252.00002, 10.0, 2.0, None, "#2CA02C".to_string()),
+        SceneItem::arc(252.00002, 360.00003, 10.0, 2.0, None, "#D62728".to_string()),
+      ])
+    )
+  }
+
+  #[tokio::test]
+  async fn computes_pie_with_outer_radius() {
+    let pulse = SinglePulse::Data(vec![
+      DataValue::from_pairs(vec![
+        ("x", 0.0.into()),
+        ("y", 0.0.into()),
+        (PIE_OUTER_RADIUS_FIELD_NAME, 2.0.into()),
+      ]),
+      DataValue::from_pairs(vec![
+        ("x", 1.0.into()),
+        ("y", 1.0.into()),
+        (PIE_OUTER_RADIUS_FIELD_NAME, 2.0.into()),
+      ]),
+      DataValue::from_pairs(vec![
+        ("x", 2.0.into()),
+        ("y", 6.0.into()),
+        (PIE_OUTER_RADIUS_FIELD_NAME, 2.0.into()),
+      ]),
+      DataValue::from_pairs(vec![
+        ("x", 3.0.into()),
+        ("y", 3.0.into()),
+        (PIE_OUTER_RADIUS_FIELD_NAME, 2.0.into()),
+      ]),
+    ]);
+
+    let operator = PieOperator::new(
+      PieShape::new(
+        PiePropertiesBuilder::new(DataSource::field("y", None))
+          .with_outer_radius(DataSource::field("z", None))
+          .build(),
+      ),
+      "y",
+      SceneWindow::new(20, 2),
+    );
+
+    let result = operator.evaluate(Pulse::Single(pulse)).await;
+
+    assert_eq!(
+      result,
+      Pulse::shapes(vec![
+        SceneItem::arc(0.0, 0.0, 10.0, 0.0, Some(2.0), "#1F77B4".to_string()),
+        SceneItem::arc(0.0, 36.0, 10.0, 0.0, Some(2.0), "#FF7F0E".to_string()),
+        SceneItem::arc(36.0, 252.00002, 10.0, 0.0, Some(2.0), "#2CA02C".to_string()),
+        SceneItem::arc(
+          252.00002,
+          360.00003,
+          10.0,
+          0.0,
+          Some(2.0),
+          "#D62728".to_string()
+        ),
       ])
     )
   }

@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use bruc_expression::data::DataItem;
 
 use crate::data::DataValue;
-use crate::graph::node::shape::{SceneWindow, PIE_VALUE_FIELD_NAME};
+use crate::graph::node::shape::{SceneWindow, PIE_OUTER_RADIUS_FIELD_NAME, PIE_VALUE_FIELD_NAME};
 use crate::spec::axis::Axis;
 use crate::spec::scale::band::BandScale;
 use crate::spec::scale::linear::LinearScale;
@@ -173,6 +173,17 @@ impl Visitor {
       DataSource::ValueSource(value) => self.visit_value_source(&field, value, data_node, result),
     };
 
+    let mut scale_nodes = Vec::new();
+
+    if let Some(outer_radius) = pie.props.outer_radius.as_ref() {
+      scale_nodes.push(self.visit_data_source(
+        outer_radius,
+        PIE_OUTER_RADIUS_FIELD_NAME,
+        data_node,
+        result,
+      ));
+    };
+
     let node = result.graph.add_node(Operator::pie(
       pie,
       &field,
@@ -181,6 +192,10 @@ impl Visitor {
 
     result.collection.shapes.push(node);
     result.graph.add_edge(data_node, node);
+
+    for scale_node in scale_nodes {
+      result.graph.add_edge(scale_node, node);
+    }
   }
 
   fn visit_shape_props(

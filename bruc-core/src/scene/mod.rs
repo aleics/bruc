@@ -62,13 +62,15 @@ impl SceneItem {
   pub fn arc(
     start_angle: f32,
     end_angle: f32,
+    radius: f32,
     inner_radius: f32,
-    outer_radius: f32,
+    outer_radius: Option<f32>,
     fill: String,
   ) -> Self {
     SceneItem::Arc(Box::new(SceneArc {
       start_angle,
       end_angle,
+      radius,
       inner_radius,
       outer_radius,
       fill,
@@ -145,7 +147,8 @@ pub struct SceneRect {
 pub struct SceneArc {
   pub(crate) start_angle: f32,
   pub(crate) end_angle: f32,
-  pub(crate) outer_radius: f32,
+  pub(crate) radius: f32,
+  pub(crate) outer_radius: Option<f32>,
   pub(crate) inner_radius: f32,
   pub(crate) fill: String,
 }

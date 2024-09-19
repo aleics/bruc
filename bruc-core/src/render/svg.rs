@@ -159,24 +159,29 @@ impl ItemRenderer for SceneArc {
       0
     };
 
+    let outer_radius = self
+      .outer_radius
+      .map(|outer_radius| self.inner_radius + outer_radius)
+      .unwrap_or(self.radius);
+
     let bottom_left = (
-      self.outer_radius + self.inner_radius * x0,
-      self.outer_radius + self.inner_radius * y0,
+      self.radius + self.inner_radius * x0,
+      self.radius + self.inner_radius * y0,
     );
 
     let top_left = (
-      self.outer_radius + self.outer_radius * x0,
-      self.outer_radius + self.outer_radius * y0,
+      self.radius + outer_radius * x0,
+      self.radius + outer_radius * y0,
     );
 
     let top_right = (
-      self.outer_radius + self.outer_radius * x1,
-      self.outer_radius + self.outer_radius * y1,
+      self.radius + outer_radius * x1,
+      self.radius + outer_radius * y1,
     );
 
     let bottom_right = (
-      self.outer_radius + self.inner_radius * x1,
-      self.outer_radius + self.inner_radius * y1,
+      self.radius + self.inner_radius * x1,
+      self.radius + self.inner_radius * y1,
     );
 
     let path = format!(
@@ -185,8 +190,8 @@ impl ItemRenderer for SceneArc {
       bottom_left.1,
       top_left.0,
       top_left.1,
-      self.outer_radius,
-      self.outer_radius,
+      outer_radius,
+      outer_radius,
       large_arc,
       top_right.0,
       top_right.1,
@@ -530,12 +535,12 @@ mod tests {
   fn render_svg_arcs() {
     let scenegraph = Scenegraph::new(SceneRoot::new(
       vec![
-        SceneItem::arc(0.0, 60.0, 0.0, 250.0, "blue".to_string()),
-        SceneItem::arc(60.0, 120.0, 0.0, 250.0, "red".to_string()),
-        SceneItem::arc(120.0, 180.0, 0.0, 250.0, "yellow".to_string()),
-        SceneItem::arc(180.0, 240.0, 0.0, 250.0, "green".to_string()),
-        SceneItem::arc(240.0, 300.0, 0.0, 250.0, "pink".to_string()),
-        SceneItem::arc(300.0, 360.0, 0.0, 250.0, "black".to_string()),
+        SceneItem::arc(0.0, 60.0, 250.0, 0.0, None, "blue".to_string()),
+        SceneItem::arc(60.0, 120.0, 250.0, 0.0, None, "red".to_string()),
+        SceneItem::arc(120.0, 180.0, 250.0, 0.0, None, "yellow".to_string()),
+        SceneItem::arc(180.0, 240.0, 250.0, 0.0, None, "green".to_string()),
+        SceneItem::arc(240.0, 300.0, 250.0, 0.0, None, "pink".to_string()),
+        SceneItem::arc(300.0, 360.0, 250.0, 0.0, None, "black".to_string()),
       ],
       SceneDimensions {
         width: 500,

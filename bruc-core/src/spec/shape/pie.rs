@@ -4,6 +4,7 @@ pub(crate) struct PiePropertiesBuilder {
   value: DataSource,
   pad_angle: Option<f32>,
   inner_radius: Option<f32>,
+  outer_radius: Option<DataSource>,
 }
 
 impl PiePropertiesBuilder {
@@ -12,6 +13,7 @@ impl PiePropertiesBuilder {
       value,
       pad_angle: None,
       inner_radius: None,
+      outer_radius: None,
     }
   }
 
@@ -25,11 +27,17 @@ impl PiePropertiesBuilder {
     self
   }
 
+  pub(crate) fn with_outer_radius(mut self, outer_radius: DataSource) -> Self {
+    self.outer_radius = Some(outer_radius);
+    self
+  }
+
   pub(crate) fn build(self) -> PieProperties {
     PieProperties {
       value: self.value,
       pad_angle: self.pad_angle.unwrap_or_default(),
-      inner_radius: self.inner_radius.unwrap_or_default()
+      inner_radius: self.inner_radius.unwrap_or_default(),
+      outer_radius: self.outer_radius,
     }
   }
 }
@@ -58,7 +66,10 @@ pub(crate) struct PieProperties {
   #[cfg_attr(feature = "serde", serde(default))]
   pub(crate) pad_angle: f32,
   #[cfg_attr(feature = "serde", serde(default))]
-  pub(crate) inner_radius: f32
+  pub(crate) inner_radius: f32,
+  #[cfg_attr(feature = "serde", serde(default))]
+  // TODO: rename this to radius
+  pub(crate) outer_radius: Option<DataSource>,
 }
 
 #[cfg(test)]
