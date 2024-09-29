@@ -2,6 +2,7 @@ use bruc_expression::data::{DataItem, DataSource};
 
 use crate::data::DataValue;
 
+use crate::graph::node::util::normalize_log10;
 use crate::graph::pulse::ResolvedDomain;
 use crate::spec::scale::domain::Domain;
 
@@ -188,6 +189,75 @@ impl Evaluation for LinearOperator {
   }
 }
 
+#[derive(Debug, PartialEq)]
+pub struct LogOperator {
+  range: (f32, f32),
+  field: String,
+  output: String,
+}
+
+impl LogOperator {
+  /// Create a new `LinearOperator` instance.
+  pub(crate) fn new(range: (f32, f32), field: &str, output: &str) -> Self {
+    LogOperator {
+      range,
+      field: field.to_string(),
+      output: output.to_string(),
+    }
+  }
+
+  /// Apply the operator's logic by linearly scaling the referenced `field` and creating a new
+  /// `output` field.
+  fn apply(&self, values: &[DataValue], domain: (f32, f32)) -> Vec<DataValue> {
+    let mut result = values.to_vec();
+
+    // Iterate over the current series
+    for value in &mut result {
+      // Apply scale to field
+      let scale_result = value
+        .get_number(&self.field)
+        .map(|value| interpolate(normalize_log10(*value, domain), self.range));
+
+      println!("scale result {:?} -> {:?}", value, scale_result);
+
+      if let Some(scale_item) = scale_result {
+        // Add scale result to value with the scale's name
+        value.instance.clear();
+        value.insert(&self.output, DataItem::Number(scale_item));
+      }
+    }
+
+    result
+  }
+}
+
+impl Evaluation for LogOperator {
+  async fn evaluate_single(&self, _single: SinglePulse) -> Pulse {
+    panic!("Linear operator requires a multi-pulse with data and a domain values.")
+  }
+
+  async fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
+    let mut values = Vec::new();
+    let mut domain: Option<(f32, f32)> = None;
+
+    for pulse in multi.pulses {
+      match pulse {
+        SinglePulse::Data(data) => values.extend(data),
+        SinglePulse::Domain(ResolvedDomain::Interval(min, max)) => domain = Some((min, max)),
+        _ => continue,
+      }
+    }
+
+    if values.is_empty() {
+      return Pulse::data(Vec::new());
+    }
+
+    let domain = domain.expect("Domain pulse not provided for linear operator");
+
+    Pulse::data(self.apply(&values, domain))
+  }
+}
+
 /// `BandOperator` represents an operator of the graph, which maps a discrete domain to a
 /// continuous range of values. `field` references the data source and `output` the name
 /// of the new field with the result of the operator.
@@ -322,7 +392,7 @@ mod tests {
 
   use crate::{
     data::DataValue,
-    graph::{pulse::ResolvedDomain, Evaluation, Pulse, SinglePulse},
+    graph::{node::scale::LogOperator, pulse::ResolvedDomain, Evaluation, Pulse, SinglePulse},
     spec::scale::domain::Domain,
   };
 
@@ -490,5 +560,34 @@ mod tests {
       .await;
 
     assert_eq!(pulse, Pulse::Single(data))
+  }
+
+  #[tokio::test]
+  async fn log_applies_multi_pulse() {
+    let first_pulse = SinglePulse::Data(vec![
+      DataValue::from_pairs(vec![("a", 10.0.into()), ("b", 1.0.into())]),
+      DataValue::from_pairs(vec![("a", 100.0.into()), ("b", 1.0.into())]),
+    ]);
+    let second_pulse = SinglePulse::Data(vec![
+      DataValue::from_pairs(vec![("a", 1000.0.into()), ("b", 1.0.into())]),
+      DataValue::from_pairs(vec![("a", 100000.0.into()), ("b", 1.0.into())]),
+    ]);
+
+    let domain = SinglePulse::Domain(ResolvedDomain::Interval(10.0, 100000.0));
+
+    let operator = LogOperator::new((0.0, 600.0), "a", "x");
+    let pulse = operator
+      .evaluate(Pulse::multi(vec![first_pulse, second_pulse, domain]))
+      .await;
+
+    assert_eq!(
+      pulse,
+      Pulse::data(vec![
+        DataValue::from_pairs(vec![("x", 0.0.into())]),
+        DataValue::from_pairs(vec![("x", 150.0.into())]),
+        DataValue::from_pairs(vec![("x", 300.0.into())]),
+        DataValue::from_pairs(vec![("x", 600.0.into())]),
+      ])
+    );
   }
 }

@@ -1,3 +1,5 @@
+use log::LogScale;
+
 use crate::spec::scale::linear::LinearScale;
 
 use self::{band::BandScale, range::Range};
@@ -5,6 +7,7 @@ use self::{band::BandScale, range::Range};
 pub mod band;
 pub mod domain;
 pub mod linear;
+pub mod log;
 pub mod range;
 
 #[derive(Debug, PartialEq, Clone)]
@@ -32,12 +35,14 @@ impl Scale {
 pub enum ScaleKind {
   Linear(LinearScale),
   Band(BandScale),
+  Log(LogScale),
 }
 
 impl ScaleKind {
   pub(crate) fn range(&self) -> &Range {
     match self {
       ScaleKind::Linear(linear) => &linear.range,
+      ScaleKind::Log(log) => &log.range,
       ScaleKind::Band(band) => &band.range,
     }
   }
@@ -49,6 +54,7 @@ mod serde_tests {
   use crate::spec::scale::band::BandScale;
   use crate::spec::scale::domain::Domain;
   use crate::spec::scale::linear::LinearScale;
+  use crate::spec::scale::log::LogScale;
   use crate::spec::scale::range::Range;
   use crate::spec::scale::{Scale, ScaleKind};
 
@@ -69,6 +75,30 @@ mod serde_tests {
       Scale::new(
         "x",
         ScaleKind::Linear(LinearScale {
+          domain: Domain::Literal(vec![0.0, 100.0]),
+          range: Range::Literal(0.0, 2.0)
+        })
+      )
+    )
+  }
+
+  #[test]
+  fn deserialize_scale_log() {
+    let scale: Scale = serde_json::from_str(
+      r#"{
+        "type": "log",
+        "name": "x",
+        "domain": [0, 100],
+        "range": [0, 2]
+      }"#,
+    )
+    .unwrap();
+
+    assert_eq!(
+      scale,
+      Scale::new(
+        "x",
+        ScaleKind::Log(LogScale {
           domain: Domain::Literal(vec![0.0, 100.0]),
           range: Range::Literal(0.0, 2.0)
         })

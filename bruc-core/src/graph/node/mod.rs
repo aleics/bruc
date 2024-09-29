@@ -1,3 +1,4 @@
+use scale::LogOperator;
 use shape::PieOperator;
 
 use crate::graph::node::scale::{IdentityOperator, LinearOperator};
@@ -68,6 +69,7 @@ pub enum Operator {
   DomainInterval(DomainIntervalOperator),
   DomainDiscrete(DomainDiscreteOperator),
   Linear(LinearOperator),
+  Log(LogOperator),
   Band(BandOperator),
   Identity(IdentityOperator),
 }
@@ -137,6 +139,12 @@ impl Operator {
     Operator::Linear(LinearOperator::new(range, field, output))
   }
 
+  /// Create a new logarithmic `Operator` instance for a certain `range`, with a given `field` reference and an
+  /// `output` field name.
+  pub(crate) fn log(range: (f32, f32), field: &str, output: &str) -> Self {
+    Operator::Log(LogOperator::new(range, field, output))
+  }
+
   pub(crate) fn band(range: (f32, f32), field: &str, output: &str) -> Self {
     Operator::Band(BandOperator::new(range, field, output))
   }
@@ -164,6 +172,7 @@ impl Operator {
       Operator::DomainInterval(domain_interval) => domain_interval.evaluate(pulse).await,
       Operator::DomainDiscrete(domain_discrete) => domain_discrete.evaluate(pulse).await,
       Operator::Linear(linear) => linear.evaluate(pulse).await,
+      Operator::Log(log) => log.evaluate(pulse).await,
       Operator::Band(band) => band.evaluate(pulse).await,
       Operator::Identity(identity) => identity.evaluate(pulse).await,
     }

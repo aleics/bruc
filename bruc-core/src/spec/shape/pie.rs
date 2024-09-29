@@ -68,7 +68,6 @@ pub(crate) struct PieProperties {
   #[cfg_attr(feature = "serde", serde(default))]
   pub(crate) inner_radius: f32,
   #[cfg_attr(feature = "serde", serde(default))]
-  // TODO: rename this to radius
   pub(crate) outer_radius: Option<DataSource>,
 }
 

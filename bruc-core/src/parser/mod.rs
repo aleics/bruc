@@ -7,6 +7,7 @@ use crate::graph::node::shape::{SceneWindow, PIE_OUTER_RADIUS_FIELD_NAME, PIE_VA
 use crate::spec::axis::Axis;
 use crate::spec::scale::band::BandScale;
 use crate::spec::scale::linear::LinearScale;
+use crate::spec::scale::log::LogScale;
 use crate::spec::scale::range::Range;
 use crate::spec::scale::{Scale, ScaleKind};
 use crate::spec::shape::bar::BarShape;
@@ -283,6 +284,14 @@ impl Visitor {
         data_node,
         result,
       ),
+      ScaleKind::Log(log) => self.visit_log(
+        log,
+        scale.name.to_string(),
+        field,
+        output,
+        data_node,
+        result,
+      ),
       ScaleKind::Band(band) => self.visit_band(
         band,
         scale.name.to_string(),
@@ -318,6 +327,32 @@ impl Visitor {
     result.collection.scales.insert(name, linear_node);
 
     linear_node
+  }
+
+  fn visit_log(
+    &self,
+    log: LogScale,
+    name: String,
+    field: &str,
+    output: &str,
+    data_node: usize,
+    result: &mut ParseResult,
+  ) -> usize {
+    let domain_operator = Operator::domain_interval(log.domain.clone());
+    let domain_node = result.graph.add_node(domain_operator);
+
+    result.graph.add_edge(data_node, domain_node);
+    result.collection.domain.insert(name.clone(), domain_node);
+
+    let Range::Literal(range_min, range_max) = log.range;
+    let log_operator = Operator::log((range_min, range_max), field, output);
+    let log_node = result.graph.add_node(log_operator);
+
+    result.graph.add_edge(domain_node, log_node);
+    result.graph.add_edge(data_node, log_node);
+    result.collection.scales.insert(name, log_node);
+
+    log_node
   }
 
   fn visit_band(
