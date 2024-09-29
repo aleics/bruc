@@ -29,7 +29,6 @@ pub(crate) mod data;
 pub(crate) mod scale;
 pub(crate) mod shape;
 pub(crate) mod transform;
-mod util;
 
 /// `Node` represents a node in the `Graph` with a certain operator and a `Pulse` instance.
 #[derive(Debug, PartialEq)]

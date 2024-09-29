@@ -1,14 +1,12 @@
 use crate::{
   graph::{pulse::ResolvedDomain, Evaluation, MultiPulse, Pulse, SinglePulse},
+  scale::Scale,
   scene::{SceneAxisRule, SceneAxisTick, SceneItem},
   spec::axis::{Axis, AxisOrientation},
 };
 use bruc_expression::data::DataItem;
 
-use super::{
-  shape::SceneWindow,
-  util::{interpolate, normalize},
-};
+use super::shape::SceneWindow;
 
 const TICK_COUNT: usize = 10;
 
@@ -71,9 +69,11 @@ impl AxisOperator {
       self.range
     };
 
+    let scale = Scale::linear(ticks_range);
+
     SceneItem::axis(
       self.create_ruler(self.range),
-      self.create_ticks(points, ticks_range, domain),
+      self.create_ticks(points, domain, &scale),
       self.axis.orientation,
     )
   }
@@ -83,20 +83,16 @@ impl AxisOperator {
     range: (f32, f32),
     domain: (f32, f32),
   ) -> Vec<SceneAxisTick> {
+    let scale = Scale::linear(range);
     let positions = AxisOperator::create_tick_relative_positions(TICK_COUNT, domain);
-    self.create_ticks(positions, range, domain)
+    self.create_ticks(positions, domain, &scale)
   }
 
-  fn create_ticks(
-    &self,
-    ticks: Vec<f32>,
-    range: (f32, f32),
-    domain: (f32, f32),
-  ) -> Vec<SceneAxisTick> {
+  fn create_ticks(&self, ticks: Vec<f32>, domain: (f32, f32), scale: &Scale) -> Vec<SceneAxisTick> {
     ticks
       .into_iter()
       .map(|value| {
-        let position = interpolate(normalize(value, domain), range);
+        let position = scale.apply(value, domain);
         SceneAxisTick {
           position: self.orientation_position(position),
           label: format!("{:.2}", value),

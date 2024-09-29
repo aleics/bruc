@@ -10,8 +10,7 @@ use crate::spec::shape::base::{
 };
 use crate::spec::shape::line::LineShape;
 use crate::spec::shape::pie::PieShape;
-
-use super::util::radians_to_degrees;
+use crate::util::radians_to_degrees;
 
 #[derive(Debug, PartialEq)]
 pub(crate) struct SceneWindow {

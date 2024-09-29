@@ -17,8 +17,10 @@ pub mod data;
 pub mod graph;
 mod parser;
 pub mod render;
+mod scale;
 mod scene;
 pub mod spec;
+mod util;
 
 #[derive(Debug)]
 struct ViewState {

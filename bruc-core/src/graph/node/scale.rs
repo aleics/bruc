@@ -2,13 +2,12 @@ use bruc_expression::data::{DataItem, DataSource};
 
 use crate::data::DataValue;
 
-use crate::graph::node::util::normalize_log10;
 use crate::graph::pulse::ResolvedDomain;
+use crate::scale::Scale;
 use crate::spec::scale::domain::Domain;
 
 use crate::graph::{Evaluation, MultiPulse, Pulse, SinglePulse};
-
-use super::util::{interpolate, normalize};
+use crate::spec::scale::ScaleKind;
 
 pub(crate) const SCALE_BAND_BANDWIDTH_FIELD_NAME: &str = "bandwidth";
 
@@ -124,7 +123,7 @@ impl Evaluation for DomainDiscreteOperator {
 /// certain `field` reference, and creates a new field in the defined `output` field.
 #[derive(Debug, PartialEq)]
 pub struct LinearOperator {
-  range: (f32, f32),
+  scale: Scale,
   field: String,
   output: String,
 }
@@ -133,7 +132,7 @@ impl LinearOperator {
   /// Create a new `LinearOperator` instance.
   pub(crate) fn new(range: (f32, f32), field: &str, output: &str) -> Self {
     LinearOperator {
-      range,
+      scale: Scale::linear(range),
       field: field.to_string(),
       output: output.to_string(),
     }
@@ -149,7 +148,7 @@ impl LinearOperator {
       // Apply scale to field
       let scale_result = value
         .get_number(&self.field)
-        .map(|value| interpolate(normalize(*value, domain), self.range));
+        .map(|value| self.scale.apply(*value, domain));
 
       if let Some(scale_item) = scale_result {
         // Add scale result to value with the scale's name
@@ -191,7 +190,7 @@ impl Evaluation for LinearOperator {
 
 #[derive(Debug, PartialEq)]
 pub struct LogOperator {
-  range: (f32, f32),
+  scale: Scale,
   field: String,
   output: String,
 }
@@ -200,7 +199,7 @@ impl LogOperator {
   /// Create a new `LinearOperator` instance.
   pub(crate) fn new(range: (f32, f32), field: &str, output: &str) -> Self {
     LogOperator {
-      range,
+      scale: Scale::log(range),
       field: field.to_string(),
       output: output.to_string(),
     }
@@ -216,7 +215,7 @@ impl LogOperator {
       // Apply scale to field
       let scale_result = value
         .get_number(&self.field)
-        .map(|value| interpolate(normalize_log10(*value, domain), self.range));
+        .map(|value| self.scale.apply(*value, domain));
 
       println!("scale result {:?} -> {:?}", value, scale_result);
 
@@ -253,7 +252,6 @@ impl Evaluation for LogOperator {
     }
 
     let domain = domain.expect("Domain pulse not provided for linear operator");
-
     Pulse::data(self.apply(&values, domain))
   }
 }
@@ -289,12 +287,13 @@ impl BandOperator {
     let bandwidth_name = format!("{}_{}", &self.output, &SCALE_BAND_BANDWIDTH_FIELD_NAME);
 
     let range = (padding + self.range.0, padding + self.range.1 - step);
+    let scale = Scale::linear(range);
 
     for value in &mut result {
       let scale_result = value
         .get(&self.field)
         .and_then(|value| value.get_number())
-        .map(|value| interpolate(normalize(*value, domain), range));
+        .map(|value| scale.apply(*value, domain));
 
       if let Some(scale_item) = scale_result {
         // Add scale result to value with the scale's name
