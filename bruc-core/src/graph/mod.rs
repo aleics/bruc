@@ -285,6 +285,7 @@ impl Edge {
 #[cfg(test)]
 mod tests {
   use crate::graph::node::shape::SceneWindow;
+  use crate::scale::Scale;
   use crate::spec::axis::{Axis, AxisOrientation};
   use crate::spec::scale::domain::Domain;
 
@@ -420,7 +421,7 @@ mod tests {
     let scale_operator = Operator::linear((0.0, 20.0), "a", "x");
     let axis_operator = Operator::axis(
       Axis::new("x", AxisOrientation::Left),
-      (0.0, 2.0),
+      Scale::linear((0.0, 2.0)),
       SceneWindow::new(500, 200),
     );
 
@@ -438,7 +439,7 @@ mod tests {
         &Node::init(Operator::linear((0.0, 20.0), "a", "x",)),
         &Node::init(Operator::axis(
           Axis::new("x", AxisOrientation::Left),
-          (0.0, 2.0),
+          Scale::linear((0.0, 2.0)),
           SceneWindow::new(500, 200)
         ))
       ]

@@ -3,6 +3,7 @@ use shape::PieOperator;
 
 use crate::graph::node::scale::{IdentityOperator, LinearOperator};
 use crate::graph::node::shape::{LineOperator, SceneWindow};
+use crate::scale::Scale;
 use crate::spec::axis::Axis;
 use crate::spec::scale::domain::Domain;
 
@@ -123,8 +124,8 @@ impl Operator {
   }
 
   /// Create a new axis `Operator` instance
-  pub(crate) fn axis(axis: Axis, range: (f32, f32), window: SceneWindow) -> Self {
-    Operator::Axis(AxisOperator::new(axis, range, window))
+  pub(crate) fn axis(axis: Axis, scale: Scale, window: SceneWindow) -> Self {
+    Operator::Axis(AxisOperator::new(axis, scale, window))
   }
 
   /// Create a new identity `Operator` instance.
@@ -152,8 +153,8 @@ impl Operator {
     Operator::DomainInterval(DomainIntervalOperator::new(domain))
   }
 
-  pub(crate) fn domain_discrete(domain: Domain, outer_padding: bool) -> Self {
-    Operator::DomainDiscrete(DomainDiscreteOperator::new(domain, outer_padding))
+  pub(crate) fn domain_discrete(domain: Domain) -> Self {
+    Operator::DomainDiscrete(DomainDiscreteOperator::new(domain))
   }
 
   /// Evaluate the operator for a certain `Pulse`.

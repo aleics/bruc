@@ -1,8 +1,9 @@
+use domain::Domain;
 use log::LogScale;
 
 use crate::spec::scale::linear::LinearScale;
 
-use self::{band::BandScale, range::Range};
+use self::band::BandScale;
 
 pub mod band;
 pub mod domain;
@@ -39,11 +40,11 @@ pub enum ScaleKind {
 }
 
 impl ScaleKind {
-  pub(crate) fn range(&self) -> &Range {
+  pub(crate) fn domain(&self) -> &Domain {
     match self {
-      ScaleKind::Linear(linear) => &linear.range,
-      ScaleKind::Log(log) => &log.range,
-      ScaleKind::Band(band) => &band.range,
+      ScaleKind::Linear(linear) => &linear.domain,
+      ScaleKind::Log(log) => &log.domain,
+      ScaleKind::Band(band) => &band.domain,
     }
   }
 }

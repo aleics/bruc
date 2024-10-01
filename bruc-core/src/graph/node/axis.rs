@@ -8,35 +8,28 @@ use bruc_expression::data::DataItem;
 
 use super::shape::SceneWindow;
 
-const TICK_COUNT: usize = 10;
-
 #[derive(Debug, PartialEq)]
 pub struct AxisOperator {
   axis: Axis,
-  range: (f32, f32),
+  scale: Scale,
   window: SceneWindow,
 }
 
 impl AxisOperator {
-  pub(crate) fn new(axis: Axis, range: (f32, f32), window: SceneWindow) -> Self {
+  pub(crate) fn new(axis: Axis, scale: Scale, window: SceneWindow) -> Self {
     AxisOperator {
       axis,
-      range,
+      scale,
       window,
     }
   }
 
   fn apply_interval(&self, domain: (f32, f32)) -> SinglePulse {
-    let scene_item = self.linear_axis(self.range, domain);
+    let scene_item = self.linear_axis(domain);
     SinglePulse::Shapes(vec![scene_item])
   }
 
-  fn apply_discrete(
-    &self,
-    domain: (f32, f32),
-    values: Vec<DataItem>,
-    outer_padding: bool,
-  ) -> SinglePulse {
+  fn apply_discrete(&self, domain: (f32, f32), values: Vec<DataItem>) -> SinglePulse {
     let mut points = Vec::new();
 
     for value in values {
@@ -49,64 +42,45 @@ impl AxisOperator {
       return SinglePulse::Shapes(Vec::new());
     }
 
-    SinglePulse::Shapes(vec![self.discrete_axis(points, domain, outer_padding)])
+    SinglePulse::Shapes(vec![self.discrete_axis(points, domain)])
   }
 
-  fn linear_axis(&self, range: (f32, f32), domain: (f32, f32)) -> SceneItem {
+  fn linear_axis(&self, domain: (f32, f32)) -> SceneItem {
+    let ticks = self.scale.ticks(domain);
     SceneItem::axis(
-      self.create_ruler(range),
-      self.create_ticks_linear_interval(range, domain),
+      self.create_ruler(),
+      self.create_ticks(ticks),
       self.axis.orientation,
     )
   }
 
-  fn discrete_axis(&self, points: Vec<f32>, domain: (f32, f32), outer_padding: bool) -> SceneItem {
-    let ticks_range = if outer_padding {
-      let step = (self.range.1 - self.range.0) / (points.len() as f32);
-      let padding = step / 2.0;
-      (self.range.0 + padding, self.range.1 - padding)
-    } else {
-      self.range
-    };
+  fn discrete_axis(&self, points: Vec<f32>, domain: (f32, f32)) -> SceneItem {
+    let range = self.scale.range();
 
-    let scale = Scale::linear(ticks_range);
+    let step = (range.1 - range.0) / (points.len() as f32);
+    let padding = step / 2.0;
+    let scale = Scale::linear((range.0 + padding, range.1 - padding));
 
     SceneItem::axis(
-      self.create_ruler(self.range),
-      self.create_ticks(points, domain, &scale),
+      self.create_ruler(),
+      self.create_ticks(Vec::new()),
       self.axis.orientation,
     )
   }
 
-  fn create_ticks_linear_interval(
-    &self,
-    range: (f32, f32),
-    domain: (f32, f32),
-  ) -> Vec<SceneAxisTick> {
-    let scale = Scale::linear(range);
-    let positions = AxisOperator::create_tick_relative_positions(TICK_COUNT, domain);
-    self.create_ticks(positions, domain, &scale)
-  }
-
-  fn create_ticks(&self, ticks: Vec<f32>, domain: (f32, f32), scale: &Scale) -> Vec<SceneAxisTick> {
+  fn create_ticks(&self, ticks: Vec<(f32, f32)>) -> Vec<SceneAxisTick> {
     ticks
       .into_iter()
-      .map(|value| {
-        let position = scale.apply(value, domain);
-        SceneAxisTick {
-          position: self.orientation_position(position),
-          label: format!("{:.2}", value),
-        }
+      .map(|(position, value)| SceneAxisTick {
+        position: self.orientation_position(position),
+        label: format!("{:.2}", value),
       })
       .collect()
   }
 
-  fn create_tick_relative_positions(count: usize, (from, to): (f32, f32)) -> Vec<f32> {
-    let step = (to - from) / (count as f32);
-    (0..count + 1).map(|i| from + step * (i as f32)).collect()
-  }
+  fn create_ruler(&self) -> SceneAxisRule {
+    let (from, to) = self.scale.range();
 
-  fn create_ruler(&self, (from, to): (f32, f32)) -> SceneAxisRule {
     SceneAxisRule {
       from: self.orientation_position(from),
       to: self.orientation_position(to),
@@ -133,10 +107,7 @@ impl Evaluation for AxisOperator {
 
         let pulse = match domain {
           ResolvedDomain::Interval(_, _) => self.apply_interval(interval),
-          ResolvedDomain::Discrete {
-            values,
-            outer_padding,
-          } => self.apply_discrete(interval, values, outer_padding),
+          ResolvedDomain::Discrete { values } => self.apply_discrete(interval, values),
         };
 
         Pulse::Single(pulse)
@@ -163,6 +134,7 @@ mod tests {
       pulse::ResolvedDomain,
       Evaluation, Pulse,
     },
+    scale::Scale,
     scene::{SceneAxisRule, SceneAxisTick, SceneItem},
     spec::axis::{Axis, AxisOrientation},
   };
@@ -171,7 +143,7 @@ mod tests {
   async fn creates_top_axis() {
     let operator = AxisOperator::new(
       Axis::new("horizontal", AxisOrientation::Top),
-      (0.0, 200.0),
+      Scale::linear((0.0, 200.0)),
       SceneWindow::new(200, 100),
     );
 
@@ -241,7 +213,7 @@ mod tests {
   async fn creates_bottom_axis() {
     let operator = AxisOperator::new(
       Axis::new("horizontal", AxisOrientation::Bottom),
-      (0.0, 200.0),
+      Scale::linear((0.0, 200.0)),
       SceneWindow::new(200, 100),
     );
 
@@ -311,7 +283,7 @@ mod tests {
   async fn creates_left_axis() {
     let operator = AxisOperator::new(
       Axis::new("vertical", AxisOrientation::Left),
-      (0.0, 200.0),
+      Scale::linear((0.0, 200.0)),
       SceneWindow::new(200, 100),
     );
 
@@ -381,7 +353,7 @@ mod tests {
   async fn creates_right_axis() {
     let operator = AxisOperator::new(
       Axis::new("vertical", AxisOrientation::Right),
-      (0.0, 200.0),
+      Scale::linear((0.0, 200.0)),
       SceneWindow::new(200, 100),
     );
 
@@ -451,7 +423,7 @@ mod tests {
   async fn creates_axis_with_positive_min() {
     let operator = AxisOperator::new(
       Axis::new("vertical", AxisOrientation::Right),
-      (100.0, 200.0),
+      Scale::linear((100.0, 200.0)),
       SceneWindow::new(200, 100),
     );
 

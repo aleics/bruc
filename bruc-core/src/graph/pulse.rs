@@ -132,10 +132,7 @@ impl MultiPulse {
 #[derive(Debug, Clone, PartialEq)]
 pub enum ResolvedDomain {
   Interval(f32, f32),
-  Discrete {
-    values: Vec<DataItem>,
-    outer_padding: bool,
-  },
+  Discrete { values: Vec<DataItem> },
 }
 
 impl ResolvedDomain {

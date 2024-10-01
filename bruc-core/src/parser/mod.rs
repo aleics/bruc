@@ -4,12 +4,13 @@ use bruc_expression::data::DataItem;
 
 use crate::data::DataValue;
 use crate::graph::node::shape::{SceneWindow, PIE_OUTER_RADIUS_FIELD_NAME, PIE_VALUE_FIELD_NAME};
+use crate::scale::Scale;
 use crate::spec::axis::Axis;
 use crate::spec::scale::band::BandScale;
 use crate::spec::scale::linear::LinearScale;
 use crate::spec::scale::log::LogScale;
 use crate::spec::scale::range::Range;
-use crate::spec::scale::{Scale, ScaleKind};
+use crate::spec::scale::{Scale as ScaleSpec, ScaleKind as ScaleSpecKind};
 use crate::spec::shape::bar::BarShape;
 use crate::spec::shape::base::{
   BaseShapeProperties, HEIGHT_FIELD_NAME, WIDTH_FIELD_NAME, X_AXIS_FIELD_NAME, Y_AXIS_FIELD_NAME,
@@ -92,15 +93,15 @@ impl Parser {
 
 struct Visitor {
   dimensions: Dimensions,
-  scales: HashMap<String, Scale>,
+  scales: HashMap<String, ScaleSpec>,
 }
 
 impl Visitor {
-  fn new(dimensions: Dimensions, scales: &[Scale]) -> Self {
+  fn new(dimensions: Dimensions, scales: &[ScaleSpec]) -> Self {
     let scales = scales
       .iter()
       .map(|scale| (scale.name.clone(), scale.clone()))
-      .collect::<HashMap<String, Scale>>();
+      .collect::<HashMap<String, ScaleSpec>>();
 
     Visitor { dimensions, scales }
   }
@@ -269,14 +270,14 @@ impl Visitor {
 
   fn visit_scale(
     &self,
-    scale: Scale,
+    scale: ScaleSpec,
     field: &str,
     output: &str,
     data_node: usize,
     result: &mut ParseResult,
   ) -> usize {
     match scale.kind {
-      ScaleKind::Linear(linear) => self.visit_linear(
+      ScaleSpecKind::Linear(linear) => self.visit_linear(
         linear,
         scale.name.to_string(),
         field,
@@ -284,7 +285,7 @@ impl Visitor {
         data_node,
         result,
       ),
-      ScaleKind::Log(log) => self.visit_log(
+      ScaleSpecKind::Log(log) => self.visit_log(
         log,
         scale.name.to_string(),
         field,
@@ -292,7 +293,7 @@ impl Visitor {
         data_node,
         result,
       ),
-      ScaleKind::Band(band) => self.visit_band(
+      ScaleSpecKind::Band(band) => self.visit_band(
         band,
         scale.name.to_string(),
         field,
@@ -364,7 +365,7 @@ impl Visitor {
     data_node: usize,
     result: &mut ParseResult,
   ) -> usize {
-    let domain_operator = Operator::domain_discrete(band.domain.clone(), true);
+    let domain_operator = Operator::domain_interval(band.domain.clone());
     let domain_node = result.graph.add_node(domain_operator);
 
     result.graph.add_edge(data_node, domain_node);
@@ -391,10 +392,11 @@ impl Visitor {
       return;
     };
 
-    let Range::Literal(min, max) = scale.kind.range();
+    let scale = Scale::from_spec(scale);
+
     let operator = Operator::axis(
       axis,
-      (*min, *max),
+      scale,
       SceneWindow::new(self.dimensions.width, self.dimensions.height),
     );
 
@@ -411,6 +413,7 @@ mod tests {
   use crate::graph::node::{Node, Operator};
   use crate::graph::Edge;
   use crate::parser::{DataNode, ParseResult, ParsedNodeCollection};
+  use crate::scale::Scale;
   use crate::spec::axis::{Axis, AxisOrientation};
   use crate::spec::scale::band::BandScale;
   use crate::spec::scale::ScaleKind;
@@ -422,7 +425,7 @@ mod tests {
   use crate::{
     data::DataValue,
     spec::data::DataEntry,
-    spec::scale::{domain::Domain, linear::LinearScale, range::Range, Scale},
+    spec::scale::{domain::Domain, linear::LinearScale, range::Range, Scale as ScaleSpec},
     spec::shape::{line::LineShape, DataSource, Shape},
     spec::transform::{filter::FilterPipe, pipe::Pipe},
     Specification,
@@ -447,14 +450,14 @@ mod tests {
         ],
       )],
       vec![
-        Scale::new(
+        ScaleSpec::new(
           "horizontal",
           ScaleKind::Linear(LinearScale {
             domain: Domain::Literal(vec![0.0, 100.0]),
             range: Range::Literal(0.0, 20.0),
           }),
         ),
-        Scale::new(
+        ScaleSpec::new(
           "vertical",
           ScaleKind::Linear(LinearScale {
             domain: Domain::Literal(vec![0.0, 100.0]),
@@ -508,12 +511,12 @@ mod tests {
         )),
         Node::init(Operator::axis(
           Axis::new("horizontal", AxisOrientation::Bottom),
-          (0.0, 20.0),
+          Scale::linear((0.0, 20.0)),
           SceneWindow::new(500, 200)
         )),
         Node::init(Operator::axis(
           Axis::new("vertical", AxisOrientation::Left),
-          (0.0, 10.0),
+          Scale::linear((0.0, 10.0)),
           SceneWindow::new(500, 200)
         ))
       ]
@@ -618,7 +621,7 @@ mod tests {
         ],
       )],
       vec![
-        Scale::new(
+        ScaleSpec::new(
           "horizontal",
           ScaleKind::Band(BandScale {
             domain: Domain::Literal(vec![0.0, 1.0, 2.0, 3.0, 4.0, 5.0]),
@@ -626,7 +629,7 @@ mod tests {
             padding: 0.0,
           }),
         ),
-        Scale::new(
+        ScaleSpec::new(
           "vertical",
           ScaleKind::Linear(LinearScale {
             domain: Domain::Literal(vec![0.0, 100.0]),
@@ -665,10 +668,9 @@ mod tests {
         ])),
         Node::init(Operator::map(MapPipe::new("a - 2", "b").unwrap())),
         Node::init(Operator::filter(FilterPipe::new("b > 2").unwrap())),
-        Node::init(Operator::domain_discrete(
-          Domain::Literal(vec![0.0, 1.0, 2.0, 3.0, 4.0, 5.0]),
-          true
-        )),
+        Node::init(Operator::domain_interval(Domain::Literal(vec![
+          0.0, 1.0, 2.0, 3.0, 4.0, 5.0
+        ]))),
         Node::init(Operator::band((0.0, 20.0), "a", "x")),
         Node::init(Operator::domain_interval(Domain::Literal(vec![0.0, 100.0]))),
         Node::init(Operator::linear((0.0, 10.0), "b", "y")),
@@ -684,12 +686,12 @@ mod tests {
         )),
         Node::init(Operator::axis(
           Axis::new("horizontal", AxisOrientation::Bottom),
-          (0.0, 20.0),
+          Scale::band((0.0, 20.0)),
           SceneWindow::new(500, 200)
         )),
         Node::init(Operator::axis(
           Axis::new("vertical", AxisOrientation::Left),
-          (0.0, 10.0),
+          Scale::linear((0.0, 10.0)),
           SceneWindow::new(500, 200)
         ))
       ]
