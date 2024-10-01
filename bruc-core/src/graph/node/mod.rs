@@ -17,7 +17,7 @@ use crate::{
 
 use self::axis::AxisOperator;
 use self::data::ConstantOperator;
-use self::scale::{BandOperator, DomainDiscreteOperator, DomainIntervalOperator};
+use self::scale::{BandOperator, DomainIntervalOperator};
 use self::shape::BarOperator;
 use self::transform::{FilterOperator, MapOperator};
 use self::{data::DataOperator, transform::GroupOperator};
@@ -67,7 +67,6 @@ pub enum Operator {
   Pie(PieOperator),
   Axis(AxisOperator),
   DomainInterval(DomainIntervalOperator),
-  DomainDiscrete(DomainDiscreteOperator),
   Linear(LinearOperator),
   Log(LogOperator),
   Band(BandOperator),
@@ -153,10 +152,6 @@ impl Operator {
     Operator::DomainInterval(DomainIntervalOperator::new(domain))
   }
 
-  pub(crate) fn domain_discrete(domain: Domain) -> Self {
-    Operator::DomainDiscrete(DomainDiscreteOperator::new(domain))
-  }
-
   /// Evaluate the operator for a certain `Pulse`.
   pub async fn evaluate(&self, pulse: Pulse) -> Pulse {
     match self {
@@ -170,7 +165,6 @@ impl Operator {
       Operator::Pie(pie) => pie.evaluate(pulse).await,
       Operator::Axis(axis) => axis.evaluate(pulse).await,
       Operator::DomainInterval(domain_interval) => domain_interval.evaluate(pulse).await,
-      Operator::DomainDiscrete(domain_discrete) => domain_discrete.evaluate(pulse).await,
       Operator::Linear(linear) => linear.evaluate(pulse).await,
       Operator::Log(log) => log.evaluate(pulse).await,
       Operator::Band(band) => band.evaluate(pulse).await,

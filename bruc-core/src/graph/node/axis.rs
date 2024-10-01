@@ -4,7 +4,6 @@ use crate::{
   scene::{SceneAxisRule, SceneAxisTick, SceneItem},
   spec::axis::{Axis, AxisOrientation},
 };
-use bruc_expression::data::DataItem;
 
 use super::shape::SceneWindow;
 
@@ -25,45 +24,15 @@ impl AxisOperator {
   }
 
   fn apply_interval(&self, domain: (f32, f32)) -> SinglePulse {
-    let scene_item = self.linear_axis(domain);
+    let scene_item = self.create_axis(domain);
     SinglePulse::Shapes(vec![scene_item])
   }
 
-  fn apply_discrete(&self, domain: (f32, f32), values: Vec<DataItem>) -> SinglePulse {
-    let mut points = Vec::new();
-
-    for value in values {
-      if let Some(num) = value.get_number().copied() {
-        points.push(num);
-      }
-    }
-
-    if points.is_empty() {
-      return SinglePulse::Shapes(Vec::new());
-    }
-
-    SinglePulse::Shapes(vec![self.discrete_axis(points, domain)])
-  }
-
-  fn linear_axis(&self, domain: (f32, f32)) -> SceneItem {
+  fn create_axis(&self, domain: (f32, f32)) -> SceneItem {
     let ticks = self.scale.ticks(domain);
     SceneItem::axis(
       self.create_ruler(),
       self.create_ticks(ticks),
-      self.axis.orientation,
-    )
-  }
-
-  fn discrete_axis(&self, points: Vec<f32>, domain: (f32, f32)) -> SceneItem {
-    let range = self.scale.range();
-
-    let step = (range.1 - range.0) / (points.len() as f32);
-    let padding = step / 2.0;
-    let scale = Scale::linear((range.0 + padding, range.1 - padding));
-
-    SceneItem::axis(
-      self.create_ruler(),
-      self.create_ticks(Vec::new()),
       self.axis.orientation,
     )
   }
@@ -107,7 +76,6 @@ impl Evaluation for AxisOperator {
 
         let pulse = match domain {
           ResolvedDomain::Interval(_, _) => self.apply_interval(interval),
-          ResolvedDomain::Discrete { values } => self.apply_discrete(interval, values),
         };
 
         Pulse::Single(pulse)

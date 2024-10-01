@@ -68,51 +68,6 @@ impl Evaluation for DomainIntervalOperator {
   }
 }
 
-#[derive(Debug, PartialEq)]
-pub struct DomainDiscreteOperator {
-  domain: Domain,
-}
-
-impl DomainDiscreteOperator {
-  pub(crate) fn new(domain: Domain) -> Self {
-    DomainDiscreteOperator { domain }
-  }
-
-  fn resolve_domain(&self, values: &[DataValue]) -> Vec<DataItem> {
-    match &self.domain {
-      Domain::Literal(values) => values
-        .iter()
-        .map(|value| DataItem::Number(*value))
-        .collect(),
-      Domain::DataField { field, .. } => values
-        .iter()
-        .flat_map(|value| value.get(field))
-        .cloned()
-        .collect(),
-    }
-  }
-
-  fn apply(&self, pulse: &SinglePulse) -> Vec<DataItem> {
-    let SinglePulse::Data(values) = pulse else {
-      return Vec::new();
-    };
-
-    self.resolve_domain(values)
-  }
-}
-
-impl Evaluation for DomainDiscreteOperator {
-  async fn evaluate_single(&self, single: SinglePulse) -> Pulse {
-    Pulse::domain(ResolvedDomain::Discrete {
-      values: self.apply(&single),
-    })
-  }
-
-  async fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
-    self.evaluate_single(multi.aggregate()).await
-  }
-}
-
 /// `LinearOperator` represents an operator of the graph, which linearly scales data values from a
 /// certain `field` reference, and creates a new field in the defined `output` field.
 #[derive(Debug, PartialEq)]
@@ -530,22 +485,6 @@ mod tests {
         DataValue::from_pairs(vec![("x", 0.8125.into()), ("x_bandwidth", 0.125.into())]),
       ])
     )
-  }
-
-  #[tokio::test]
-  async fn band_handles_empty_domain() {
-    let data = SinglePulse::Data(vec![
-      DataValue::from_pairs(vec![("a", 0.0.into()), ("b", 5.0.into())]),
-      DataValue::from_pairs(vec![("a", 1.0.into()), ("b", 2.0.into())]),
-    ]);
-    let domain = SinglePulse::Domain(ResolvedDomain::Discrete { values: Vec::new() });
-
-    let operator = BandOperator::new((0.0, 1.0), "a", "x");
-    let pulse = operator
-      .evaluate(Pulse::multi(vec![data.clone(), domain]))
-      .await;
-
-    assert_eq!(pulse, Pulse::Single(data))
   }
 
   #[tokio::test]
