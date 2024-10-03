@@ -178,21 +178,21 @@ while (true) {
 
 function randomData() {
   const values = [];
-  for (let i = 1; i <= randomValue(200); i++) {
+  for (let i = 1; i <= randomValue(0, 200); i++) {
     values.push({
       x: i,
-      y: randomValue(50),
+      y: randomValue(0, 50),
       k: i,
-      q: randomValue(50),
+      q: randomValue(0, 50),
       a: i,
-      b: randomValue(50),
+      b: randomValue(0, 50),
     });
   }
   return values;
 }
 
-function randomValue(max) {
-  return Math.floor(Math.random() * max);
+function randomValue(min, max) {
+  return Math.random() * (max - min) + min;
 }
 
 function delay(time) {
