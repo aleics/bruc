@@ -1,6 +1,6 @@
 import { Bruc } from "bruc";
 
-const pie_spec = `{
+const pieSpec = `{
   "dimensions": {
     "width": 300,
     "height": 300
@@ -28,7 +28,7 @@ const pie_spec = `{
   }
 }`;
 
-const donut_spec = `{
+const donutSpec = `{
   "dimensions": {
     "width": 300,
     "height": 300
@@ -57,7 +57,7 @@ const donut_spec = `{
   }
 }`;
 
-const radial_spec = `{
+const radialSpec = `{
   "dimensions": {
     "width": 300,
     "height": 300
@@ -93,7 +93,7 @@ const radial_spec = `{
   }
 }`;
 
-const radial_donut_spec = `{
+const radialDonutSpec = `{
   "dimensions": {
     "width": 300,
     "height": 300
@@ -130,24 +130,24 @@ const radial_donut_spec = `{
   }
 }`;
 
-const pie = Bruc.build(pie_spec);
+const pie = Bruc.build(pieSpec);
 await pie.renderAsSvg("#pie");
 
-const donut = Bruc.build(donut_spec);
+const donut = Bruc.build(donutSpec);
 await donut.renderAsSvg("#donut");
 
-const radial = Bruc.build(radial_spec);
+const radial = Bruc.build(radialSpec);
 await radial.renderAsSvg("#radial");
 
-const radial_donut = Bruc.build(radial_donut_spec);
-await radial_donut.renderAsSvg("#radial-donut");
+const radialDonut = Bruc.build(radialDonutSpec);
+await radialDonut.renderAsSvg("#radial-donut");
 
 while (true) {
   const data = randomData();
   await pie.setData("primary", data);
   await donut.setData("primary", data);
   await radial.setData("primary", data);
-  await radial_donut.setData("primary", data);
+  await radialDonut.setData("primary", data);
 
   await delay(1000);
 }

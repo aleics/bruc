@@ -1,6 +1,6 @@
 import { Bruc } from "bruc";
 
-const spec_horizontal = `{
+const specHorizontal = `{
   "dimensions": {
     "width": 1500,
     "height": 300
@@ -58,7 +58,7 @@ const spec_horizontal = `{
   }
 }`;
 
-const spec_vertical = `{
+const specVertical = `{
   "dimensions": {
     "width": 800,
     "height": 800
@@ -116,17 +116,17 @@ const spec_vertical = `{
   }
 }`;
 
-const bruc_horizontal = Bruc.build(spec_horizontal);
-await bruc_horizontal.renderAsSvg("#first");
+const horizontal = Bruc.build(specHorizontal);
+await horizontal.renderAsSvg("#first");
 
-const bruc_vertical = Bruc.build(spec_vertical);
-await bruc_vertical.renderAsSvg("#second");
+const vertical = Bruc.build(specVertical);
+await vertical.renderAsSvg("#second");
 
-while(true) {
+while (true) {
   const data = randomData();
 
-  await bruc_horizontal.setData("primary", data);
-  await bruc_vertical.setData("primary", data);
+  await horizontal.setData("primary", data);
+  await vertical.setData("primary", data);
 
   await delay(1000);
 }
@@ -145,6 +145,5 @@ function randomValue(max) {
 }
 
 function delay(time) {
-  return new Promise(resolve => setTimeout(resolve, time));
+  return new Promise((resolve) => setTimeout(resolve, time));
 }
-
