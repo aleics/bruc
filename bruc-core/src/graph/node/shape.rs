@@ -410,7 +410,7 @@ mod tests {
     let operator = PieOperator::new(
       PieShape::new(
         PiePropertiesBuilder::new(DataSource::field("y", None))
-          .with_pad_angle(0.17453292519943295) // 10 degrees
+          .with_pad_angle(0.174_532_92) // 10 degrees
           .build(),
       ),
       "y",
