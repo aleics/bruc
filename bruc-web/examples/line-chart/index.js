@@ -1,8 +1,8 @@
 import { Bruc } from "bruc";
 
-const spec = `{
+const linearSpec = `{
   "dimensions": {
-    "width": 1500,
+    "width": 600,
     "height": 300
   },
   "data": [
@@ -16,7 +16,7 @@ const spec = `{
       "type": "linear",
       "name": "horizontal",
       "domain": { "data": "primary", "field": "x" },
-      "range": [0, 1500]
+      "range": [0, 600]
     },
     {
       "type": "linear",
@@ -64,27 +64,129 @@ const spec = `{
           "stroke": "blue",
           "strokeWidth": 1.5
         }
+      },
+      {
+        "from": "primary",
+        "type": "line",
+        "properties": {
+          "x": { "field": "a", "scale": "horizontal" },
+          "y": { "field": "b", "scale": "vertical" },
+          "stroke": "green",
+          "strokeWidth": 1.5
+        }
       }
     ]
   }
 }`;
 
-const bruc = Bruc.build(spec);
+const logSpec = `{
+  "dimensions": {
+    "width": 600,
+    "height": 300
+  },
+  "data": [
+    {
+      "name": "primary",
+      "values": []
+    }
+  ],
+  "scales": [
+    {
+      "type": "log",
+      "name": "horizontal",
+      "domain": { "data": "primary", "field": "x" },
+      "range": [0, 600]
+    },
+    {
+      "type": "linear",
+      "name": "vertical",
+      "domain": { "data": "primary", "field": "y" },
+      "range": [0, 300]
+    }
+  ],
+  "visual": {
+    "axes": [
+      {
+        "orientation": "top",
+        "scale": "horizontal"
+      },
+      {
+        "orientation": "bottom",
+        "scale": "horizontal"
+      },
+      {
+        "orientation": "left",
+        "scale": "vertical"
+      },
+      {
+        "orientation": "right",
+        "scale": "vertical"
+      }
+    ],
+    "shapes": [
+      {
+        "from": "primary",
+        "type": "line",
+        "properties": {
+          "x": { "field": "x", "scale": "horizontal" },
+          "y": { "field": "y", "scale": "vertical" },
+          "stroke": "red",
+          "strokeWidth": 2
+        }
+      },
+      {
+        "from": "primary",
+        "type": "line",
+        "properties": {
+          "x": { "field": "k", "scale": "horizontal" },
+          "y": { "field": "q", "scale": "vertical" },
+          "stroke": "blue",
+          "strokeWidth": 1.5
+        }
+      },
+      {
+        "from": "primary",
+        "type": "line",
+        "properties": {
+          "x": { "field": "a", "scale": "horizontal" },
+          "y": { "field": "b", "scale": "vertical" },
+          "stroke": "green",
+          "strokeWidth": 1.5
+        }
+      }
+    ]
+  }
+}`;
 
-await bruc.renderAsSvg("#first");
-await bruc.renderAsSvg("#second");
+const linear = Bruc.build(linearSpec);
 
-while(true) {
+await linear.renderAsSvg("#first");
+await linear.renderAsSvg("#second");
+
+const log = Bruc.build(logSpec);
+
+await log.renderAsSvg("#first-log");
+await log.renderAsSvg("#second-log");
+
+while (true) {
   const data = randomData();
-  await bruc.setData("primary", data);
+  await linear.setData("primary", data);
+  await log.setData("primary", data);
 
   await delay(1000);
 }
 
 function randomData() {
   const values = [];
-  for (let i = 0; i <= randomValue(200); i++) {
-    values.push({ x: i, y: randomValue(50), k: i, q: randomValue(50) });
+  for (let i = 1; i <= randomValue(200); i++) {
+    values.push({
+      x: i,
+      y: randomValue(50),
+      k: i,
+      q: randomValue(50),
+      a: i,
+      b: randomValue(50),
+    });
   }
   return values;
 }
@@ -94,5 +196,5 @@ function randomValue(max) {
 }
 
 function delay(time) {
-  return new Promise(resolve => setTimeout(resolve, time));
+  return new Promise((resolve) => setTimeout(resolve, time));
 }

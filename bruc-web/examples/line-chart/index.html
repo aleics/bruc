@@ -1,9 +1,31 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-  <body>
-    <div id="first"></div>
-    <div id="second"></div>
-    <noscript>This page contains webassembly and javascript content, please enable javascript in your browser.</noscript>
-    <script src="./index.js"></script>
-  </body>
+    <head>
+        <style>
+            .wrapper {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                row-gap: 20px;
+            }
+
+            .wrapper > div {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="wrapper">
+            <div id="first"></div>
+            <div id="second"></div>
+            <div id="first-log"></div>
+            <div id="second-log"></div>
+        </div>
+        <noscript
+            >This page contains webassembly and javascript content, please
+            enable javascript in your browser.</noscript
+        >
+        <script src="./index.js"></script>
+    </body>
 </html>
