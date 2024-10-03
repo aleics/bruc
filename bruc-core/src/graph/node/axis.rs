@@ -1,6 +1,6 @@
 use crate::{
   graph::{pulse::ResolvedDomain, Evaluation, MultiPulse, Pulse, SinglePulse},
-  scale::Scale,
+  scale::{Scale, ScaleTick},
   scene::{SceneAxisRule, SceneAxisTick, SceneItem},
   spec::axis::{Axis, AxisOrientation},
 };
@@ -37,12 +37,12 @@ impl AxisOperator {
     )
   }
 
-  fn create_ticks(&self, ticks: Vec<(f32, f32)>) -> Vec<SceneAxisTick> {
+  fn create_ticks(&self, ticks: Vec<ScaleTick>) -> Vec<SceneAxisTick> {
     ticks
       .into_iter()
-      .map(|(position, value)| SceneAxisTick {
-        position: self.orientation_position(position),
-        label: format!("{:.2}", value),
+      .map(|tick| SceneAxisTick {
+        position: self.orientation_position(tick.position),
+        label: tick.label,
       })
       .collect()
   }
@@ -129,47 +129,47 @@ mod tests {
         vec![
           SceneAxisTick {
             position: (0.0, 100.0),
-            label: "0.00".to_string()
+            label: Some("0.00".to_string())
           },
           SceneAxisTick {
             position: (20.0, 100.0),
-            label: "10.00".to_string()
+            label: Some("10.00".to_string())
           },
           SceneAxisTick {
             position: (40.0, 100.0),
-            label: "20.00".to_string()
+            label: Some("20.00".to_string())
           },
           SceneAxisTick {
             position: (60.000004, 100.0),
-            label: "30.00".to_string()
+            label: Some("30.00".to_string())
           },
           SceneAxisTick {
             position: (80.0, 100.0),
-            label: "40.00".to_string()
+            label: Some("40.00".to_string())
           },
           SceneAxisTick {
             position: (100.0, 100.0),
-            label: "50.00".to_string()
+            label: Some("50.00".to_string())
           },
           SceneAxisTick {
             position: (120.00001, 100.0),
-            label: "60.00".to_string()
+            label: Some("60.00".to_string())
           },
           SceneAxisTick {
             position: (140.0, 100.0),
-            label: "70.00".to_string()
+            label: Some("70.00".to_string())
           },
           SceneAxisTick {
             position: (160.0, 100.0),
-            label: "80.00".to_string()
+            label: Some("80.00".to_string())
           },
           SceneAxisTick {
             position: (180.0, 100.0),
-            label: "90.00".to_string()
+            label: Some("90.00".to_string())
           },
           SceneAxisTick {
             position: (200.0, 100.0),
-            label: "100.00".to_string()
+            label: Some("100.00".to_string())
           }
         ],
         AxisOrientation::Top
@@ -199,47 +199,47 @@ mod tests {
         vec![
           SceneAxisTick {
             position: (0.0, 0.0),
-            label: "0.00".to_string()
+            label: Some("0.00".to_string())
           },
           SceneAxisTick {
             position: (20.0, 0.0),
-            label: "10.00".to_string()
+            label: Some("10.00".to_string())
           },
           SceneAxisTick {
             position: (40.0, 0.0),
-            label: "20.00".to_string()
+            label: Some("20.00".to_string())
           },
           SceneAxisTick {
             position: (60.000004, 0.0),
-            label: "30.00".to_string()
+            label: Some("30.00".to_string())
           },
           SceneAxisTick {
             position: (80.0, 0.0),
-            label: "40.00".to_string()
+            label: Some("40.00".to_string())
           },
           SceneAxisTick {
             position: (100.0, 0.0),
-            label: "50.00".to_string()
+            label: Some("50.00".to_string())
           },
           SceneAxisTick {
             position: (120.00001, 0.0),
-            label: "60.00".to_string()
+            label: Some("60.00".to_string())
           },
           SceneAxisTick {
             position: (140.0, 0.0),
-            label: "70.00".to_string()
+            label: Some("70.00".to_string())
           },
           SceneAxisTick {
             position: (160.0, 0.0),
-            label: "80.00".to_string()
+            label: Some("80.00".to_string())
           },
           SceneAxisTick {
             position: (180.0, 0.0),
-            label: "90.00".to_string()
+            label: Some("90.00".to_string())
           },
           SceneAxisTick {
             position: (200.0, 0.0),
-            label: "100.00".to_string()
+            label: Some("100.00".to_string())
           }
         ],
         AxisOrientation::Bottom
@@ -269,47 +269,47 @@ mod tests {
         vec![
           SceneAxisTick {
             position: (0.0, 0.0),
-            label: "0.00".to_string()
+            label: Some("0.00".to_string())
           },
           SceneAxisTick {
             position: (0.0, 20.0),
-            label: "10.00".to_string()
+            label: Some("10.00".to_string())
           },
           SceneAxisTick {
             position: (0.0, 40.0),
-            label: "20.00".to_string()
+            label: Some("20.00".to_string())
           },
           SceneAxisTick {
             position: (0.0, 60.000004),
-            label: "30.00".to_string()
+            label: Some("30.00".to_string())
           },
           SceneAxisTick {
             position: (0.0, 80.0),
-            label: "40.00".to_string()
+            label: Some("40.00".to_string())
           },
           SceneAxisTick {
             position: (0.0, 100.0),
-            label: "50.00".to_string()
+            label: Some("50.00".to_string())
           },
           SceneAxisTick {
             position: (0.0, 120.00001),
-            label: "60.00".to_string()
+            label: Some("60.00".to_string())
           },
           SceneAxisTick {
             position: (0.0, 140.0),
-            label: "70.00".to_string()
+            label: Some("70.00".to_string())
           },
           SceneAxisTick {
             position: (0.0, 160.0),
-            label: "80.00".to_string()
+            label: Some("80.00".to_string())
           },
           SceneAxisTick {
             position: (0.0, 180.0),
-            label: "90.00".to_string()
+            label: Some("90.00".to_string())
           },
           SceneAxisTick {
             position: (0.0, 200.0),
-            label: "100.00".to_string()
+            label: Some("100.00".to_string())
           }
         ],
         AxisOrientation::Left
@@ -339,47 +339,47 @@ mod tests {
         vec![
           SceneAxisTick {
             position: (200.0, 0.0),
-            label: "0.00".to_string()
+            label: Some("0.00".to_string())
           },
           SceneAxisTick {
             position: (200.0, 20.0),
-            label: "10.00".to_string()
+            label: Some("10.00".to_string())
           },
           SceneAxisTick {
             position: (200.0, 40.0),
-            label: "20.00".to_string()
+            label: Some("20.00".to_string())
           },
           SceneAxisTick {
             position: (200.0, 60.000004),
-            label: "30.00".to_string()
+            label: Some("30.00".to_string())
           },
           SceneAxisTick {
             position: (200.0, 80.0),
-            label: "40.00".to_string()
+            label: Some("40.00".to_string())
           },
           SceneAxisTick {
             position: (200.0, 100.0),
-            label: "50.00".to_string()
+            label: Some("50.00".to_string())
           },
           SceneAxisTick {
             position: (200.0, 120.00001),
-            label: "60.00".to_string()
+            label: Some("60.00".to_string())
           },
           SceneAxisTick {
             position: (200.0, 140.0),
-            label: "70.00".to_string()
+            label: Some("70.00".to_string())
           },
           SceneAxisTick {
             position: (200.0, 160.0),
-            label: "80.00".to_string()
+            label: Some("80.00".to_string())
           },
           SceneAxisTick {
             position: (200.0, 180.0),
-            label: "90.00".to_string()
+            label: Some("90.00".to_string())
           },
           SceneAxisTick {
             position: (200.0, 200.0),
-            label: "100.00".to_string()
+            label: Some("100.00".to_string())
           }
         ],
         AxisOrientation::Right
@@ -409,47 +409,47 @@ mod tests {
         vec![
           SceneAxisTick {
             position: (200.0, 100.0),
-            label: "20.00".to_string()
+            label: Some("20.00".to_string())
           },
           SceneAxisTick {
             position: (200.0, 110.0),
-            label: "28.00".to_string()
+            label: Some("28.00".to_string())
           },
           SceneAxisTick {
             position: (200.0, 120.0),
-            label: "36.00".to_string()
+            label: Some("36.00".to_string())
           },
           SceneAxisTick {
             position: (200.0, 130.0),
-            label: "44.00".to_string()
+            label: Some("44.00".to_string())
           },
           SceneAxisTick {
             position: (200.0, 140.0),
-            label: "52.00".to_string()
+            label: Some("52.00".to_string())
           },
           SceneAxisTick {
             position: (200.0, 150.0),
-            label: "60.00".to_string()
+            label: Some("60.00".to_string())
           },
           SceneAxisTick {
             position: (200.0, 160.0),
-            label: "68.00".to_string()
+            label: Some("68.00".to_string())
           },
           SceneAxisTick {
             position: (200.0, 170.0),
-            label: "76.00".to_string()
+            label: Some("76.00".to_string())
           },
           SceneAxisTick {
             position: (200.0, 180.0),
-            label: "84.00".to_string()
+            label: Some("84.00".to_string())
           },
           SceneAxisTick {
             position: (200.0, 190.0),
-            label: "92.00".to_string()
+            label: Some("92.00".to_string())
           },
           SceneAxisTick {
             position: (200.0, 200.0),
-            label: "100.00".to_string()
+            label: Some("100.00".to_string())
           }
         ],
         AxisOrientation::Right

@@ -307,12 +307,16 @@ fn render_axis_ticks(
       "<line x1=\"{x1}\" x2=\"{x2}\" y1=\"{y1}\" y2=\"{y2}\" stroke-width=\"1\" opacity=\"1\" stroke=\"{SVG_AXIS_COLOR}\" stroke-linecap=\"square\" />",
     );
 
-    let tick_text = format!(
-      "<text transform=\"translate({x2}, {y2})\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"{label_x}em\" dy=\"{label_y}em\">{label}</tspan></text>",
-      label = tick.label,
-      label_x = tick_text_margin.0 * tick.label.len() as f32,
-      label_y = tick_text_margin.1
-    );
+    let tick_text = if let Some(label) = tick.label.as_ref() {
+      format!(
+          "<text transform=\"translate({x2}, {y2})\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"{label_x}em\" dy=\"{label_y}em\">{label}</tspan></text>",
+          label = label,
+          label_x = tick_text_margin.0 * label.len() as f32,
+          label_y = tick_text_margin.1
+        )
+    } else {
+        String::new()
+    };
 
     acc.push_str(&format!("<g>{tick_line}{tick_text}</g>"));
     acc
@@ -392,15 +396,15 @@ mod tests {
     let ticks = vec![
       SceneAxisTick {
         position: (0.0, 0.0),
-        label: "0.00".to_string(),
+        label: Some("0.00".to_string()),
       },
       SceneAxisTick {
         position: (20.0, 0.0),
-        label: "10.00".to_string(),
+        label: Some("10.00".to_string()),
       },
       SceneAxisTick {
         position: (40.0, 0.0),
-        label: "20.00".to_string(),
+        label: Some("20.00".to_string()),
       },
     ];
 
@@ -429,15 +433,15 @@ mod tests {
     let ticks = vec![
       SceneAxisTick {
         position: (0.0, 0.0),
-        label: "0.00".to_string(),
+        label: Some("0.00".to_string()),
       },
       SceneAxisTick {
         position: (20.0, 0.0),
-        label: "10.00".to_string(),
+        label: Some("10.00".to_string()),
       },
       SceneAxisTick {
         position: (40.0, 0.0),
-        label: "20.00".to_string(),
+        label: Some("20.00".to_string()),
       },
     ];
 
@@ -466,15 +470,15 @@ mod tests {
     let ticks = vec![
       SceneAxisTick {
         position: (0.0, 0.0),
-        label: "0.00".to_string(),
+        label: Some("0.00".to_string()),
       },
       SceneAxisTick {
         position: (20.0, 0.0),
-        label: "10.00".to_string(),
+        label: Some("10.00".to_string()),
       },
       SceneAxisTick {
         position: (40.0, 0.0),
-        label: "20.00".to_string(),
+        label: Some("20.00".to_string()),
       },
     ];
 
@@ -503,15 +507,15 @@ mod tests {
     let ticks = vec![
       SceneAxisTick {
         position: (0.0, 0.0),
-        label: "0.00".to_string(),
+        label: Some("0.00".to_string()),
       },
       SceneAxisTick {
         position: (20.0, 0.0),
-        label: "10.00".to_string(),
+        label: Some("10.00".to_string()),
       },
       SceneAxisTick {
         position: (40.0, 0.0),
-        label: "20.00".to_string(),
+        label: Some("20.00".to_string()),
       },
     ];
 

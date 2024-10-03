@@ -183,5 +183,5 @@ pub struct SceneAxisRule {
 #[derive(Debug, Clone, PartialEq)]
 pub struct SceneAxisTick {
   pub(crate) position: (f32, f32),
-  pub(crate) label: String,
+  pub(crate) label: Option<String>,
 }
