@@ -14,17 +14,17 @@ pub mod vars;
 pub mod serde;
 
 pub struct PredicateParser<'a> {
-  parser: Parser<'a>,
+    parser: Parser<'a>,
 }
 
 impl<'a> PredicateParser<'a> {
-  pub fn new(text: &'a str) -> PredicateParser<'a> {
-    PredicateParser {
-      parser: Parser::new(text),
+    pub fn new(text: &'a str) -> PredicateParser<'a> {
+        PredicateParser {
+            parser: Parser::new(text),
+        }
     }
-  }
 
-  pub fn parse(&mut self) -> Result<Expression> {
-    self.parser.parse()
-  }
+    pub fn parse(&mut self) -> Result<Expression> {
+        self.parser.parse()
+    }
 }

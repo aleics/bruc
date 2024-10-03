@@ -9,31 +9,31 @@ use crate::spec::transform::map::MapPipe;
 #[cfg_attr(feature = "serde", serde(tag = "type"))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub enum Pipe {
-  Filter(FilterPipe),
-  Map(MapPipe),
-  Group(GroupPipe),
+    Filter(FilterPipe),
+    Map(MapPipe),
+    Group(GroupPipe),
 }
 
 pub trait Predicate {
-  type Value;
+    type Value;
 
-  fn interpret(&self, vars: &DataValue) -> Result<Self::Value, Error>;
+    fn interpret(&self, vars: &DataValue) -> Result<Self::Value, Error>;
 }
 
 #[cfg(feature = "serde")]
 #[cfg(test)]
 mod serde_tests {
-  use crate::spec::transform::pipe::Pipe;
+    use crate::spec::transform::pipe::Pipe;
 
-  #[test]
-  fn deserializes_pipes() {
-    let pipes_json = r#"[
+    #[test]
+    fn deserializes_pipes() {
+        let pipes_json = r#"[
       { "type": "filter", "fn": "a > 2" },
       { "type": "map", "fn": "a + 2", "output": "b" },
       { "type": "group", "by": "b", "op": "count", "output": "count" }
     ]"#;
-    let pipes: Vec<Pipe> = serde_json::from_str(pipes_json).unwrap();
+        let pipes: Vec<Pipe> = serde_json::from_str(pipes_json).unwrap();
 
-    assert_eq!(pipes.len(), 3);
-  }
+        assert_eq!(pipes.len(), 3);
+    }
 }

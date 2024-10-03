@@ -4,8 +4,8 @@ use bruc_core::View;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
-  let specification = serde_json::from_str(
-    r#"{
+    let specification = serde_json::from_str(
+        r#"{
       "dimensions": {
         "width": 500,
         "height": 200
@@ -68,13 +68,13 @@ async fn main() {
         ]
       }
     }"#,
-  )
-  .unwrap();
+    )
+    .unwrap();
 
-  let mut view = View::build(specification);
-  let mut render_result = view.render(SvgRenderer).await;
+    let mut view = View::build(specification);
+    let mut render_result = view.render(SvgRenderer).await;
 
-  let svg = render_result.next().await.unwrap();
+    let svg = render_result.next().await.unwrap();
 
-  println!("{}", svg);
+    println!("{}", svg);
 }
