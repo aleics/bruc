@@ -233,7 +233,7 @@ impl ItemRenderer for SceneAxis {
 
 fn render_top_axis(axis: &SceneAxis, dimensions: &SceneDimensions) -> SvgRenderResult {
   let tick_size = (0.0, -SVG_TICK_SIZE);
-  let tick_text_margin = (0.0, -0.75);
+  let tick_text_margin = (0.0, -0.5);
 
   let ticks = render_axis_ticks(&axis.ticks, tick_size, tick_text_margin, dimensions);
   let ruler = render_axis_ruler(axis, dimensions);
@@ -248,7 +248,7 @@ fn render_top_axis(axis: &SceneAxis, dimensions: &SceneDimensions) -> SvgRenderR
 
 fn render_bottom_axis(axis: &SceneAxis, dimensions: &SceneDimensions) -> SvgRenderResult {
   let tick_size = (0.0, SVG_TICK_SIZE);
-  let tick_text_margin = (0.0, 0.75);
+  let tick_text_margin = (0.0, 1.0);
 
   let ticks = render_axis_ticks(&axis.ticks, tick_size, tick_text_margin, dimensions);
   let ruler = render_axis_ruler(axis, dimensions);
@@ -263,7 +263,7 @@ fn render_bottom_axis(axis: &SceneAxis, dimensions: &SceneDimensions) -> SvgRend
 
 fn render_left_axis(axis: &SceneAxis, dimensions: &SceneDimensions) -> SvgRenderResult {
   let tick_size = (-SVG_TICK_SIZE, 0.0);
-  let tick_text_margin = (-0.3, 0.0);
+  let tick_text_margin = (-0.3, 0.3);
 
   let ticks = render_axis_ticks(&axis.ticks, tick_size, tick_text_margin, dimensions);
   let ruler = render_axis_ruler(axis, dimensions);
@@ -278,7 +278,7 @@ fn render_left_axis(axis: &SceneAxis, dimensions: &SceneDimensions) -> SvgRender
 
 fn render_right_axis(axis: &SceneAxis, dimensions: &SceneDimensions) -> SvgRenderResult {
   let tick_size = (SVG_TICK_SIZE, 0.0);
-  let tick_text_margin = (0.3, 0.0);
+  let tick_text_margin = (0.3, 0.3);
 
   let ticks = render_axis_ticks(&axis.ticks, tick_size, tick_text_margin, dimensions);
   let ruler = render_axis_ruler(axis, dimensions);
@@ -382,7 +382,7 @@ mod tests {
     let result = renderer.render(&scenegraph);
 
     assert_eq!(
-            result,
+      result,
       "<svg width=\"520\" height=\"220\"><g transform=\"translate(10, 10)\"><path d=\"M0 10 L1 20\" fill=\"transparent\" stroke=\"black\" stroke-width=\"1\" stroke-linecap=\"round\" /></g></svg>"
     )
   }
@@ -419,8 +419,8 @@ mod tests {
     let result = SvgRenderer.render(&scenegraph);
 
     assert_eq!(
-            result,
-      "<svg width=\"520\" height=\"230\"><g transform=\"translate(10, 20)\"><g><g><line x1=\"0\" x2=\"0\" y1=\"200\" y2=\"195\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(0, 195)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"0em\" dy=\"-0.75em\">0.00</tspan></text></g><g><line x1=\"20\" x2=\"20\" y1=\"200\" y2=\"195\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(20, 195)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"0em\" dy=\"-0.75em\">10.00</tspan></text></g><g><line x1=\"40\" x2=\"40\" y1=\"200\" y2=\"195\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(40, 195)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"0em\" dy=\"-0.75em\">20.00</tspan></text></g><line x1=\"0\" x2=\"40\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /></g></g></svg>"
+      result,
+      "<svg width=\"520\" height=\"230\"><g transform=\"translate(10, 20)\"><g><g><line x1=\"0\" x2=\"0\" y1=\"200\" y2=\"195\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(0, 195)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"0em\" dy=\"-0.5em\">0.00</tspan></text></g><g><line x1=\"20\" x2=\"20\" y1=\"200\" y2=\"195\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(20, 195)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"0em\" dy=\"-0.5em\">10.00</tspan></text></g><g><line x1=\"40\" x2=\"40\" y1=\"200\" y2=\"195\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(40, 195)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"0em\" dy=\"-0.5em\">20.00</tspan></text></g><line x1=\"0\" x2=\"40\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /></g></g></svg>"
     )
   }
 
@@ -456,8 +456,8 @@ mod tests {
     let result = SvgRenderer.render(&scenegraph);
 
     assert_eq!(
-            result,
-      "<svg width=\"520\" height=\"230\"><g transform=\"translate(10, 10)\"><g><g><line x1=\"0\" x2=\"0\" y1=\"200\" y2=\"205\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(0, 205)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"0em\" dy=\"0.75em\">0.00</tspan></text></g><g><line x1=\"20\" x2=\"20\" y1=\"200\" y2=\"205\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(20, 205)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"0em\" dy=\"0.75em\">10.00</tspan></text></g><g><line x1=\"40\" x2=\"40\" y1=\"200\" y2=\"205\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(40, 205)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"0em\" dy=\"0.75em\">20.00</tspan></text></g><line x1=\"0\" x2=\"40\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /></g></g></svg>"
+      result,
+      "<svg width=\"520\" height=\"230\"><g transform=\"translate(10, 10)\"><g><g><line x1=\"0\" x2=\"0\" y1=\"200\" y2=\"205\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(0, 205)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"0em\" dy=\"1em\">0.00</tspan></text></g><g><line x1=\"20\" x2=\"20\" y1=\"200\" y2=\"205\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(20, 205)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"0em\" dy=\"1em\">10.00</tspan></text></g><g><line x1=\"40\" x2=\"40\" y1=\"200\" y2=\"205\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(40, 205)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"0em\" dy=\"1em\">20.00</tspan></text></g><line x1=\"0\" x2=\"40\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /></g></g></svg>"
     )
   }
 
@@ -494,7 +494,7 @@ mod tests {
 
     assert_eq!(
       result,
-      "<svg width=\"545\" height=\"220\"><g transform=\"translate(35, 10)\"><g><g><line x1=\"0\" x2=\"-5\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(-5, 200)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"-1.2em\" dy=\"0em\">0.00</tspan></text></g><g><line x1=\"20\" x2=\"15\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(15, 200)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"-1.5em\" dy=\"0em\">10.00</tspan></text></g><g><line x1=\"40\" x2=\"35\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(35, 200)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"-1.5em\" dy=\"0em\">20.00</tspan></text></g><line x1=\"0\" x2=\"40\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /></g></g></svg>"
+      "<svg width=\"545\" height=\"220\"><g transform=\"translate(35, 10)\"><g><g><line x1=\"0\" x2=\"-5\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(-5, 200)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"-1.2em\" dy=\"0.3em\">0.00</tspan></text></g><g><line x1=\"20\" x2=\"15\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(15, 200)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"-1.5em\" dy=\"0.3em\">10.00</tspan></text></g><g><line x1=\"40\" x2=\"35\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(35, 200)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"-1.5em\" dy=\"0.3em\">20.00</tspan></text></g><line x1=\"0\" x2=\"40\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /></g></g></svg>"
     )
   }
 
@@ -530,8 +530,8 @@ mod tests {
     let result = SvgRenderer.render(&scenegraph);
 
     assert_eq!(
-            result,
-      "<svg width=\"545\" height=\"220\"><g transform=\"translate(10, 10)\"><g><g><line x1=\"0\" x2=\"5\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(5, 200)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"1.2em\" dy=\"0em\">0.00</tspan></text></g><g><line x1=\"20\" x2=\"25\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(25, 200)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"1.5em\" dy=\"0em\">10.00</tspan></text></g><g><line x1=\"40\" x2=\"45\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(45, 200)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"1.5em\" dy=\"0em\">20.00</tspan></text></g><line x1=\"0\" x2=\"40\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /></g></g></svg>"
+      result,
+      "<svg width=\"545\" height=\"220\"><g transform=\"translate(10, 10)\"><g><g><line x1=\"0\" x2=\"5\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(5, 200)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"1.2em\" dy=\"0.3em\">0.00</tspan></text></g><g><line x1=\"20\" x2=\"25\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(25, 200)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"1.5em\" dy=\"0.3em\">10.00</tspan></text></g><g><line x1=\"40\" x2=\"45\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(45, 200)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"1.5em\" dy=\"0.3em\">20.00</tspan></text></g><line x1=\"0\" x2=\"40\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /></g></g></svg>"
     )
   }
 
