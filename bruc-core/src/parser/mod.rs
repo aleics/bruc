@@ -128,6 +128,7 @@ impl Visitor {
             ShapeKind::Line(line) => self.visit_line_shape(line, data_node.out, result),
             ShapeKind::Bar(bar) => self.visit_bar_shape(bar, data_node.out, result),
             ShapeKind::Pie(pie) => self.visit_pie_shape(pie, data_node.out, result),
+            ShapeKind::Point(_) => todo!(),
         };
     }
 
