@@ -159,99 +159,160 @@ mod tests {
 
     fn bar_chart_spec() -> Specification {
         let spec = r#"
-      {
-        "dimensions": {
-          "width": 1500,
-          "height": 300
-        },
-        "data": [
-          {
-            "name": "primary",
-            "values": [
-              { "x":0, "y":33 },
-              { "x":1, "y":15 },
-              { "x":2, "y":21 },
-              { "x":3, "y":6 }
-            ]
-          }
-        ],
-        "scales": [
-          {
-            "type": "band",
-            "name": "horizontal",
-            "domain": { "data": "primary", "field": "x" },
-            "range": [0, 1500]
-          },
-          {
-            "type": "linear",
-            "name": "vertical",
-            "domain": { "data": "primary", "field": "y" },
-            "range": [0, 300]
-          }
-        ],
-        "visual": {
-          "axes": [
             {
-              "orientation": "bottom",
-              "scale": "horizontal"
-            },
-            {
-              "orientation": "left",
-              "scale": "vertical"
+                "dimensions": {
+                    "width": 1500,
+                    "height": 300
+                },
+                "data": [
+                    {
+                        "name": "primary",
+                        "values": [
+                            { "x": 0, "y": 33 },
+                            { "x": 1, "y": 15 },
+                            { "x": 2, "y": 21 },
+                            { "x": 3, "y": 6 }
+                        ]
+                    }
+                ],
+                "scales": [
+                    {
+                        "type": "band",
+                        "name": "horizontal",
+                        "domain": { "data": "primary", "field": "x" },
+                        "range": [0, 1500]
+                    },
+                    {
+                        "type": "linear",
+                        "name": "vertical",
+                        "domain": { "data": "primary", "field": "y" },
+                        "range": [0, 300]
+                    }
+                ],
+                "visual": {
+                    "axes": [
+                        {
+                            "orientation": "bottom",
+                            "scale": "horizontal"
+                        },
+                        {
+                            "orientation": "left",
+                            "scale": "vertical"
+                        }
+                    ],
+                    "shapes": [
+                        {
+                            "from": "primary",
+                            "type": "bar",
+                            "properties": {
+                                "x": { "field": "x", "scale": "horizontal" },
+                                "width": 150.0,
+                                "height": { "field": "y", "scale": "vertical" },
+                                "fill": "blue"
+                            }
+                        }
+                    ]
+                }
             }
-          ],
-          "shapes": [
-            {
-              "from": "primary",
-              "type": "bar",
-              "properties": {
-                "x": { "field": "x", "scale": "horizontal" },
-                "width": 150.0,
-                "height": { "field": "y", "scale": "vertical" },
-                "fill": "blue"
-              }
-            }
-          ]
-        }
-      }
-    "#;
+        "#;
 
         serde_json::from_str(spec).unwrap()
     }
 
     fn pie_chart_spec() -> Specification {
         let spec = r#"
-      {
-        "dimensions": {
-          "width": 1500,
-          "height": 300
-        },
-        "data": [
-          {
-            "name": "primary",
-            "values": [
-              { "x":0, "y":33 },
-              { "x":1, "y":15 },
-              { "x":2, "y":21 },
-              { "x":3, "y":6 }
-            ]
-          }
-        ],
-        "visual": {
-          "shapes": [
             {
-              "from": "primary",
-              "type": "pie",
-              "properties": {
-                "value": { "field": "y" },
-                "padAngle": 0.1,
-                "innerRadius": 50
-              }
+                "dimensions": {
+                    "width": 1500,
+                    "height": 300
+                },
+                "data": [
+                    {
+                        "name": "primary",
+                        "values": [
+                            { "x": 0, "y": 33 },
+                            { "x": 1, "y": 15 },
+                            { "x": 2, "y": 21 },
+                            { "x": 3, "y": 6 }
+                        ]
+                    }
+                ],
+                "visual": {
+                    "shapes": [
+                        {
+                            "from": "primary",
+                            "type": "pie",
+                            "properties": {
+                                "value": { "field": "y" },
+                                "padAngle": 0.1,
+                                "innerRadius": 50
+                            }
+                        }
+                    ]
+                }
             }
-          ]
-        }
-      }
-    "#;
+        "#;
+
+        serde_json::from_str(spec).unwrap()
+    }
+
+    fn scatter_plot() -> Specification {
+        let spec = r#"
+            {
+                "dimensions": {
+                    "width": 1500,
+                    "height": 300
+                },
+                "data": [
+                    {
+                        "name": "primary",
+                        "values": [
+                            { "x": 0, "y": 33, "color": "red" },
+                            { "x": 1, "y": 15, "color": "green" },
+                            { "x": 2, "y": 21, "color": "blue" },
+                            { "x": 3, "y": 6, "color": "orange" }
+                        ]
+                    }
+                ],
+                "scales": [
+                    {
+                        "type": "band",
+                        "name": "horizontal",
+                        "domain": { "data": "primary", "field": "x" },
+                        "range": [0, 1500]
+                    },
+                    {
+                        "type": "linear",
+                        "name": "vertical",
+                        "domain": { "data": "primary", "field": "y" },
+                        "range": [0, 300]
+                    }
+                ],
+                "visual": {
+                    "axes": [
+                        {
+                            "orientation": "bottom",
+                            "scale": "horizontal"
+                        },
+                        {
+                            "orientation": "left",
+                            "scale": "vertical"
+                        }
+                    ],
+                    "shapes": [
+                        {
+                            "from": "primary",
+                            "type": "point",
+                            "properties": {
+                                "x": { "field": "x", "scale": "horizontal" },
+                                "y": { "field": "y", "scale": "vertical" },
+                                "color": { "field": "color" }
+                            }
+                        }
+                    ]
+                }
+            }
+        "#;
 
         serde_json::from_str(spec).unwrap()
     }
@@ -286,9 +347,9 @@ mod tests {
 
         // then
         assert_eq!(
-      content.unwrap(),
-      "Scenegraph { root: SceneRoot { items: [Line(SceneLine { stroke: \"black\", stroke_width: 1.0, points: [(10.0, 13.0), (26.0, 5.0)] }), Axis(SceneAxis { rule: SceneAxisRule { from: (0.0, 0.0), to: (40.0, 0.0) }, ticks: [SceneAxisTick { position: (0.0, 0.0), label: Some(\"0.00\") }, SceneAxisTick { position: (4.0, 0.0), label: Some(\"2.00\") }, SceneAxisTick { position: (8.0, 0.0), label: Some(\"4.00\") }, SceneAxisTick { position: (12.0, 0.0), label: Some(\"6.00\") }, SceneAxisTick { position: (16.0, 0.0), label: Some(\"8.00\") }, SceneAxisTick { position: (20.0, 0.0), label: Some(\"10.00\") }, SceneAxisTick { position: (24.0, 0.0), label: Some(\"12.00\") }, SceneAxisTick { position: (28.0, 0.0), label: Some(\"14.00\") }, SceneAxisTick { position: (32.0, 0.0), label: Some(\"16.00\") }, SceneAxisTick { position: (36.0, 0.0), label: Some(\"18.00\") }, SceneAxisTick { position: (40.0, 0.0), label: Some(\"20.00\") }], orientation: Bottom }), Axis(SceneAxis { rule: SceneAxisRule { from: (0.0, 0.0), to: (0.0, 20.0) }, ticks: [SceneAxisTick { position: (0.0, 0.0), label: Some(\"0.00\") }, SceneAxisTick { position: (0.0, 2.0), label: Some(\"2.00\") }, SceneAxisTick { position: (0.0, 4.0), label: Some(\"4.00\") }, SceneAxisTick { position: (0.0, 6.0), label: Some(\"6.00\") }, SceneAxisTick { position: (0.0, 8.0), label: Some(\"8.00\") }, SceneAxisTick { position: (0.0, 10.0), label: Some(\"10.00\") }, SceneAxisTick { position: (0.0, 12.0), label: Some(\"12.00\") }, SceneAxisTick { position: (0.0, 14.0), label: Some(\"14.00\") }, SceneAxisTick { position: (0.0, 16.0), label: Some(\"16.00\") }, SceneAxisTick { position: (0.0, 18.0), label: Some(\"18.00\") }, SceneAxisTick { position: (0.0, 20.0), label: Some(\"20.00\") }], orientation: Left })], dimensions: SceneDimensions { width: 40, height: 20 } } }"
-    )
+            content.unwrap(),
+            "Scenegraph { root: SceneRoot { items: [Line(SceneLine { stroke: \"black\", stroke_width: 1.0, points: [(10.0, 13.0), (26.0, 5.0)] }), Axis(SceneAxis { rule: SceneAxisRule { from: (0.0, 0.0), to: (40.0, 0.0) }, ticks: [SceneAxisTick { position: (0.0, 0.0), label: Some(\"0.00\") }, SceneAxisTick { position: (4.0, 0.0), label: Some(\"2.00\") }, SceneAxisTick { position: (8.0, 0.0), label: Some(\"4.00\") }, SceneAxisTick { position: (12.0, 0.0), label: Some(\"6.00\") }, SceneAxisTick { position: (16.0, 0.0), label: Some(\"8.00\") }, SceneAxisTick { position: (20.0, 0.0), label: Some(\"10.00\") }, SceneAxisTick { position: (24.0, 0.0), label: Some(\"12.00\") }, SceneAxisTick { position: (28.0, 0.0), label: Some(\"14.00\") }, SceneAxisTick { position: (32.0, 0.0), label: Some(\"16.00\") }, SceneAxisTick { position: (36.0, 0.0), label: Some(\"18.00\") }, SceneAxisTick { position: (40.0, 0.0), label: Some(\"20.00\") }], orientation: Bottom }), Axis(SceneAxis { rule: SceneAxisRule { from: (0.0, 0.0), to: (0.0, 20.0) }, ticks: [SceneAxisTick { position: (0.0, 0.0), label: Some(\"0.00\") }, SceneAxisTick { position: (0.0, 2.0), label: Some(\"2.00\") }, SceneAxisTick { position: (0.0, 4.0), label: Some(\"4.00\") }, SceneAxisTick { position: (0.0, 6.0), label: Some(\"6.00\") }, SceneAxisTick { position: (0.0, 8.0), label: Some(\"8.00\") }, SceneAxisTick { position: (0.0, 10.0), label: Some(\"10.00\") }, SceneAxisTick { position: (0.0, 12.0), label: Some(\"12.00\") }, SceneAxisTick { position: (0.0, 14.0), label: Some(\"14.00\") }, SceneAxisTick { position: (0.0, 16.0), label: Some(\"16.00\") }, SceneAxisTick { position: (0.0, 18.0), label: Some(\"18.00\") }, SceneAxisTick { position: (0.0, 20.0), label: Some(\"20.00\") }], orientation: Left })], dimensions: SceneDimensions { width: 40, height: 20 } } }"
+        )
     }
 
     #[tokio::test]
@@ -302,9 +363,9 @@ mod tests {
 
         // then
         assert_eq!(
-      content.unwrap(),
-      "Scenegraph { root: SceneRoot { items: [Group(SceneGroup { items: [Rect(SceneRect { width: 150.0, height: 300.0, x: 93.75, y: 0.0, fill: \"blue\" }), Rect(SceneRect { width: 150.0, height: 100.0, x: 468.75, y: 200.0, fill: \"blue\" }), Rect(SceneRect { width: 150.0, height: 166.66667, x: 843.75, y: 133.33333, fill: \"blue\" }), Rect(SceneRect { width: 150.0, height: 0.0, x: 1218.75, y: 300.0, fill: \"blue\" })] }), Axis(SceneAxis { rule: SceneAxisRule { from: (0.0, 0.0), to: (1500.0, 0.0) }, ticks: [SceneAxisTick { position: (187.5, 0.0), label: Some(\"0.00\") }, SceneAxisTick { position: (562.5, 0.0), label: Some(\"1.00\") }, SceneAxisTick { position: (937.5, 0.0), label: Some(\"2.00\") }, SceneAxisTick { position: (1312.5, 0.0), label: Some(\"3.00\") }], orientation: Bottom }), Axis(SceneAxis { rule: SceneAxisRule { from: (0.0, 0.0), to: (0.0, 300.0) }, ticks: [SceneAxisTick { position: (0.0, 0.0), label: Some(\"6.00\") }, SceneAxisTick { position: (0.0, 29.999998), label: Some(\"8.70\") }, SceneAxisTick { position: (0.0, 59.999996), label: Some(\"11.40\") }, SceneAxisTick { position: (0.0, 90.0), label: Some(\"14.10\") }, SceneAxisTick { position: (0.0, 119.99999), label: Some(\"16.80\") }, SceneAxisTick { position: (0.0, 150.0), label: Some(\"19.50\") }, SceneAxisTick { position: (0.0, 180.0), label: Some(\"22.20\") }, SceneAxisTick { position: (0.0, 210.0), label: Some(\"24.90\") }, SceneAxisTick { position: (0.0, 240.0), label: Some(\"27.60\") }, SceneAxisTick { position: (0.0, 270.0), label: Some(\"30.30\") }, SceneAxisTick { position: (0.0, 300.0), label: Some(\"33.00\") }], orientation: Left })], dimensions: SceneDimensions { width: 1500, height: 300 } } }"
-    )
+            content.unwrap(),
+            "Scenegraph { root: SceneRoot { items: [Group(SceneGroup { items: [Rect(SceneRect { width: 150.0, height: 300.0, x: 93.75, y: 0.0, fill: \"blue\" }), Rect(SceneRect { width: 150.0, height: 100.0, x: 468.75, y: 200.0, fill: \"blue\" }), Rect(SceneRect { width: 150.0, height: 166.66667, x: 843.75, y: 133.33333, fill: \"blue\" }), Rect(SceneRect { width: 150.0, height: 0.0, x: 1218.75, y: 300.0, fill: \"blue\" })] }), Axis(SceneAxis { rule: SceneAxisRule { from: (0.0, 0.0), to: (1500.0, 0.0) }, ticks: [SceneAxisTick { position: (187.5, 0.0), label: Some(\"0.00\") }, SceneAxisTick { position: (562.5, 0.0), label: Some(\"1.00\") }, SceneAxisTick { position: (937.5, 0.0), label: Some(\"2.00\") }, SceneAxisTick { position: (1312.5, 0.0), label: Some(\"3.00\") }], orientation: Bottom }), Axis(SceneAxis { rule: SceneAxisRule { from: (0.0, 0.0), to: (0.0, 300.0) }, ticks: [SceneAxisTick { position: (0.0, 0.0), label: Some(\"6.00\") }, SceneAxisTick { position: (0.0, 29.999998), label: Some(\"8.70\") }, SceneAxisTick { position: (0.0, 59.999996), label: Some(\"11.40\") }, SceneAxisTick { position: (0.0, 90.0), label: Some(\"14.10\") }, SceneAxisTick { position: (0.0, 119.99999), label: Some(\"16.80\") }, SceneAxisTick { position: (0.0, 150.0), label: Some(\"19.50\") }, SceneAxisTick { position: (0.0, 180.0), label: Some(\"22.20\") }, SceneAxisTick { position: (0.0, 210.0), label: Some(\"24.90\") }, SceneAxisTick { position: (0.0, 240.0), label: Some(\"27.60\") }, SceneAxisTick { position: (0.0, 270.0), label: Some(\"30.30\") }, SceneAxisTick { position: (0.0, 300.0), label: Some(\"33.00\") }], orientation: Left })], dimensions: SceneDimensions { width: 1500, height: 300 } } }"
+        )
     }
 
     #[tokio::test]
@@ -318,9 +379,25 @@ mod tests {
 
         // then
         assert_eq!(
-      content.unwrap(),
-      "Scenegraph { root: SceneRoot { items: [Group(SceneGroup { items: [Arc(SceneArc { start_angle: 5.729578, end_angle: 152.67041, radius: 750.0, outer_radius: None, inner_radius: 50.0, fill: \"#1F77B4\" }), Arc(SceneArc { start_angle: 164.12958, end_angle: 224.67041, radius: 750.0, outer_radius: None, inner_radius: 50.0, fill: \"#FF7F0E\" }), Arc(SceneArc { start_angle: 236.12958, end_angle: 325.47043, radius: 750.0, outer_radius: None, inner_radius: 50.0, fill: \"#2CA02C\" }), Arc(SceneArc { start_angle: 336.9296, end_angle: 354.27042, radius: 750.0, outer_radius: None, inner_radius: 50.0, fill: \"#D62728\" })] })], dimensions: SceneDimensions { width: 1500, height: 300 } } }"
-    )
+            content.unwrap(),
+            "Scenegraph { root: SceneRoot { items: [Group(SceneGroup { items: [Arc(SceneArc { start_angle: 5.729578, end_angle: 152.67041, radius: 750.0, outer_radius: None, inner_radius: 50.0, fill: \"#1F77B4\" }), Arc(SceneArc { start_angle: 164.12958, end_angle: 224.67041, radius: 750.0, outer_radius: None, inner_radius: 50.0, fill: \"#FF7F0E\" }), Arc(SceneArc { start_angle: 236.12958, end_angle: 325.47043, radius: 750.0, outer_radius: None, inner_radius: 50.0, fill: \"#2CA02C\" }), Arc(SceneArc { start_angle: 336.9296, end_angle: 354.27042, radius: 750.0, outer_radius: None, inner_radius: 50.0, fill: \"#D62728\" })] })], dimensions: SceneDimensions { width: 1500, height: 300 } } }"
+        )
+    }
+
+    #[tokio::test]
+    async fn renders_scatter_plot() {
+        // given
+        let mut view = View::build(scatter_plot());
+
+        // when
+        let mut result = view.render(DebugRenderer).await;
+        let content = result.next().await;
+
+        // then
+        assert_eq!(
+            content.unwrap(),
+            "Scenegraph { root: SceneRoot { items: [Group(SceneGroup { items: [Point(ScenePoint { x: 93.75, y: 0.0, size: 3.0, color: \"red\" }), Point(ScenePoint { x: 468.75, y: 200.0, size: 3.0, color: \"green\" }), Point(ScenePoint { x: 843.75, y: 133.33333, size: 3.0, color: \"blue\" }), Point(ScenePoint { x: 1218.75, y: 300.0, size: 3.0, color: \"orange\" })] }), Axis(SceneAxis { rule: SceneAxisRule { from: (0.0, 0.0), to: (1500.0, 0.0) }, ticks: [SceneAxisTick { position: (187.5, 0.0), label: Some(\"0.00\") }, SceneAxisTick { position: (562.5, 0.0), label: Some(\"1.00\") }, SceneAxisTick { position: (937.5, 0.0), label: Some(\"2.00\") }, SceneAxisTick { position: (1312.5, 0.0), label: Some(\"3.00\") }], orientation: Bottom }), Axis(SceneAxis { rule: SceneAxisRule { from: (0.0, 0.0), to: (0.0, 300.0) }, ticks: [SceneAxisTick { position: (0.0, 0.0), label: Some(\"6.00\") }, SceneAxisTick { position: (0.0, 29.999998), label: Some(\"8.70\") }, SceneAxisTick { position: (0.0, 59.999996), label: Some(\"11.40\") }, SceneAxisTick { position: (0.0, 90.0), label: Some(\"14.10\") }, SceneAxisTick { position: (0.0, 119.99999), label: Some(\"16.80\") }, SceneAxisTick { position: (0.0, 150.0), label: Some(\"19.50\") }, SceneAxisTick { position: (0.0, 180.0), label: Some(\"22.20\") }, SceneAxisTick { position: (0.0, 210.0), label: Some(\"24.90\") }, SceneAxisTick { position: (0.0, 240.0), label: Some(\"27.60\") }, SceneAxisTick { position: (0.0, 270.0), label: Some(\"30.30\") }, SceneAxisTick { position: (0.0, 300.0), label: Some(\"33.00\") }], orientation: Left })], dimensions: SceneDimensions { width: 1500, height: 300 } } }"
+        )
     }
 
     #[tokio::test]
@@ -345,12 +422,12 @@ mod tests {
 
         // then
         assert_eq!(
-      first.unwrap(),
-       "Scenegraph { root: SceneRoot { items: [Line(SceneLine { stroke: \"black\", stroke_width: 1.0, points: [(10.0, 13.0), (26.0, 5.0)] }), Axis(SceneAxis { rule: SceneAxisRule { from: (0.0, 0.0), to: (40.0, 0.0) }, ticks: [SceneAxisTick { position: (0.0, 0.0), label: Some(\"0.00\") }, SceneAxisTick { position: (4.0, 0.0), label: Some(\"2.00\") }, SceneAxisTick { position: (8.0, 0.0), label: Some(\"4.00\") }, SceneAxisTick { position: (12.0, 0.0), label: Some(\"6.00\") }, SceneAxisTick { position: (16.0, 0.0), label: Some(\"8.00\") }, SceneAxisTick { position: (20.0, 0.0), label: Some(\"10.00\") }, SceneAxisTick { position: (24.0, 0.0), label: Some(\"12.00\") }, SceneAxisTick { position: (28.0, 0.0), label: Some(\"14.00\") }, SceneAxisTick { position: (32.0, 0.0), label: Some(\"16.00\") }, SceneAxisTick { position: (36.0, 0.0), label: Some(\"18.00\") }, SceneAxisTick { position: (40.0, 0.0), label: Some(\"20.00\") }], orientation: Bottom }), Axis(SceneAxis { rule: SceneAxisRule { from: (0.0, 0.0), to: (0.0, 20.0) }, ticks: [SceneAxisTick { position: (0.0, 0.0), label: Some(\"0.00\") }, SceneAxisTick { position: (0.0, 2.0), label: Some(\"2.00\") }, SceneAxisTick { position: (0.0, 4.0), label: Some(\"4.00\") }, SceneAxisTick { position: (0.0, 6.0), label: Some(\"6.00\") }, SceneAxisTick { position: (0.0, 8.0), label: Some(\"8.00\") }, SceneAxisTick { position: (0.0, 10.0), label: Some(\"10.00\") }, SceneAxisTick { position: (0.0, 12.0), label: Some(\"12.00\") }, SceneAxisTick { position: (0.0, 14.0), label: Some(\"14.00\") }, SceneAxisTick { position: (0.0, 16.0), label: Some(\"16.00\") }, SceneAxisTick { position: (0.0, 18.0), label: Some(\"18.00\") }, SceneAxisTick { position: (0.0, 20.0), label: Some(\"20.00\") }], orientation: Left })], dimensions: SceneDimensions { width: 40, height: 20 } } }"
-    );
+            first.unwrap(),
+            "Scenegraph { root: SceneRoot { items: [Line(SceneLine { stroke: \"black\", stroke_width: 1.0, points: [(10.0, 13.0), (26.0, 5.0)] }), Axis(SceneAxis { rule: SceneAxisRule { from: (0.0, 0.0), to: (40.0, 0.0) }, ticks: [SceneAxisTick { position: (0.0, 0.0), label: Some(\"0.00\") }, SceneAxisTick { position: (4.0, 0.0), label: Some(\"2.00\") }, SceneAxisTick { position: (8.0, 0.0), label: Some(\"4.00\") }, SceneAxisTick { position: (12.0, 0.0), label: Some(\"6.00\") }, SceneAxisTick { position: (16.0, 0.0), label: Some(\"8.00\") }, SceneAxisTick { position: (20.0, 0.0), label: Some(\"10.00\") }, SceneAxisTick { position: (24.0, 0.0), label: Some(\"12.00\") }, SceneAxisTick { position: (28.0, 0.0), label: Some(\"14.00\") }, SceneAxisTick { position: (32.0, 0.0), label: Some(\"16.00\") }, SceneAxisTick { position: (36.0, 0.0), label: Some(\"18.00\") }, SceneAxisTick { position: (40.0, 0.0), label: Some(\"20.00\") }], orientation: Bottom }), Axis(SceneAxis { rule: SceneAxisRule { from: (0.0, 0.0), to: (0.0, 20.0) }, ticks: [SceneAxisTick { position: (0.0, 0.0), label: Some(\"0.00\") }, SceneAxisTick { position: (0.0, 2.0), label: Some(\"2.00\") }, SceneAxisTick { position: (0.0, 4.0), label: Some(\"4.00\") }, SceneAxisTick { position: (0.0, 6.0), label: Some(\"6.00\") }, SceneAxisTick { position: (0.0, 8.0), label: Some(\"8.00\") }, SceneAxisTick { position: (0.0, 10.0), label: Some(\"10.00\") }, SceneAxisTick { position: (0.0, 12.0), label: Some(\"12.00\") }, SceneAxisTick { position: (0.0, 14.0), label: Some(\"14.00\") }, SceneAxisTick { position: (0.0, 16.0), label: Some(\"16.00\") }, SceneAxisTick { position: (0.0, 18.0), label: Some(\"18.00\") }, SceneAxisTick { position: (0.0, 20.0), label: Some(\"20.00\") }], orientation: Left })], dimensions: SceneDimensions { width: 40, height: 20 } } }"
+        );
         assert_eq!(
-      second.unwrap(),
-      "Scenegraph { root: SceneRoot { items: [Line(SceneLine { stroke: \"black\", stroke_width: 1.0, points: [(20.0, 8.0), (16.0, 10.0)] }), Axis(SceneAxis { rule: SceneAxisRule { from: (0.0, 0.0), to: (40.0, 0.0) }, ticks: [SceneAxisTick { position: (0.0, 0.0), label: Some(\"0.00\") }, SceneAxisTick { position: (4.0, 0.0), label: Some(\"2.00\") }, SceneAxisTick { position: (8.0, 0.0), label: Some(\"4.00\") }, SceneAxisTick { position: (12.0, 0.0), label: Some(\"6.00\") }, SceneAxisTick { position: (16.0, 0.0), label: Some(\"8.00\") }, SceneAxisTick { position: (20.0, 0.0), label: Some(\"10.00\") }, SceneAxisTick { position: (24.0, 0.0), label: Some(\"12.00\") }, SceneAxisTick { position: (28.0, 0.0), label: Some(\"14.00\") }, SceneAxisTick { position: (32.0, 0.0), label: Some(\"16.00\") }, SceneAxisTick { position: (36.0, 0.0), label: Some(\"18.00\") }, SceneAxisTick { position: (40.0, 0.0), label: Some(\"20.00\") }], orientation: Bottom }), Axis(SceneAxis { rule: SceneAxisRule { from: (0.0, 0.0), to: (0.0, 20.0) }, ticks: [SceneAxisTick { position: (0.0, 0.0), label: Some(\"0.00\") }, SceneAxisTick { position: (0.0, 2.0), label: Some(\"2.00\") }, SceneAxisTick { position: (0.0, 4.0), label: Some(\"4.00\") }, SceneAxisTick { position: (0.0, 6.0), label: Some(\"6.00\") }, SceneAxisTick { position: (0.0, 8.0), label: Some(\"8.00\") }, SceneAxisTick { position: (0.0, 10.0), label: Some(\"10.00\") }, SceneAxisTick { position: (0.0, 12.0), label: Some(\"12.00\") }, SceneAxisTick { position: (0.0, 14.0), label: Some(\"14.00\") }, SceneAxisTick { position: (0.0, 16.0), label: Some(\"16.00\") }, SceneAxisTick { position: (0.0, 18.0), label: Some(\"18.00\") }, SceneAxisTick { position: (0.0, 20.0), label: Some(\"20.00\") }], orientation: Left })], dimensions: SceneDimensions { width: 40, height: 20 } } }"
-    );
+            second.unwrap(),
+            "Scenegraph { root: SceneRoot { items: [Line(SceneLine { stroke: \"black\", stroke_width: 1.0, points: [(20.0, 8.0), (16.0, 10.0)] }), Axis(SceneAxis { rule: SceneAxisRule { from: (0.0, 0.0), to: (40.0, 0.0) }, ticks: [SceneAxisTick { position: (0.0, 0.0), label: Some(\"0.00\") }, SceneAxisTick { position: (4.0, 0.0), label: Some(\"2.00\") }, SceneAxisTick { position: (8.0, 0.0), label: Some(\"4.00\") }, SceneAxisTick { position: (12.0, 0.0), label: Some(\"6.00\") }, SceneAxisTick { position: (16.0, 0.0), label: Some(\"8.00\") }, SceneAxisTick { position: (20.0, 0.0), label: Some(\"10.00\") }, SceneAxisTick { position: (24.0, 0.0), label: Some(\"12.00\") }, SceneAxisTick { position: (28.0, 0.0), label: Some(\"14.00\") }, SceneAxisTick { position: (32.0, 0.0), label: Some(\"16.00\") }, SceneAxisTick { position: (36.0, 0.0), label: Some(\"18.00\") }, SceneAxisTick { position: (40.0, 0.0), label: Some(\"20.00\") }], orientation: Bottom }), Axis(SceneAxis { rule: SceneAxisRule { from: (0.0, 0.0), to: (0.0, 20.0) }, ticks: [SceneAxisTick { position: (0.0, 0.0), label: Some(\"0.00\") }, SceneAxisTick { position: (0.0, 2.0), label: Some(\"2.00\") }, SceneAxisTick { position: (0.0, 4.0), label: Some(\"4.00\") }, SceneAxisTick { position: (0.0, 6.0), label: Some(\"6.00\") }, SceneAxisTick { position: (0.0, 8.0), label: Some(\"8.00\") }, SceneAxisTick { position: (0.0, 10.0), label: Some(\"10.00\") }, SceneAxisTick { position: (0.0, 12.0), label: Some(\"12.00\") }, SceneAxisTick { position: (0.0, 14.0), label: Some(\"14.00\") }, SceneAxisTick { position: (0.0, 16.0), label: Some(\"16.00\") }, SceneAxisTick { position: (0.0, 18.0), label: Some(\"18.00\") }, SceneAxisTick { position: (0.0, 20.0), label: Some(\"20.00\") }], orientation: Left })], dimensions: SceneDimensions { width: 40, height: 20 } } }"
+        );
     }
 }

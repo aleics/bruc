@@ -86,10 +86,10 @@ mod serde_tests {
         let point_shape: PointShape = serde_json::from_str(
             r#"{
                 "properties": {
-                "x": { "field": "x", "scale": "xscale" },
-                "y": { "field": "y", "scale": "yscale" },
-                "color": "red",
-                "size": { "field": "size" }
+                    "x": { "field": "x", "scale": "xscale" },
+                    "y": { "field": "y", "scale": "yscale" },
+                    "color": "red",
+                    "size": { "field": "size" }
                 }
             }"#,
         )
