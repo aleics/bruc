@@ -3,7 +3,7 @@ use core::f32;
 use crate::{
     scene::{
         SceneArc, SceneAxis, SceneAxisTick, SceneDimensions, SceneGroup, SceneItem, SceneLine,
-        SceneRect, SceneRoot, Scenegraph,
+        ScenePoint, SceneRect, SceneRoot, Scenegraph,
     },
     spec::axis::AxisOrientation,
 };
@@ -25,13 +25,13 @@ impl SvgRenderer {
         let canvas_margin_y = result.d_height + SVG_CANVAS_MARGIN.1;
 
         format!(
-      "<svg width=\"{width}\" height=\"{height}\"><g transform=\"translate({margin_x}, {margin_y})\">{content}</g></svg>",
-      width = root.dimensions.width as f32 + canvas_margin_x.max(SVG_CANVAS_MARGIN.0 * 2.0),
-      height = root.dimensions.height as f32 + canvas_margin_y.max(SVG_CANVAS_MARGIN.1 * 2.0),
-      margin_x = result.margin.0.max(SVG_CANVAS_MARGIN.0),
-      margin_y = result.margin.1.max(SVG_CANVAS_MARGIN.1),
-      content = result.content
-    )
+            "<svg width=\"{width}\" height=\"{height}\"><g transform=\"translate({margin_x}, {margin_y})\">{content}</g></svg>",
+            width = root.dimensions.width as f32 + canvas_margin_x.max(SVG_CANVAS_MARGIN.0 * 2.0),
+            height = root.dimensions.height as f32 + canvas_margin_y.max(SVG_CANVAS_MARGIN.1 * 2.0),
+            margin_x = result.margin.0.max(SVG_CANVAS_MARGIN.0),
+            margin_y = result.margin.1.max(SVG_CANVAS_MARGIN.1),
+            content = result.content
+        )
     }
 }
 
@@ -84,6 +84,7 @@ impl ItemRenderer for SceneItem {
             SceneItem::Rect(rect) => rect.render(dimensions),
             SceneItem::Axis(axis) => axis.render(dimensions),
             SceneItem::Arc(arc) => arc.render(dimensions),
+            SceneItem::Point(point) => point.render(dimensions),
         }
     }
 }
@@ -131,11 +132,11 @@ impl ItemRenderer for SceneLine {
         let stroke_width = self.stroke_width;
 
         SvgRenderResult {
-      content: format!("<path d=\"{path}\" fill=\"transparent\" stroke=\"{stroke}\" stroke-width=\"{stroke_width}\" stroke-linecap=\"round\" />"),
-      d_width: 0.0,
-      d_height: 0.0,
-      margin: (0.0, 0.0)
-    }
+            content: format!("<path d=\"{path}\" fill=\"transparent\" stroke=\"{stroke}\" stroke-width=\"{stroke_width}\" stroke-linecap=\"round\" />"),
+            d_width: 0.0,
+            d_height: 0.0,
+            margin: (0.0, 0.0)
+        }
     }
 }
 
@@ -354,6 +355,27 @@ impl ItemRenderer for SceneRect {
     }
 }
 
+impl ItemRenderer for ScenePoint {
+    type RenderResult = SvgRenderResult;
+
+    fn render(&self, _dimensions: &SceneDimensions) -> Self::RenderResult {
+        let content = format!(
+            "<circle cx=\"{x}\" cy=\"{y}\" r=\"{size}\" fill=\"{color}\" />",
+            x = self.x,
+            y = self.y,
+            size = self.size,
+            color = self.color
+        );
+
+        SvgRenderResult {
+            content,
+            d_width: 0.0,
+            d_height: 0.0,
+            margin: (0.0, 0.0),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::render::svg::SvgRenderer;
@@ -381,9 +403,9 @@ mod tests {
         let result = renderer.render(&scenegraph);
 
         assert_eq!(
-      result,
-      "<svg width=\"520\" height=\"220\"><g transform=\"translate(10, 10)\"><path d=\"M0 10 L1 20\" fill=\"transparent\" stroke=\"black\" stroke-width=\"1\" stroke-linecap=\"round\" /></g></svg>"
-    )
+            result,
+            "<svg width=\"520\" height=\"220\"><g transform=\"translate(10, 10)\"><path d=\"M0 10 L1 20\" fill=\"transparent\" stroke=\"black\" stroke-width=\"1\" stroke-linecap=\"round\" /></g></svg>"
+        )
     }
 
     #[test]
@@ -418,9 +440,9 @@ mod tests {
         let result = SvgRenderer.render(&scenegraph);
 
         assert_eq!(
-      result,
-      "<svg width=\"520\" height=\"230\"><g transform=\"translate(10, 20)\"><g><g><line x1=\"0\" x2=\"0\" y1=\"200\" y2=\"195\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(0, 195)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"0em\" dy=\"-0.5em\">0.00</tspan></text></g><g><line x1=\"20\" x2=\"20\" y1=\"200\" y2=\"195\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(20, 195)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"0em\" dy=\"-0.5em\">10.00</tspan></text></g><g><line x1=\"40\" x2=\"40\" y1=\"200\" y2=\"195\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(40, 195)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"0em\" dy=\"-0.5em\">20.00</tspan></text></g><line x1=\"0\" x2=\"40\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /></g></g></svg>"
-    )
+            result,
+            "<svg width=\"520\" height=\"230\"><g transform=\"translate(10, 20)\"><g><g><line x1=\"0\" x2=\"0\" y1=\"200\" y2=\"195\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(0, 195)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"0em\" dy=\"-0.5em\">0.00</tspan></text></g><g><line x1=\"20\" x2=\"20\" y1=\"200\" y2=\"195\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(20, 195)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"0em\" dy=\"-0.5em\">10.00</tspan></text></g><g><line x1=\"40\" x2=\"40\" y1=\"200\" y2=\"195\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(40, 195)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"0em\" dy=\"-0.5em\">20.00</tspan></text></g><line x1=\"0\" x2=\"40\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /></g></g></svg>"
+        )
     }
 
     #[test]
@@ -455,9 +477,9 @@ mod tests {
         let result = SvgRenderer.render(&scenegraph);
 
         assert_eq!(
-      result,
-      "<svg width=\"520\" height=\"230\"><g transform=\"translate(10, 10)\"><g><g><line x1=\"0\" x2=\"0\" y1=\"200\" y2=\"205\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(0, 205)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"0em\" dy=\"1em\">0.00</tspan></text></g><g><line x1=\"20\" x2=\"20\" y1=\"200\" y2=\"205\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(20, 205)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"0em\" dy=\"1em\">10.00</tspan></text></g><g><line x1=\"40\" x2=\"40\" y1=\"200\" y2=\"205\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(40, 205)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"0em\" dy=\"1em\">20.00</tspan></text></g><line x1=\"0\" x2=\"40\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /></g></g></svg>"
-    )
+            result,
+            "<svg width=\"520\" height=\"230\"><g transform=\"translate(10, 10)\"><g><g><line x1=\"0\" x2=\"0\" y1=\"200\" y2=\"205\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(0, 205)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"0em\" dy=\"1em\">0.00</tspan></text></g><g><line x1=\"20\" x2=\"20\" y1=\"200\" y2=\"205\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(20, 205)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"0em\" dy=\"1em\">10.00</tspan></text></g><g><line x1=\"40\" x2=\"40\" y1=\"200\" y2=\"205\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(40, 205)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"0em\" dy=\"1em\">20.00</tspan></text></g><line x1=\"0\" x2=\"40\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /></g></g></svg>"
+        )
     }
 
     #[test]
@@ -492,9 +514,9 @@ mod tests {
         let result = SvgRenderer.render(&scenegraph);
 
         assert_eq!(
-      result,
-      "<svg width=\"545\" height=\"220\"><g transform=\"translate(35, 10)\"><g><g><line x1=\"0\" x2=\"-5\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(-5, 200)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"-1.2em\" dy=\"0.3em\">0.00</tspan></text></g><g><line x1=\"20\" x2=\"15\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(15, 200)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"-1.5em\" dy=\"0.3em\">10.00</tspan></text></g><g><line x1=\"40\" x2=\"35\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(35, 200)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"-1.5em\" dy=\"0.3em\">20.00</tspan></text></g><line x1=\"0\" x2=\"40\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /></g></g></svg>"
-    )
+            result,
+            "<svg width=\"545\" height=\"220\"><g transform=\"translate(35, 10)\"><g><g><line x1=\"0\" x2=\"-5\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(-5, 200)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"-1.2em\" dy=\"0.3em\">0.00</tspan></text></g><g><line x1=\"20\" x2=\"15\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(15, 200)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"-1.5em\" dy=\"0.3em\">10.00</tspan></text></g><g><line x1=\"40\" x2=\"35\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(35, 200)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"-1.5em\" dy=\"0.3em\">20.00</tspan></text></g><line x1=\"0\" x2=\"40\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /></g></g></svg>"
+        )
     }
 
     #[test]
@@ -529,9 +551,9 @@ mod tests {
         let result = SvgRenderer.render(&scenegraph);
 
         assert_eq!(
-      result,
-      "<svg width=\"545\" height=\"220\"><g transform=\"translate(10, 10)\"><g><g><line x1=\"0\" x2=\"5\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(5, 200)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"1.2em\" dy=\"0.3em\">0.00</tspan></text></g><g><line x1=\"20\" x2=\"25\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(25, 200)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"1.5em\" dy=\"0.3em\">10.00</tspan></text></g><g><line x1=\"40\" x2=\"45\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(45, 200)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"1.5em\" dy=\"0.3em\">20.00</tspan></text></g><line x1=\"0\" x2=\"40\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /></g></g></svg>"
-    )
+            result,
+            "<svg width=\"545\" height=\"220\"><g transform=\"translate(10, 10)\"><g><g><line x1=\"0\" x2=\"5\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(5, 200)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"1.2em\" dy=\"0.3em\">0.00</tspan></text></g><g><line x1=\"20\" x2=\"25\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(25, 200)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"1.5em\" dy=\"0.3em\">10.00</tspan></text></g><g><line x1=\"40\" x2=\"45\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /><text transform=\"translate(45, 200)\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\" font-family=\"sans-serif\"><tspan dx=\"1.5em\" dy=\"0.3em\">20.00</tspan></text></g><line x1=\"0\" x2=\"40\" y1=\"200\" y2=\"200\" stroke-width=\"1\" opacity=\"1\" stroke=\"#212121\" stroke-linecap=\"square\" /></g></g></svg>"
+        )
     }
 
     #[test]
@@ -554,8 +576,32 @@ mod tests {
         let result = SvgRenderer.render(&scenegraph);
 
         assert_eq!(
-        result,
-        "<svg width=\"520\" height=\"520\"><g transform=\"translate(10, 10)\"><path d=\"M 250 250 L 249.99998, 0 A 250 250 0 0 1 466.50635 125 L 250 250 A 0 0 0 0 0 250 250\" fill=\"blue\"/><path d=\"M 250 250 L 466.50635, 125 A 250 250 0 0 1 466.50635 375 L 250 250 A 0 0 0 0 0 250 250\" fill=\"red\"/><path d=\"M 250 250 L 466.50635, 375 A 250 250 0 0 1 249.99998 500 L 250 250 A 0 0 0 0 0 250 250\" fill=\"yellow\"/><path d=\"M 250 250 L 249.99998, 500 A 250 250 0 0 1 33.49362 374.99994 L 250 250 A 0 0 0 0 0 250 250\" fill=\"green\"/><path d=\"M 250 250 L 33.49362, 374.99994 A 250 250 0 0 1 33.493683 124.999954 L 250 250 A 0 0 0 0 0 250 250\" fill=\"pink\"/><path d=\"M 250 250 L 33.493683, 124.999954 A 250 250 0 0 1 250 0 L 250 250 A 0 0 0 0 0 250 250\" fill=\"black\"/></g></svg>"
-    )
+            result,
+            "<svg width=\"520\" height=\"520\"><g transform=\"translate(10, 10)\"><path d=\"M 250 250 L 249.99998, 0 A 250 250 0 0 1 466.50635 125 L 250 250 A 0 0 0 0 0 250 250\" fill=\"blue\"/><path d=\"M 250 250 L 466.50635, 125 A 250 250 0 0 1 466.50635 375 L 250 250 A 0 0 0 0 0 250 250\" fill=\"red\"/><path d=\"M 250 250 L 466.50635, 375 A 250 250 0 0 1 249.99998 500 L 250 250 A 0 0 0 0 0 250 250\" fill=\"yellow\"/><path d=\"M 250 250 L 249.99998, 500 A 250 250 0 0 1 33.49362 374.99994 L 250 250 A 0 0 0 0 0 250 250\" fill=\"green\"/><path d=\"M 250 250 L 33.49362, 374.99994 A 250 250 0 0 1 33.493683 124.999954 L 250 250 A 0 0 0 0 0 250 250\" fill=\"pink\"/><path d=\"M 250 250 L 33.493683, 124.999954 A 250 250 0 0 1 250 0 L 250 250 A 0 0 0 0 0 250 250\" fill=\"black\"/></g></svg>"
+        )
+    }
+
+    #[test]
+    fn render_svg_points() {
+        let scenegraph = Scenegraph::new(SceneRoot::new(
+            vec![
+                SceneItem::point(0.0, 5.0, 1.0, "red".to_string()),
+                SceneItem::point(1.0, 10.0, 2.0, "blue".to_string()),
+                SceneItem::point(2.0, 2.0, 5.0, "green".to_string()),
+                SceneItem::point(3.0, 8.0, 3.0, "orange".to_string()),
+                SceneItem::point(4.0, 4.0, 1.0, "yellow".to_string()),
+            ],
+            SceneDimensions {
+                width: 500,
+                height: 500,
+            },
+        ));
+
+        let result = SvgRenderer.render(&scenegraph);
+
+        assert_eq!(
+            result,
+            "<svg width=\"520\" height=\"520\"><g transform=\"translate(10, 10)\"><circle cx=\"0\" cy=\"5\" r=\"1\" fill=\"red\" /><circle cx=\"1\" cy=\"10\" r=\"2\" fill=\"blue\" /><circle cx=\"2\" cy=\"2\" r=\"5\" fill=\"green\" /><circle cx=\"3\" cy=\"8\" r=\"3\" fill=\"orange\" /><circle cx=\"4\" cy=\"4\" r=\"1\" fill=\"yellow\" /></g></svg>"
+        )
     }
 }
