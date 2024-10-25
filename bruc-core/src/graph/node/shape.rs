@@ -277,6 +277,19 @@ impl Evaluation for PieOperator {
     }
 }
 
+pub(crate) const POINT_COLOR_FIELD_NAME: &str = "__point_color";
+pub(crate) const POINT_SIZE_FIELD_NAME: &str = "__point_size";
+
+#[derive(Debug, PartialEq)]
+pub struct PointOperator {
+    window: SceneWindow,
+}
+
+impl PointOperator {
+    pub(crate) fn new(window: SceneWindow) -> Self {
+        PointOperator { window }
+    }
+}
 #[cfg(test)]
 mod tests {
     use crate::data::DataValue;

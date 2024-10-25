@@ -3,7 +3,10 @@ use std::collections::HashMap;
 use bruc_expression::data::DataItem;
 
 use crate::data::DataValue;
-use crate::graph::node::shape::{SceneWindow, PIE_OUTER_RADIUS_FIELD_NAME, PIE_VALUE_FIELD_NAME};
+use crate::graph::node::shape::{
+    SceneWindow, PIE_OUTER_RADIUS_FIELD_NAME, PIE_VALUE_FIELD_NAME, POINT_COLOR_FIELD_NAME,
+    POINT_SIZE_FIELD_NAME,
+};
 use crate::scale::Scale;
 use crate::spec::axis::Axis;
 use crate::spec::scale::band::BandScale;
@@ -16,6 +19,7 @@ use crate::spec::shape::base::{
     BaseShapeProperties, HEIGHT_FIELD_NAME, WIDTH_FIELD_NAME, X_AXIS_FIELD_NAME, Y_AXIS_FIELD_NAME,
 };
 use crate::spec::shape::line::LineShape;
+use crate::spec::shape::point::PointShape;
 use crate::spec::shape::{DataSource, Shape, ShapeKind};
 use crate::spec::Dimensions;
 use crate::{
@@ -25,6 +29,7 @@ use crate::{
 };
 
 /// `ParseResult` collects all the data needed after parsing the `Specification`
+#[derive(Debug)]
 pub(crate) struct ParseResult {
     pub(crate) graph: Graph,
     pub(crate) collection: ParsedNodeCollection,
@@ -128,7 +133,7 @@ impl Visitor {
             ShapeKind::Line(line) => self.visit_line_shape(line, data_node.out, result),
             ShapeKind::Bar(bar) => self.visit_bar_shape(bar, data_node.out, result),
             ShapeKind::Pie(pie) => self.visit_pie_shape(pie, data_node.out, result),
-            ShapeKind::Point(_) => todo!(),
+            ShapeKind::Point(point) => self.visit_point_shape(point, data_node.out, result),
         };
     }
 
@@ -197,6 +202,50 @@ impl Visitor {
 
         result.collection.shapes.push(node);
         result.graph.add_edge(data_node, node);
+
+        for scale_node in scale_nodes {
+            result.graph.add_edge(scale_node, node);
+        }
+    }
+
+    fn visit_point_shape(&self, point: PointShape, data_node: usize, result: &mut ParseResult) {
+        let mut scale_nodes = Vec::new();
+
+        // Parse scale node for the "x" field
+        if let Some(x) = point.props.x.as_ref() {
+            scale_nodes.push(self.visit_data_source(x, X_AXIS_FIELD_NAME, data_node, result));
+        }
+
+        // Parse scale node for the "y" field
+        if let Some(y) = point.props.y.as_ref() {
+            scale_nodes.push(self.visit_data_source(y, Y_AXIS_FIELD_NAME, data_node, result));
+        }
+
+        // Parse scale node for the "color" field
+        if let Some(color) = point.props.color.as_ref() {
+            scale_nodes.push(self.visit_data_source(
+                color,
+                POINT_COLOR_FIELD_NAME,
+                data_node,
+                result,
+            ));
+        }
+
+        // Parse scale node for the "size" field
+        if let Some(size) = point.props.size.as_ref() {
+            scale_nodes.push(self.visit_data_source(
+                size,
+                POINT_SIZE_FIELD_NAME,
+                data_node,
+                result,
+            ));
+        }
+
+        let node = result.graph.add_node(Operator::point(SceneWindow::new(
+            self.dimensions.width,
+            self.dimensions.height,
+        )));
+        result.collection.shapes.push(node);
 
         for scale_node in scale_nodes {
             result.graph.add_edge(scale_node, node);
@@ -414,7 +463,7 @@ impl Visitor {
 mod tests {
     use std::collections::{BTreeMap, BTreeSet, HashMap};
 
-    use crate::graph::node::shape::SceneWindow;
+    use crate::graph::node::shape::{SceneWindow, POINT_COLOR_FIELD_NAME};
     use crate::graph::node::{Node, Operator};
     use crate::graph::Edge;
     use crate::parser::{DataNode, ParseResult, ParsedNodeCollection};
@@ -425,6 +474,7 @@ mod tests {
     use crate::spec::shape::bar::{BarPropertiesBuilder, BarShape};
     use crate::spec::shape::line::LinePropertiesBuilder;
     use crate::spec::shape::pie::{PiePropertiesBuilder, PieShape};
+    use crate::spec::shape::point::{PointPropertiesBuilder, PointShape};
     use crate::spec::transform::map::MapPipe;
     use crate::spec::{Dimensions, Visual};
     use crate::{
@@ -866,6 +916,177 @@ mod tests {
                 scales: HashMap::new(),
                 axis: HashMap::new(),
                 shapes: vec![2]
+            }
+        )
+    }
+
+    #[test]
+    fn parses_scatter_plot() {
+        // given
+        let spec: Specification = Specification::new(
+            Dimensions::default(),
+            vec![DataEntry::new(
+                "primary",
+                vec![
+                    DataValue::from_pairs(vec![("a", 10.0.into()), ("color", "red".into())]),
+                    DataValue::from_pairs(vec![("a", 5.0.into()), ("color", "blue".into())]),
+                ],
+                vec![
+                    Pipe::Map(MapPipe::new("a - 2", "b").unwrap()),
+                    Pipe::Filter(FilterPipe::new("b > 2").unwrap()),
+                ],
+            )],
+            vec![
+                ScaleSpec::new(
+                    "horizontal",
+                    ScaleKind::Linear(LinearScale {
+                        domain: Domain::Literal(vec![0.0, 100.0]),
+                        range: Range::Literal(0.0, 20.0),
+                    }),
+                ),
+                ScaleSpec::new(
+                    "vertical",
+                    ScaleKind::Linear(LinearScale {
+                        domain: Domain::Literal(vec![0.0, 100.0]),
+                        range: Range::Literal(0.0, 10.0),
+                    }),
+                ),
+            ],
+            Visual::new(
+                vec![Shape::point(
+                    "primary",
+                    PointShape::new(
+                        PointPropertiesBuilder::new()
+                            .with_x(DataSource::field("a", Some("horizontal")))
+                            .with_y(DataSource::field("b", Some("vertical")))
+                            .with_color(DataSource::field("color", None))
+                            .build(),
+                    ),
+                )],
+                vec![
+                    Axis::new("horizontal", AxisOrientation::Bottom),
+                    Axis::new("vertical", AxisOrientation::Left),
+                ],
+            ),
+        );
+        let parser = Parser;
+
+        // when
+        let ParseResult { graph, collection } = parser.parse(spec);
+
+        // then
+        assert_eq!(
+            graph.nodes,
+            vec![
+                Node::init(Operator::data(vec![
+                    DataValue::from_pairs(vec![("a", 10.0.into()), ("color", "red".into())]),
+                    DataValue::from_pairs(vec![("a", 5.0.into()), ("color", "blue".into())]),
+                ])),
+                Node::init(Operator::map(MapPipe::new("a - 2", "b").unwrap())),
+                Node::init(Operator::filter(FilterPipe::new("b > 2").unwrap())),
+                Node::init(Operator::domain_interval(Domain::Literal(vec![0.0, 100.0]))),
+                Node::init(Operator::linear((0.0, 20.0), "a", "x")),
+                Node::init(Operator::domain_interval(Domain::Literal(vec![0.0, 100.0]))),
+                Node::init(Operator::linear((0.0, 10.0), "b", "y")),
+                Node::init(Operator::identity("color", POINT_COLOR_FIELD_NAME)),
+                Node::init(Operator::point(SceneWindow::new(500, 200))),
+                Node::init(Operator::axis(
+                    Axis::new("horizontal", AxisOrientation::Bottom),
+                    Scale::linear((0.0, 20.0)),
+                    SceneWindow::new(500, 200)
+                )),
+                Node::init(Operator::axis(
+                    Axis::new("vertical", AxisOrientation::Left),
+                    Scale::linear((0.0, 10.0)),
+                    SceneWindow::new(500, 200)
+                ))
+            ]
+        );
+        assert_eq!(
+            graph.edges,
+            vec![
+                Edge::new(0, 1),
+                Edge::new(1, 2),
+                Edge::new(2, 3),
+                Edge::new(3, 4),
+                Edge::new(2, 4),
+                Edge::new(2, 5),
+                Edge::new(5, 6),
+                Edge::new(2, 6),
+                Edge::new(2, 7),
+                Edge::new(4, 8),
+                Edge::new(6, 8),
+                Edge::new(7, 8),
+                Edge::new(3, 9),
+                Edge::new(5, 10)
+            ]
+        );
+        assert_eq!(
+            graph.targets,
+            BTreeMap::from([
+                (0, BTreeSet::from([1])),
+                (1, BTreeSet::from([2])),
+                (2, BTreeSet::from([3, 4, 5, 6, 7])),
+                (3, BTreeSet::from([4, 9])),
+                (4, BTreeSet::from([8])),
+                (5, BTreeSet::from([6, 10])),
+                (6, BTreeSet::from([8])),
+                (7, BTreeSet::from([8])),
+                (8, BTreeSet::new()),
+                (9, BTreeSet::new()),
+                (10, BTreeSet::new())
+            ])
+        );
+        assert_eq!(
+            graph.sources,
+            BTreeMap::from([
+                (0, BTreeSet::new()),
+                (1, BTreeSet::from([0])),
+                (2, BTreeSet::from([1])),
+                (3, BTreeSet::from([2])),
+                (4, BTreeSet::from([2, 3])),
+                (5, BTreeSet::from([2])),
+                (6, BTreeSet::from([2, 5])),
+                (7, BTreeSet::from([2])),
+                (8, BTreeSet::from([4, 6, 7])),
+                (9, BTreeSet::from([3])),
+                (10, BTreeSet::from([5]))
+            ])
+        );
+        assert_eq!(
+            graph.degrees,
+            BTreeMap::from([
+                (0, 0),
+                (1, 1),
+                (2, 1),
+                (3, 1),
+                (4, 2),
+                (5, 1),
+                (6, 2),
+                (7, 1),
+                (8, 3),
+                (9, 1),
+                (10, 1)
+            ])
+        );
+        assert_eq!(
+            graph.nodes_in_degree,
+            BTreeMap::from([
+                (0, BTreeSet::from([0])),
+                (1, BTreeSet::from([1, 2, 3, 5, 7, 9, 10])),
+                (2, BTreeSet::from([4, 6])),
+                (3, BTreeSet::from([8]))
+            ])
+        );
+        assert_eq!(graph.order, vec![0, 1, 2, 3, 5, 7, 4, 9, 6, 10, 8]);
+        assert_eq!(
+            collection,
+            ParsedNodeCollection {
+                data: HashMap::from([("primary".to_string(), DataNode::new(0, 2))]),
+                domain: HashMap::from([("vertical".to_string(), 5), ("horizontal".to_string(), 3)]),
+                scales: HashMap::from([("vertical".to_string(), 6), ("horizontal".to_string(), 4)]),
+                axis: HashMap::from([("vertical".to_string(), 10), ("horizontal".to_string(), 9)]),
+                shapes: vec![8]
             }
         )
     }

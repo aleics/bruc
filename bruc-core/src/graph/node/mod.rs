@@ -1,5 +1,5 @@
 use scale::LogOperator;
-use shape::PieOperator;
+use shape::{PieOperator, PointOperator};
 
 use crate::graph::node::scale::{IdentityOperator, LinearOperator};
 use crate::graph::node::shape::{LineOperator, SceneWindow};
@@ -65,6 +65,7 @@ pub enum Operator {
     Line(LineOperator),
     Bar(BarOperator),
     Pie(PieOperator),
+    Point(PointOperator),
     Axis(AxisOperator),
     DomainInterval(DomainIntervalOperator),
     Linear(LinearOperator),
@@ -122,6 +123,11 @@ impl Operator {
         Operator::Pie(PieOperator::new(pie, field, window))
     }
 
+    /// Create a new point `Operator` instance
+    pub(crate) fn point(window: SceneWindow) -> Operator {
+        Operator::Point(PointOperator::new(window))
+    }
+
     /// Create a new axis `Operator` instance
     pub(crate) fn axis(axis: Axis, scale: Scale, window: SceneWindow) -> Self {
         Operator::Axis(AxisOperator::new(axis, scale, window))
@@ -163,6 +169,7 @@ impl Operator {
             Operator::Line(line) => line.evaluate(pulse).await,
             Operator::Bar(bar) => bar.evaluate(pulse).await,
             Operator::Pie(pie) => pie.evaluate(pulse).await,
+            Operator::Point(point) => point.evaluate(pulse).await,
             Operator::Axis(axis) => axis.evaluate(pulse).await,
             Operator::DomainInterval(domain_interval) => domain_interval.evaluate(pulse).await,
             Operator::Linear(linear) => linear.evaluate(pulse).await,
