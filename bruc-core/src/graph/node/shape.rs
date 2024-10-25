@@ -289,12 +289,55 @@ impl PointOperator {
     pub(crate) fn new(window: SceneWindow) -> Self {
         PointOperator { window }
     }
+
+    fn apply(&self, pulse: &SinglePulse) -> Vec<SceneItem> {
+        let SinglePulse::Data(values) = pulse else {
+            return Vec::new();
+        };
+
+        values.iter().map(|value| self.read_point(value)).collect()
+    }
+
+    fn read_point(&self, value: &DataValue) -> SceneItem {
+        // Read "x" field
+        let x = value.get_number(X_AXIS_FIELD_NAME).copied().unwrap_or(0.0);
+
+        // Read "y" field
+        let y = value.get_number(Y_AXIS_FIELD_NAME).copied().unwrap_or(0.0);
+        let y = self.window.height - y;
+
+        // Read "color" field
+        let color = value
+            .get_text(POINT_COLOR_FIELD_NAME)
+            .cloned()
+            .unwrap_or("blue".to_string());
+
+        // Read "size" field
+        let size = value
+            .get_number(POINT_SIZE_FIELD_NAME)
+            .copied()
+            .unwrap_or(3.0);
+
+        SceneItem::point(x, y, size, color)
+    }
 }
+
+impl Evaluation for PointOperator {
+    async fn evaluate_single(&self, single: SinglePulse) -> Pulse {
+        Pulse::shapes(self.apply(&single))
+    }
+
+    async fn evaluate_multi(&self, multi: MultiPulse) -> Pulse {
+        self.evaluate_single(multi.aggregate()).await
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::data::DataValue;
     use crate::graph::node::shape::{
-        BarOperator, LineOperator, PieOperator, SceneWindow, PIE_OUTER_RADIUS_FIELD_NAME,
+        BarOperator, LineOperator, PieOperator, PointOperator, SceneWindow,
+        PIE_OUTER_RADIUS_FIELD_NAME,
     };
     use crate::graph::{Evaluation, Pulse, SinglePulse};
     use crate::scene::SceneItem;
@@ -528,5 +571,37 @@ mod tests {
                 ),
             ])
         )
+    }
+
+    #[tokio::test]
+    async fn computes_point() {
+        let x_pulse = SinglePulse::Data(vec![
+            DataValue::from_pairs(vec![("x", 2.0.into())]),
+            DataValue::from_pairs(vec![("x", 5.0.into())]),
+            DataValue::from_pairs(vec![("x", 10.0.into())]),
+            DataValue::from_pairs(vec![("x", 15.0.into())]),
+        ]);
+        let y_pulse = SinglePulse::Data(vec![
+            DataValue::from_pairs(vec![("y", 1.0.into())]),
+            DataValue::from_pairs(vec![("y", 1.0.into())]),
+            DataValue::from_pairs(vec![("y", 1.0.into())]),
+            DataValue::from_pairs(vec![("y", 1.0.into())]),
+        ]);
+
+        let operator = PointOperator::new(SceneWindow::new(20, 2));
+
+        let pulse = operator
+            .evaluate(Pulse::multi(vec![x_pulse, y_pulse]))
+            .await;
+
+        assert_eq!(
+            pulse,
+            Pulse::shapes(vec![
+                SceneItem::point(2.0, 1.0, 3.0, "blue".to_string()),
+                SceneItem::point(5.0, 1.0, 3.0, "blue".to_string()),
+                SceneItem::point(10.0, 1.0, 3.0, "blue".to_string()),
+                SceneItem::point(15.0, 1.0, 3.0, "blue".to_string())
+            ])
+        );
     }
 }

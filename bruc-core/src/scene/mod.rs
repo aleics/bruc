@@ -35,6 +35,7 @@ impl SceneRoot {
 pub enum SceneItem {
     Group(Box<SceneGroup>),
     Line(Box<SceneLine>),
+    Point(Box<ScenePoint>),
     Rect(Box<SceneRect>),
     Arc(Box<SceneArc>),
     Axis(Box<SceneAxis>),
@@ -47,6 +48,10 @@ impl SceneItem {
 
     pub fn line(points: Vec<(f32, f32)>, stroke: String, stroke_width: f32) -> Self {
         SceneItem::Line(Box::new(SceneLine::new(points, stroke, stroke_width)))
+    }
+
+    pub fn point(x: f32, y: f32, size: f32, color: String) -> Self {
+        SceneItem::Point(Box::new(ScenePoint::new(x, y, size, color)))
     }
 
     pub fn rect(width: f32, height: f32, x: f32, y: f32, fill: String) -> Self {
@@ -131,6 +136,20 @@ impl SceneLine {
             stroke,
             stroke_width,
         }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct ScenePoint {
+    pub(crate) x: f32,
+    pub(crate) y: f32,
+    pub(crate) size: f32,
+    pub(crate) color: String,
+}
+
+impl ScenePoint {
+    pub fn new(x: f32, y: f32, size: f32, color: String) -> Self {
+        ScenePoint { x, y, color, size }
     }
 }
 

@@ -42,6 +42,10 @@ impl DataValue {
     pub fn get_number(&self, field: &str) -> Option<&f32> {
         self.instance.get(field).and_then(|item| item.get_number())
     }
+
+    pub fn get_text(&self, field: &str) -> Option<&String> {
+        self.instance.get(field).and_then(|item| item.get_text())
+    }
 }
 
 impl DataSource for DataValue {
