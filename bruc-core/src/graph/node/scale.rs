@@ -306,14 +306,18 @@ impl IdentityOperator {
         let SinglePulse::Data(values) = pulse else {
             return Vec::new();
         };
-        let mut result = values.to_vec();
+
+        let mut result = Vec::new();
 
         // Iterate over the current series
-        for value in &mut result {
+        for value in values {
             // Find field in data value
             if let Some(item) = value.get(&self.field) {
                 // Add result to value with the output's name
-                value.insert(&self.output, item.clone());
+                let mut new_value = DataValue::new();
+                new_value.insert(&self.output, item.clone());
+
+                result.push(new_value);
             }
         }
 
@@ -343,7 +347,11 @@ mod tests {
 
     use crate::{
         data::DataValue,
-        graph::{node::scale::LogOperator, pulse::ResolvedDomain, Evaluation, Pulse, SinglePulse},
+        graph::{
+            node::scale::{IdentityOperator, LogOperator},
+            pulse::ResolvedDomain,
+            Evaluation, Pulse, SinglePulse,
+        },
         spec::scale::domain::Domain,
     };
 
@@ -516,6 +524,33 @@ mod tests {
                 DataValue::from_pairs(vec![("x", 150.0.into())]),
                 DataValue::from_pairs(vec![("x", 300.0.into())]),
                 DataValue::from_pairs(vec![("x", 600.0.into())]),
+            ])
+        );
+    }
+
+    #[tokio::test]
+    async fn identity_applies_multi_pulse() {
+        let first_pulse = SinglePulse::Data(vec![
+            DataValue::from_pairs(vec![("a", 10.0.into()), ("b", 1.0.into())]),
+            DataValue::from_pairs(vec![("a", 100.0.into()), ("b", 1.0.into())]),
+        ]);
+        let second_pulse = SinglePulse::Data(vec![
+            DataValue::from_pairs(vec![("a", 1000.0.into()), ("b", 1.0.into())]),
+            DataValue::from_pairs(vec![("a", 100000.0.into()), ("b", 1.0.into())]),
+        ]);
+
+        let operator = IdentityOperator::new("a", "x");
+        let pulse = operator
+            .evaluate(Pulse::multi(vec![first_pulse, second_pulse]))
+            .await;
+
+        assert_eq!(
+            pulse,
+            Pulse::data(vec![
+                DataValue::from_pairs(vec![("x", 10.0.into())]),
+                DataValue::from_pairs(vec![("x", 100.0.into())]),
+                DataValue::from_pairs(vec![("x", 1000.0.into())]),
+                DataValue::from_pairs(vec![("x", 100000.0.into())]),
             ])
         );
     }
