@@ -52,6 +52,7 @@ renderers
 ### Charts
 `bruc` currently supports only simple visualization possibilities. As more primitives are added into the library, more
 type of charts will be possible. Currently the following are supported and examples demonstrated possible usage:
+ - [Scatter plot](https://github.com/aleics/bruc/tree/main/bruc-web/examples/scatter-plot)
  - [Line chart](https://github.com/aleics/bruc/tree/main/bruc-web/examples/line-chart)
  - [Bar chart](https://github.com/aleics/bruc/tree/main/bruc-web/examples/bar-chart)
  - [Pie chart](https://github.com/aleics/bruc/tree/main/bruc-web/examples/pie-chart)
