@@ -57,8 +57,7 @@ impl Hash for DataItem {
             DataItem::Bool(value) => hasher.write_i8(i8::from(*value)),
             DataItem::Number(value) => hasher.write(&value.to_be_bytes()),
             DataItem::Text(value) => value.hash(hasher),
-        };
-        hasher.finish();
+        }
     }
 }
 
