@@ -57,18 +57,10 @@ impl LineOperator {
             .shape
             .props
             .stroke
-            .as_ref()
-            .and_then(|stroke| stroke.get_text())
-            .cloned()
+            .clone()
             .unwrap_or("black".to_string());
 
-        let stroke_width = self
-            .shape
-            .props
-            .stroke_width
-            .as_ref()
-            .and_then(|stroke_width| stroke_width.get_number().copied())
-            .unwrap_or(1.0);
+        let stroke_width = self.shape.props.stroke_width.unwrap_or(1.0);
 
         vec![SceneItem::line(points, stroke, stroke_width)]
     }

@@ -1,13 +1,12 @@
 use crate::spec::shape::base::BaseShapeProperties;
 use crate::spec::shape::DataSource;
-use bruc_expression::data::DataItem;
 
 pub(crate) struct LinePropertiesBuilder {
     x: Option<DataSource>,
     y: Option<DataSource>,
     interpolate: Interpolate,
-    stroke: Option<DataItem>,
-    stroke_width: Option<DataItem>,
+    stroke: Option<String>,
+    stroke_width: Option<f32>,
 }
 
 impl LinePropertiesBuilder {
@@ -37,12 +36,12 @@ impl LinePropertiesBuilder {
     }
 
     pub(crate) fn with_stroke(mut self, stroke: &str) -> Self {
-        self.stroke = Some(stroke.to_string().into());
+        self.stroke = Some(stroke.to_string());
         self
     }
 
     pub(crate) fn with_stroke_width(mut self, stroke_width: f32) -> Self {
-        self.stroke_width = Some(stroke_width.into());
+        self.stroke_width = Some(stroke_width);
         self
     }
 
@@ -78,8 +77,8 @@ impl LineShape {
 pub(crate) struct LineProperties {
     #[cfg_attr(feature = "serde", serde(default))]
     pub(crate) interpolate: Interpolate,
-    pub(crate) stroke: Option<DataItem>,
-    pub(crate) stroke_width: Option<DataItem>,
+    pub(crate) stroke: Option<String>,
+    pub(crate) stroke_width: Option<f32>,
     #[cfg_attr(feature = "serde", serde(flatten))]
     pub(crate) base: BaseShapeProperties,
 }
